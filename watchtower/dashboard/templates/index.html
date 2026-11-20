@@ -1,29 +1,161 @@
 {% extends "base.html" %}
-{% block nav %}
+{% block top_actions %}
   <form class="add" action="/portals" method="post" id="add-form">
-    <input name="url" type="url" placeholder="Paste a tender portal URL…" required>
-    <button>Add portal</button>
+    <input name="url" type="text" inputmode="url" placeholder="Add portal URL (e.g. evergabe-online.de)…" required>
+    <button class="primary" type="submit">Add portal</button>
   </form>
+  <button id="search-shortcut" class="top-btn" type="button" aria-keyshortcuts="Alt+/">Find a tender <kbd aria-hidden="true">Alt /</kbd></button>
 {% endblock %}
+
 {% block main %}
-<section class="summary">
-  <div class="stat serving"><b id="n-serving">{{ counts.serving }}</b><small>serving</small></div>
-  <div class="stat healing"><b id="n-healing">{{ counts.healing }}</b><small>healing</small></div>
-  <div class="stat integrating"><b id="n-integrating">{{ counts.integrating }}</b><small>integrating</small></div>
-  <div class="stat failed"><b id="n-failed">{{ counts.failed }}</b><small>need a human</small></div>
-  <div class="stat"><b id="n-tenders">{{ tenders }}</b><small>tenders delivered</small></div>
-  <div class="stat"><b id="n-avg-usd">${{ "%.3f" | format(avg_usd) }}</b><small>avg. cost per portal · <span id="n-projected">${{ "%.0f" | format(projected) }}</span> for 4,500</small></div>
+<section id="overview">
+  <div class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow"><span aria-hidden="true">✳</span> PROCUREMENT INTELLIGENCE · WATCHTOWER</p>
+      <h1>Your morning<br>briefing<span>.</span></h1>
+      <p class="hero-sub">Autonomous European tender monitoring that attaches, detects breakage, and repairs itself.</p>
+      <div class="hero-actions">
+        <button type="button" class="primary" id="brief-btn">▶ Morning briefing</button>
+        {% if lab %}<button type="button" class="btn-amber" id="timelapse-btn">⚡ Run offline self-healing timelapse</button>{% endif %}
+        <a class="ghost-link" href="#tenders">Explore tenders <span aria-hidden="true" class="arrow"></span></a>
+      </div>
+      <div id="brief-box" class="brief-box" hidden>
+        <p id="brief-text"></p>
+        <audio id="brief-audio" hidden></audio>
+      </div>
+    </div>
+    <div class="activity">
+      <div class="activity-head"><span>Portal activity</span><span>LAST 7 DAYS</span></div>
+      <p><strong id="activity-total">{{ activity.total }}</strong> tender updates</p>
+      {% set max_day = (activity.days | map(attribute='count') | max) or 1 %}
+      <div class="chart" id="activity-chart" role="img" aria-label="{% for d in activity.days %}{{ d.weekday }} {{ d.count }}{% if not loop.last %}, {% endif %}{% endfor %} updates">
+        {% for d in activity.days %}
+          {% set pct = ((d.count * 100 / max_day) | round | int) if d.count > 0 else 8 %}
+          <div class="{{ 'zero' if d.count == 0 else '' }}" title="{{ d.weekday }} ({{ d.date }}): {{ d.count }} updates">
+            <i style="--size:{{ pct if pct >= 8 else 8 }}%"></i>
+            <span>{{ d.label }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="metrics-grid">
+    <a class="metric-tile serving" href="#portals" data-filter-state="serving">
+      <span>Serving</span>
+      <strong id="n-serving">{{ counts.serving }}</strong>
+    </a>
+    <a class="metric-tile healing" href="#portals" data-filter-state="healing">
+      <span>Healing</span>
+      <strong id="n-healing">{{ counts.healing }}</strong>
+    </a>
+    <a class="metric-tile integrating" href="#portals" data-filter-state="integrating">
+      <span>Integrating</span>
+      <strong id="n-integrating">{{ counts.integrating }}</strong>
+    </a>
+    <a class="metric-tile failed" href="#portals" data-filter-state="failed">
+      <span>Need a human</span>
+      <strong id="n-failed">{{ counts.failed }}</strong>
+    </a>
+    <a class="metric-tile" href="#tenders">
+      <span>Tenders delivered</span>
+      <strong id="n-tenders">{{ tenders }}</strong>
+    </a>
+    <a class="metric-tile cost-tile" href="#portals">
+      <span>Avg. cost / portal</span>
+      <strong id="n-avg-usd">${{ "%.3f" | format(avg_usd) }}</strong>
+      <small><span id="n-projected">${{ "%.0f" | format(projected) }}</span> for 4,500</small>
+    </a>
+  </div>
 </section>
-<section class="briefing">
-  <button class="violet" id="brief-btn">▶ Morning briefing</button>
-  {% if lab %}<button type="button" class="demo-btn" id="timelapse-btn">⚡ Run offline self-healing timelapse</button>{% endif %}
-  <p id="brief-text" class="muted" hidden></p>
-  <audio id="brief-audio" hidden></audio>
+
+<section id="portals-section" aria-labelledby="portals-heading">
+  <div class="section-head">
+    <div>
+      <h2 id="portals-heading">Monitored portals</h2>
+      <h1 id="portals-page-heading" hidden>Portal health</h1>
+    </div>
+    <div class="state-filters" id="state-filters" role="group" aria-label="Filter portals by health state">
+      <button type="button" class="chip-btn active" data-state-filter="">All</button>
+      <button type="button" class="chip-btn" data-state-filter="serving">Serving</button>
+      <button type="button" class="chip-btn" data-state-filter="healing">Healing</button>
+      <button type="button" class="chip-btn" data-state-filter="integrating">Integrating</button>
+      <button type="button" class="chip-btn" data-state-filter="failed">Need a human</button>
+    </div>
+  </div>
+  <div class="portal-grid" id="grid">
+    {% for c in cards %}{% include "_card.html" %}{% endfor %}
+    {% if not cards %}
+    <p class="empty" id="empty">No portals monitored yet. Paste any procurement portal URL above to attach it automatically{% if lab %} — or click <strong>Run offline self-healing timelapse</strong>{% endif %}.</p>
+    {% endif %}
+  </div>
 </section>
-<section class="grid" id="grid">
-  {% for c in cards %}{% include "_card.html" %}{% endfor %}
-  {% if not cards %}<p class="empty" id="empty">No portals yet. Paste a URL above{% if lab %} — or try <code>/lab/ssr/</code>{% endif %}.</p>{% endif %}
+
+<section id="tender-section" aria-labelledby="tender-heading">
+  <div class="section-head">
+    <div>
+      <h2 id="tender-heading">Latest tenders</h2>
+      <h1 id="tender-page-heading" hidden>Tenders</h1>
+    </div>
+    <div class="filters">
+      <label for="search" class="sr-only">Search tenders</label>
+      <input id="search" type="search" placeholder="Search title, buyer, CPV…">
+      <label for="portal-filter" class="sr-only">Filter by portal</label>
+      <select id="portal-filter"><option value="">All portals</option></select>
+      <label for="country" class="sr-only">Filter by country</label>
+      <select id="country"><option value="">All countries</option></select>
+      <label for="status-filter" class="sr-only">Filter by status</label>
+      <select id="status-filter">
+        <option value="">All statuses</option>
+        <option value="open">Open</option>
+        <option value="closed">Closed</option>
+        <option value="withdrawn">Withdrawn</option>
+      </select>
+    </div>
+  </div>
+  <p id="results" class="results-note" role="status"></p>
+  <ul id="tender-list" class="tender-list"></ul>
+  <div id="tender-more" class="tender-more" hidden>
+    <a class="btn-soft" href="#tenders" id="tender-more-link">View all tenders →</a>
+  </div>
 </section>
+
+<section id="repair-view" hidden aria-labelledby="repair-heading">
+  <div class="repair-nav">
+    <a class="back-link" href="#portals"><span aria-hidden="true">←</span> All portals</a>
+    <a class="back-link" id="repair-theater-link" href="#">Open Agent Theater ↗</a>
+  </div>
+  <div class="section-head">
+    <div>
+      <p class="eyebrow"><span aria-hidden="true">✳</span> SELF-REPAIR</p>
+      <h1 id="repair-heading">Before vs after</h1>
+      <p id="repair-portal" class="repair-portal"></p>
+    </div>
+    <div class="filters">
+      <label for="repair-pick" class="sr-only">Choose a repair</label>
+      <select id="repair-pick"></select>
+    </div>
+  </div>
+  <p id="repair-summary" class="repair-summary" role="status"></p>
+  <ul class="legend" aria-label="What the colours mean">
+    <li><span class="swatch swatch-item" aria-hidden="true"></span> What Watchtower reads</li>
+    <li><span class="swatch swatch-gone" aria-hidden="true"></span> Gone from the page</li>
+    <li><span class="swatch swatch-new" aria-hidden="true"></span> New on the page</li>
+  </ul>
+  <div class="compare">
+    <figure>
+      <figcaption><strong>Before</strong> <span id="cap-before"></span></figcaption>
+      <iframe id="frame-before" sandbox title="The portal page when the old recipe worked" loading="lazy"></iframe>
+    </figure>
+    <figure>
+      <figcaption><strong>After</strong> <span id="cap-after"></span></figcaption>
+      <iframe id="frame-after" sandbox title="The portal page now, read by the repaired recipe" loading="lazy"></iframe>
+    </figure>
+  </div>
+  <h2 class="diff-title">What Watchtower changed in its recipe</h2>
+  <ul id="repair-diff" class="repair-diff"></ul>
+</section>
+
 {% if traces_ui %}
 <section class="panel calls" id="traces">
   <h3>Model calls <small>last 30, recorded in MLflow</small><a class="open" href="{{ traces_ui }}" target="_blank" rel="noopener">Open in MLflow ↗</a></h3>
@@ -37,6 +169,29 @@
   </table></div>
 </section>
 {% endif %}
-<aside class="feed"><h3>Live</h3><ol id="feed"></ol></aside>
+
+<section class="panel live-feed" id="live-feed-panel">
+  <div class="live-feed-head">
+    <h3>Live agent stream</h3>
+    <small class="muted">Real-time attach, check &amp; repair events</small>
+  </div>
+  <ol id="feed"></ol>
+</section>
+
+<template id="tender-template">
+  <li class="tender">
+    <div class="tender-icon" aria-hidden="true">▤</div>
+    <div class="tender-name">
+      <button class="open-tender" type="button"></button>
+      <p class="buyer"></p>
+    </div>
+    <span class="portal-pill"></span>
+    <span class="country"></span>
+    <span class="deadline"></span>
+    <span class="tag"></span>
+    <button class="save" type="button" aria-pressed="false"><span aria-hidden="true">☆</span></button>
+  </li>
+</template>
 {% endblock %}
+
 {% block scripts %}<script>Watchtower.morning(); Watchtower.traces();</script>{% endblock %}

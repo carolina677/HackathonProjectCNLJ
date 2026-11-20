@@ -19,7 +19,7 @@ async def test_index_lists_portals_with_state_and_story(client, repo):
     assert "state-failed" in html and "state-integrating" in html
     assert "Repaired" in html  # last runs told in words
     assert 'action="/portals"' in html or "hx-post=\"/portals\"" in html
-    assert "data-tenders" in html and 'id="tenders-dialog"' in html and "/briefly" in html
+    assert "data-tenders" in html and 'id="tenders-dialog"' in html and "Briefly" in html and "Watchtower" in html
 
 
 async def test_portal_card_fragment(client, repo):
@@ -70,4 +70,24 @@ async def test_ui_summary_endpoint(client, repo):
     assert r.status_code == 200
     data = r.json()
     assert data["serving"] == 1 and data["tenders"] == 1
-    assert {"healing", "integrating", "failed", "avg_usd", "projected"} <= set(data)
+    assert {"healing", "integrating", "failed", "avg_usd", "projected", "lab", "activity"} <= set(data)
+    assert data["activity"]["total"] >= 1 and len(data["activity"]["days"]) == 7
+
+
+async def test_ui_tenders_endpoint(client, repo):
+    from datetime import date, datetime, timezone
+    from watchtower.models import Tender, TenderStatus
+
+    pid = await repo.create_portal("https://tenders.example/de")
+    now = datetime.now(timezone.utc)
+    await repo.upsert_tenders(pid, [Tender(
+        id="t-1", url="https://tenders.example/de/1", title="Cloud Migration", buyerName="City Hall",
+        publicationDate=date(2026, 11, 20), submissionDeadline=None,
+        status=TenderStatus.open, documents=[], lastChangedAt=now,
+    )], now=now)
+    r = await client.get("/ui/tenders")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["total"] == 1 and len(body["tenders"]) == 1
+    t = body["tenders"][0]
+    assert t["portalId"] == pid and t["portalHost"] == "tenders.example/de" and t["title"] == "Cloud Migration"

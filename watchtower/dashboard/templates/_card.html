@@ -1,11 +1,11 @@
 {% set p = c.p %}
-<article class="card state-{{ p.state.value }}" id="card-{{ p.id }}" data-id="{{ p.id }}">
+<article class="card state-{{ p.state.value }}" id="card-{{ p.id }}" data-id="{{ p.id }}" data-state="{{ p.state.value }}">
   <div class="card-head">
-    <span class="pill">{{ p.state.value }}</span>
-    {% if c.platform %}<span class="tag">{{ c.platform }}</span>{% endif %}
-    {% if c.country %}<span class="tag">{{ c.country }}</span>{% endif %}
+    <span class="pill pill-{{ p.state.value }}">{{ "needs review" if p.state.value == "failed" else p.state.value }}</span>
+    {% if c.platform %}<span class="meta-chip">{{ c.platform }}</span>{% endif %}
+    {% if c.country %}<span class="meta-chip">{{ c.country }}</span>{% endif %}
   </div>
-  <h2 class="host" title="{{ p.url }}">{{ c.host }}</h2>
+  <h3 class="host" title="{{ p.url }}">{{ c.host }}</h3>
   <a class="url" href="{{ p.url }}" target="_blank" rel="noopener">{{ p.url }}</a>
   <div class="numbers">
     <div><b>{{ p.tenderCount }}</b><small>tenders</small></div>
@@ -18,11 +18,12 @@
     {% else %}<li class="run-running"><span>Queued</span></li>{% endfor %}
   </ol>
   <div class="actions">
-    <a href="/portals/{{ p.id }}/theater">Theater</a>
-    <button type="button" class="ghost" data-tenders="{{ p.id }}" data-host="{{ c.host }}">Tenders</button>
-    <a href="/portals/{{ p.id }}/tenders" target="_blank">JSON</a>
-    <button data-refresh="{{ p.id }}">Refresh</button>
-    {% if c.lab %}<button class="danger" data-break="{{ p.id }}">Break it</button>{% endif %}
-    <button class="ghost" data-delete="{{ p.id }}">Remove</button>
+    {% if c.latest_repair %}<a class="btn-compare" href="/#repair/{{ p.id }}/{{ c.latest_repair.n }}">Before vs after</a>{% endif %}
+    <a class="btn-soft" href="/portals/{{ p.id }}/theater">Theater</a>
+    <button type="button" class="btn-soft" data-tenders="{{ p.id }}" data-host="{{ c.host }}">Tenders</button>
+    <button type="button" class="btn-soft" data-refresh="{{ p.id }}">Refresh</button>
+    {% if c.lab %}<button type="button" class="btn-danger" data-break="{{ p.id }}">Break it</button>{% endif %}
+    <a class="btn-ghost" href="/portals/{{ p.id }}/tenders" target="_blank" rel="noopener">JSON</a>
+    <button type="button" class="btn-ghost" data-delete="{{ p.id }}">Remove</button>
   </div>
 </article>

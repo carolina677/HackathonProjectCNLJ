@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse,
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from .. import cost, events, tracing
+from .. import cost, events, repairs, tracing
 
 HERE = Path(__file__).parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
@@ -73,16 +73,22 @@ def run_words(r: dict, first: bool) -> str:
     return "Read stopped: " + (detail or "the portal changed")
 
 
+def _host_label(url: str) -> str:
+    u = urlsplit(url)
+    return (u.netloc + u.path.rstrip("/"))[:60] or url
+
+
 async def card_context(repo, p, request: Request | None = None) -> dict:
     runs = await repo.run_details(p.id, limit=50)
     oldest = runs[-1]["id"] if runs else None
     story = [{"text": run_words(r, r["id"] == oldest), "when": ago(r["finished_at"] or r["started_at"]),
               "result": r["result"] or "running"} for r in runs[:3]]
-    u = urlsplit(p.url)
-    label = (u.netloc + u.path.rstrip("/"))[:60]
-    return {"p": p.out(), "host": label, "story": story, "cost": cost.summary(p.id),
+    portal_repairs = repairs.list_repairs(request.app.state.settings.data_dir, p.id) if request is not None else []
+    return {"p": p.out(), "host": _host_label(p.url), "story": story, "cost": cost.summary(p.id),
             "platform": (p.recipe or {}).get("platform"), "country": p.country,
-            "lab": lab_slug(request, p.url) if request is not None else None}
+            "lab": lab_slug(request, p.url) if request is not None else None,
+            "latest_repair": portal_repairs[0] if portal_repairs else None,
+            "repairs_count": len(portal_repairs)}
 
 
 def register(app: FastAPI) -> None:
@@ -97,11 +103,12 @@ def register(app: FastAPI) -> None:
         return templates.TemplateResponse(request, "index.html", {
             "cards": cards, "counts": counts, "tenders": sum(c["p"].tenderCount for c in cards),
             "avg_usd": cost.per_portal_average(), "projected": cost.projected(4500),
+            "activity": await repo.activity_7d(),
             "lab": bool(request.app.state.settings.lab), "traces_ui": tracing.ui_url()})
 
     @app.get("/briefly")
     async def briefly():
-        return RedirectResponse("/static/briefly-preview.html")
+        return RedirectResponse("/")
 
     @app.post("/demo/timelapse", status_code=202)
     async def demo_timelapse(request: Request):
@@ -129,14 +136,38 @@ def register(app: FastAPI) -> None:
 
     @app.get("/ui/summary")
     async def ui_summary(request: Request):
-        portals = await request.app.state.repo.list_portals()
+        repo = request.app.state.repo
+        portals = await repo.list_portals()
         counts = {s: sum(p.state.value == s for p in portals) for s in ("serving", "healing", "integrating", "failed")}
         return {
             **counts,
             "tenders": sum(p.tenderCount for p in portals),
             "avg_usd": cost.per_portal_average(),
             "projected": cost.projected(4500),
+            "lab": bool(request.app.state.settings.lab),
+            "activity": await repo.activity_7d(),
         }
+
+    @app.get("/ui/tenders")
+    async def ui_tenders(request: Request):
+        """Aggregated live tenders across all active portals for the unified dashboard."""
+        repo = request.app.state.repo
+        portals = await repo.list_portals()
+        collected: list[tuple[int, float, dict]] = []
+        for p in portals:
+            host = _host_label(p.url)
+            for t in await repo.list_tenders(p.id):
+                data = t.model_dump(mode="json", exclude_none=True)
+                data["portalId"] = p.id
+                data["portalUrl"] = p.url
+                data["portalHost"] = host
+                if p.country:
+                    data["portalCountry"] = p.country
+                priority = 0 if data.get("status") == "open" else 1
+                ts = t.lastChangedAt.timestamp() if t.lastChangedAt else 0.0
+                collected.append((priority, -ts, data))
+        collected.sort(key=lambda item: (item[0], item[1]))
+        return {"total": len(collected), "tenders": [item[2] for item in collected[:500]]}
 
     async def _portal(request: Request, pid: str):
         p = await request.app.state.repo.get_portal(pid)
