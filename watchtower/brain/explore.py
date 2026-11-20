@@ -43,7 +43,7 @@ class Exploration:
     list_page: Page | None = None
     detail_pages: list[Page] = field(default_factory=list)
     json_candidates: list[CapturedJson] = field(default_factory=list)
-    blocked: Literal["login", "captcha"] | None = None
+    blocked: Literal["login", "captcha", "firewall"] | None = None
     docs_reachable: bool = False
     doc_hops: list[str] = field(default_factory=list)
     path: list[str] = field(default_factory=list)
@@ -200,6 +200,13 @@ def _find_search_form(html: str, base: str) -> tuple[str, str, dict[str, str]] |
     return None
 
 
+# Block pages of web application firewalls (F5, Akamai, Imperva, Cloudflare). They reject automated
+# requests on purpose; Watchtower reports that and never tries to get around it.
+FIREWALL = re.compile(r"The requested URL was rejected\. Please consult with your administrator"
+                      r"|<title>\s*Access Denied\s*</title>[\s\S]{0,400}Reference #\d"
+                      r"|Incapsula incident ID|Attention Required! \| Cloudflare|cf-error-details", re.I)
+
+
 async def explore(start_url: str, fetcher: Fetcher, jev, *, portal_id: str | None = None,
                   max_hops: int = 4, max_details: int = 3) -> Exploration:
     ex = Exploration()
@@ -212,6 +219,9 @@ async def explore(start_url: str, fetcher: Fetcher, jev, *, portal_id: str | Non
             ex.path.append(cur)
             if page.status in (401, 403):
                 ex.blocked = "login"
+                return ex
+            if FIREWALL.search(page.html[:20000]):
+                ex.blocked = "firewall"
                 return ex
             if page.status >= 400:
                 ex.error = f"HTTP {page.status} on {cur}"

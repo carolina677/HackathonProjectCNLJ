@@ -27,6 +27,7 @@ log = logging.getLogger("watchtower.pipeline")
 
 RETRY_DELAYS = (60.0, 300.0)
 MAX_TRANSIENT = 3
+NO_DOCUMENTS = "Serving without documents: the portal's document links could not be found."
 MAX_REPAIR_CYCLES = 3  # repairs in a row whose new recipe never delivered: stop paying, say so
 SMALL_PORTAL_LIMIT = 50
 PROGRESSIVE_SERVE_AT = 20
@@ -34,6 +35,7 @@ PROGRESSIVE_SERVE_AT = 20
 BLOCK_REASONS = {
     "login": "Portal requires a login",
     "captcha": "Portal shows a captcha and documents are not reachable without it",
+    "firewall": "The portal's firewall rejects automated requests; Watchtower does not get around it",
 }
 
 ALLOWED = {
@@ -109,6 +111,8 @@ class Pipeline:
         if p is None:
             return
         self.check_transition(p.state, to)
+        if to == PortalState.serving and reason is None and (p.recipe or {}).get("documents_unavailable"):
+            reason = NO_DOCUMENTS
         await self.repo.set_state(pid, to, reason)
         if p.state != to or p.reason != reason:
             events.emit(pid, "state", {"from": str(p.state), "to": str(to), "reason": reason})
@@ -182,6 +186,7 @@ class Pipeline:
             sample, _, v = await self._try(known, fetcher, pid)
             recipe = known if v.ok and sample else None
         ex = None
+        docs_less: Recipe | None = None
         if recipe is None:
             ex = await explore(p.url, fetcher, self.jev, portal_id=pid)
             if ex.blocked:
@@ -204,7 +209,14 @@ class Pipeline:
                 if v.ok and sample:
                     recipe = cand
                     break
+                if v.ok_without_documents and sample:
+                    docs_less = cand
                 feedback = (errors[:5] + v.feedback)[:15] or ["The recipe returned nothing usable."]
+        if recipe is None and docs_less is not None:
+            # Every field checked out, only the document links could not be found: tenders without
+            # documents are worth more to the customer than no tenders, and the card says so.
+            recipe = docs_less.model_copy(update={"documents_unavailable": True})
+            events.emit(pid, "log", {"msg": "Serving tenders without documents: no document links found"})
         if recipe is None:
             why = "; ".join((v.problems if v else [])[:3]) or "extracted values did not match the pages"
             await self.transition(pid, PortalState.failed, f"Could not learn a reliable recipe: {why}")

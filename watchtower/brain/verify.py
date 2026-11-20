@@ -46,6 +46,7 @@ class VerifyReport:
     problems: list[str] = field(default_factory=list)
     feedback: list[str] = field(default_factory=list)
     judged: bool = True
+    ok_without_documents: bool = False  # everything checked out except the document links
 
     @property
     def mask(self) -> list[str]:
@@ -183,13 +184,9 @@ async def verify_sample(tenders: list[dict], pages: dict[str, str], jev, *, samp
     for f in rep.nulled:
         rep.feedback.append(f"Field {f} did not match the page in {len(failing.get(f, []))}/{len(picked)} samples.")
     rep.feedback += rep.problems[:10]
-    rep.ok = (
-        (not any("duplicate" in p for p in rep.problems))
-        and rule_fail <= 1
-        and not core_bad
-        and not title_missing
-        and not docs_missing
-    )
+    rest_ok = (not any("duplicate" in p for p in rep.problems)) and rule_fail <= 1 and not core_bad and not title_missing
+    rep.ok = rest_ok and not docs_missing
+    rep.ok_without_documents = rest_ok and docs_missing
     events.emit(portal_id, "verify", {"ok": rep.ok, "field_scores": rep.field_scores, "mask": rep.mask,
                                       "problems": rep.problems[:10], "samples": [t.get("id") for t in picked],
                                       "judged": rep.judged})

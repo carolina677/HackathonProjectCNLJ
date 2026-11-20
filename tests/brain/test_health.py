@@ -136,3 +136,14 @@ def test_document_captcha_pages_mark_unhealthy():
     h = health_check(5, _many(5), [], doc_counts={str(i): 0 for i in range(5)},
                      doc_errors=["document https://x/dl?id=1: captcha page instead of a document"])
     assert not h.ok and "captcha" in h.reason
+
+
+def test_one_failed_late_list_page_does_not_throw_away_what_was_read():
+    errors = ["list request failed on https://p/list?page=414: ReadTimeout: timed out"]
+    assert health_check(0, _many(300), errors).ok
+
+
+def test_list_request_failing_with_nothing_read_is_unhealthy():
+    errors = ["list request failed on https://p/api: JSONDecodeError: Expecting value"]
+    h = health_check(20, [], errors)
+    assert not h.ok and "stopped answering" in h.reason

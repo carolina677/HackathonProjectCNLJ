@@ -132,3 +132,23 @@ async def test_detail_and_document_blocks_reported():
     )
     ex4 = await explore("https://p.example/search", f4, FakeJev())
     assert ex4.blocked is None and ex4.list_page is list_page and ex4.docs_reachable
+
+
+@pytest.mark.parametrize("html", [
+    "<html><head><title>Request Rejected</title></head><body>The requested URL was rejected. Please consult with "
+    "your administrator.<br><br>Your support ID is: &lt;13663541770473790570&gt;</body></html>",
+    "<html><head><title>Access Denied</title></head><body><h1>Access Denied</h1>You don't have permission to access "
+    "this server.<p>Reference #18.6f1e3e17.1795213434.2a1b</p></body></html>",
+    "<html><body>Request unsuccessful. Incapsula incident ID: 1234-5678</body></html>",
+])
+async def test_firewall_rejection_is_reported_as_such(html):
+    from watchtower.fetch import Page
+    from watchtower.pipeline import BLOCK_REASONS
+
+    class OnePage:
+        async def open(self, url):
+            return Page(url, url, 200, html)
+
+    ex = await explore("https://p.example/", OnePage(), FakeJev())
+    assert ex.blocked == "firewall"
+    assert "firewall" in BLOCK_REASONS["firewall"]

@@ -208,3 +208,20 @@ async def test_pulse_notices_break_without_refresh(e2e_pulse):
     await idle(app, pid)
     runs = (await c.get(f"/portals/{pid}/runs")).json()
     assert any(r["kind"] == "repair" and r["result"] == "ok" for r in runs)
+
+
+async def test_portal_whose_documents_cannot_be_found_serves_tenders_and_says_so(lab, settings, monkeypatch):
+    """Fields verified but no document links after 3 attempts: serve the tenders, flag missing documents."""
+    from tests.recipe.test_engine import ssr_recipe as real
+
+    monkeypatch.setattr(f"{__name__}.ssr_recipe",
+                        lambda lab_, slug="ssr", docs=None: real(lab_, slug, docs=[{"selector": "ul.nope a"}]))
+    async with _e2e_app(lab, settings, monkeypatch) as (c, lab_, replay, app):
+        pid = (await c.post("/portals", json={"url": lab.url("ssr")})).json()["id"]
+        p = await until(c, pid, lambda p: p["state"] in ("serving", "failed"), timeout=120)
+        assert p["state"] == "serving" and p["tenderCount"] == 23
+        assert "without documents" in (p["reason"] or "")
+        assert replay.calls == 3  # it tried to find the documents first
+        await c.post(f"/portals/{pid}/refresh")
+        await idle(app, pid)
+        assert "without documents" in ((await c.get(f"/portals/{pid}")).json()["reason"] or "")
