@@ -100,10 +100,16 @@ _browser = None
 _browser_lock = asyncio.Lock()
 
 
+_http_loop = None
+
+
 def http() -> httpx.AsyncClient:
-    global _http
-    if _http is None or _http.is_closed:
+    """One shared client per event loop (a client is bound to the loop that created it)."""
+    global _http, _http_loop
+    loop = asyncio.get_running_loop()
+    if _http is None or _http.is_closed or _http_loop is not loop:
         _http = httpx.AsyncClient(headers=HEADERS, follow_redirects=True, timeout=httpx.Timeout(30, read=120))
+        _http_loop = loop
     return _http
 
 

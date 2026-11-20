@@ -125,13 +125,13 @@ const Theater = (() => {
     $("#race-btn").addEventListener("click", async (e) => {
       e.target.disabled = true; e.target.textContent = "Racing…";
       try { const r = await fetch(`/portals/${pid}/race`, { method: "POST" }); if (!r.ok) throw new Error((await r.json()).error); }
-      catch (err) { alert(err.message); }
+      catch (err) { Watchtower.toast(err.message, "error"); }
       finally { e.target.disabled = false; e.target.textContent = "Race Jev vs LLM"; }
     });
     document.addEventListener("click", async (e) => {
       const t = e.target;
-      if (t.dataset.refresh) { t.disabled = true; await fetch(`/portals/${pid}/refresh`, { method: "POST" }); setTimeout(() => (t.disabled = false), 1500); }
-      if (t.dataset.break) { t.disabled = true; const r = await (await fetch(`/portals/${pid}/break`, { method: "POST" })).json(); t.textContent = `Broke: ${r.mutation}`; setTimeout(() => { t.disabled = false; t.textContent = "Break it"; }, 4000); }
+      if (t.dataset.refresh) { t.disabled = true; await fetch(`/portals/${pid}/refresh`, { method: "POST" }); Watchtower.toast("Reading the portal now"); setTimeout(() => (t.disabled = false), 1500); }
+      if (t.dataset.break) { t.disabled = true; const r = await (await fetch(`/portals/${pid}/break`, { method: "POST" })).json(); Watchtower.toast(`Chaos Lab broke the portal: ${r.mutation}. Watch it heal.`); t.textContent = `Broke: ${r.mutation}`; setTimeout(() => { t.disabled = false; t.textContent = "Break it"; }, 4000); }
     });
   }
 

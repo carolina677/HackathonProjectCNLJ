@@ -10,6 +10,13 @@ const Watchtower = (() => {
     return r.status === 204 ? null : r.json().catch(() => null);
   }
 
+  /* Inline feedback (status / completion / error) instead of blocking alert() dialogs. */
+  function toast(msg, kind = "ok") {
+    document.querySelector(".toast")?.remove();
+    const t = document.createElement("div"); t.className = `toast ${kind}`; t.setAttribute("role", kind === "error" ? "alert" : "status");
+    t.textContent = msg; document.body.append(t); setTimeout(() => t.remove(), kind === "error" ? 6000 : 3000);
+  }
+
   async function refreshCard(id) {
     const r = await fetch(`/ui/portals/${id}/card`);
     const old = document.getElementById(`card-${id}`);
@@ -71,14 +78,14 @@ const Watchtower = (() => {
       const input = e.target.url, btn = e.target.querySelector("button");
       btn.disabled = true;
       try { const { id } = await api("POST", "/portals", { url: input.value.trim() }); input.value = ""; refreshCard(id); }
-      catch (err) { alert(err.message); } finally { btn.disabled = false; }
+      catch (err) { toast(err.message, "error"); } finally { btn.disabled = false; }
     });
     document.addEventListener("click", async (e) => {
       const t = e.target;
-      if (t.dataset.refresh) { t.disabled = true; await api("POST", `/portals/${t.dataset.refresh}/refresh`).catch(alert); scheduleCard(t.dataset.refresh); }
-      if (t.dataset.break) { t.disabled = true; const r = await api("POST", `/portals/${t.dataset.break}/break`).catch(alert); if (r) t.textContent = `Broke: ${r.mutation}`; setTimeout(() => { t.disabled = false; t.textContent = "Break it"; }, 4000); }
+      if (t.dataset.refresh) { t.disabled = true; await api("POST", `/portals/${t.dataset.refresh}/refresh`).then(() => toast("Reading the portal now")).catch((e) => toast(e.message, "error")); scheduleCard(t.dataset.refresh); }
+      if (t.dataset.break) { t.disabled = true; const r = await api("POST", `/portals/${t.dataset.break}/break`).catch((e) => toast(e.message, "error")); if (r) toast(`Chaos Lab broke the portal: ${r.mutation}. Watch it heal.`); if (r) t.textContent = `Broke: ${r.mutation}`; setTimeout(() => { t.disabled = false; t.textContent = "Break it"; }, 4000); }
       if (t.dataset.delete && confirm("Remove this portal and its tenders?")) {
-        await api("DELETE", `/portals/${t.dataset.delete}`).catch(alert); document.getElementById(`card-${t.dataset.delete}`)?.remove(); recount();
+        await api("DELETE", `/portals/${t.dataset.delete}`).then(() => toast("Portal removed")).catch((e) => toast(e.message, "error")); document.getElementById(`card-${t.dataset.delete}`)?.remove(); recount();
       }
     });
     connect((ev) => {
@@ -88,5 +95,5 @@ const Watchtower = (() => {
     setInterval(() => document.querySelectorAll(".card").forEach((c) => scheduleCard(c.dataset.id)), 60000);
   }
 
-  return { api, connect, morning, refreshCard, $ };
+  return { api, connect, morning, refreshCard, toast, $ };
 })();
