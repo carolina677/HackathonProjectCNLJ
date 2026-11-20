@@ -15,3 +15,11 @@ def test_render_matrix_rows_and_header():
     data = [line for line in out[2:] if line.startswith("|")]
     assert len(data) == 2
     assert "| 0.97 |" in data[0] and "| $0.012 |" in data[0]
+
+
+def test_unnoticed_mutation_is_not_reported_as_repaired():
+    m = load_script("repair_matrix")
+    row = m.finish_row({"mutation": "pagination_style", "portal": "ssr", "quality_before": 1.0,
+                        "seconds": 600.0, "llm_usd": 0.0}, noticed_state="serving")
+    assert row["noticed"] == "not noticed" and row["repaired"] == "-" and row["quality_after"] is None
+    assert "| n/a |" in m.render_matrix([row])

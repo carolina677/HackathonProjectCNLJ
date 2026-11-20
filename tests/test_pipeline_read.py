@@ -178,3 +178,32 @@ async def test_repair_delivers_refreshed_tenders_before_serving(lab, repo, setti
     assert p.state == PortalState.serving and p.recipe["item"] == "tr.vx-wor-rednet"
     assert len(await repo.list_tenders(pid)) == 23
     assert pl.pop_followup(pid) is None
+
+
+async def test_pulse_uses_no_vision_and_list_fields_only(lab, repo, settings, monkeypatch):
+    from watchtower import pipeline as pipeline_mod
+
+    pid = await repo.create_portal(lab.url("ssr"))
+    recipe = json.loads(ssr_recipe(lab).model_dump_json())
+    await repo.set_recipe(pid, recipe)
+    await repo.set_state(pid, PortalState.serving, None)
+    await repo.mark_success(pid, 23, datetime.now(timezone.utc), fill={"title": 1.0})
+    pl = Pipeline(repo, settings, HostLimiter(0.0), None, FakeJev(), None)
+    real = pl.fetcher
+
+    def with_vision(p):
+        f = real(p)
+        f.on_screenshot = lambda png, url: None  # what a real Jev client installs (paid locate calls)
+        return f
+
+    monkeypatch.setattr(pl, "fetcher", with_vision)
+    seen = {}
+
+    async def fake_run(recipe, fetcher, **kw):
+        seen["vision"] = fetcher.on_screenshot
+        await kw["on_list"]([{"id": "1", "title": "t"}], [])
+        return []
+
+    monkeypatch.setattr(pipeline_mod, "run_recipe", fake_run)
+    assert await pl.pulse(pid) is True
+    assert seen["vision"] is None

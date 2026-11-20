@@ -2,7 +2,9 @@
 
     python scripts/repair_matrix.py --api http://localhost:8080 [--out docs/results-repair.json] [--timeout 600]
 
-Needs a server started with WATCHTOWER_LAB=1 and real model keys (repairs call the LLM).
+Needs a server started with WATCHTOWER_LAB=1, PULSE_INTERVAL_SECONDS=60 and real model keys (repairs call the LLM).
+With the default 15-minute pulse a mutation is noticed after up to 900 s, longer than the default timeout.
+A mutation the pulse does not notice in time is reported as "not noticed", never as repaired.
 """
 
 import argparse
@@ -31,10 +33,19 @@ def portal_for(mutation: str) -> str:
 def render_matrix(rows: list[dict]) -> str:
     lines = ["| " + " | ".join(COLUMNS) + " |", "|" + "---|" * len(COLUMNS)]
     for r in rows:
+        after = "n/a" if r["quality_after"] is None else f"{r['quality_after']:.2f}"
         cells = [r["mutation"], r["portal"], r["noticed"], r["repaired"], f"{r['quality_before']:.2f}",
-                 f"{r['quality_after']:.2f}", f"{r['seconds']:.0f}", f"${r['llm_usd']:.3f}"]
+                 after, f"{r['seconds']:.0f}", f"${r['llm_usd']:.3f}"]
         lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines)
+
+
+def finish_row(row: dict, noticed_state: str, repaired_state: str | None = None,
+               quality_after: float | None = None) -> dict:
+    """A mutation only counts as repaired if Watchtower noticed it first (healing or failed)."""
+    if noticed_state not in ("healing", "failed"):
+        return {**row, "noticed": "not noticed", "repaired": "-", "quality_after": None}
+    return {**row, "noticed": noticed_state, "repaired": repaired_state or "-", "quality_after": quality_after}
 
 
 async def _llm_usd(c: httpx.AsyncClient, pid: str) -> float:
@@ -56,12 +67,15 @@ async def run_matrix(api: str, lab: str, timeout: float) -> list[dict]:
             await lc.post(f"{lab}/{slug}/mutate", json={"name": mutation})
             t0 = time.monotonic()
             noticed = await _wait(c, pid, {"healing", "failed"}, timeout)  # the pulse must find it: no refresh
-            done = await _wait(c, pid, {"serving", "failed"}, timeout)
-            after = score((await c.get(f"/portals/{pid}/tenders")).json(), truth)
-            rows.append({"mutation": mutation, "portal": slug, "noticed": noticed["state"],
-                         "repaired": done["state"], "reason": noticed.get("reason"),
-                         "quality_before": before.quality, "quality_after": after.quality,
-                         "seconds": time.monotonic() - t0, "llm_usd": await _llm_usd(c, pid) - usd0})
+            base = {"mutation": mutation, "portal": slug, "reason": noticed.get("reason"),
+                    "quality_before": before.quality}
+            if noticed["state"] in ("healing", "failed"):
+                done = await _wait(c, pid, {"serving", "failed"}, timeout)
+                after = score((await c.get(f"/portals/{pid}/tenders")).json(), truth).quality
+                row = finish_row(base, noticed["state"], done["state"], after)
+            else:
+                row = finish_row(base, noticed["state"])
+            rows.append({**row, "seconds": time.monotonic() - t0, "llm_usd": await _llm_usd(c, pid) - usd0})
             print(render_matrix(rows[-1:]).splitlines()[-1], flush=True)
             await c.delete(f"/portals/{pid}")
             await lc.post(f"{lab}/{slug}/reset")

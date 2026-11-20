@@ -376,12 +376,15 @@ class Pipeline:
             seen.extend(items)
             return False
 
+        recipe = Recipe.model_validate(p.recipe)
+        fetcher = self.fetcher(pid)
+        fetcher.on_screenshot = None  # Jev Vision boxes are paid calls; the pulse must stay free
         try:
-            await run_recipe(Recipe.model_validate(p.recipe), self.fetcher(pid), limit=10, errors=errors,
-                             mask=set(p.field_mask or []), on_list=on_list)
+            await run_recipe(recipe, fetcher, limit=10, errors=errors, mask=set(p.field_mask or []),
+                             on_list=on_list)
         except PortalCancelled:
             return True  # deleted while pulsing
-        h = pulse_health(seen, errors, p.prev_fill or None)
+        h = pulse_health(seen, errors, p.prev_fill or None, set(recipe.fields))
         if not h.ok:
             events.emit(pid, "log", {"msg": f"Pulse: {h.reason} Reading now."})
         return h.ok

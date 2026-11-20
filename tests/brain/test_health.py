@@ -96,20 +96,31 @@ def test_document_403_block_is_unhealthy():
 
 def test_pulse_ignores_count_drop():
     items = [{"id": str(i), "title": "t"} for i in range(10)]
-    assert pulse_health(items, [], {"title": 1.0}).ok  # prev_count is 80; pulse only sees page one
+    assert pulse_health(items, [], {"title": 1.0}, {"title"}).ok  # prev_count is 80; pulse only sees page one
 
 
 def test_pulse_flags_layout_change():
-    h = pulse_health([], ["list selector matched no items on https://x/"], None)
+    h = pulse_health([], ["list selector matched no items on https://x/"], None, {"title"})
     assert not h.ok and "learned layout" in h.reason
 
 
 def test_pulse_flags_empty_titles():
     items = [{"id": str(i), "title": None} for i in range(10)]
-    h = pulse_health(items, [], {"title": 1.0})
+    h = pulse_health(items, [], {"title": 1.0}, {"title"})
     assert not h.ok and "title" in h.reason
 
 
 def test_pulse_transient_is_marked_transient():
-    h = pulse_health([], ["HTTP 503 on https://x/"], None)
+    h = pulse_health([], ["HTTP 503 on https://x/"], None, {"title"})
     assert not h.ok and h.transient
+
+
+def test_pulse_ignores_fields_read_on_detail_pages():
+    items = [{"id": str(i), "title": None} for i in range(10)]  # title comes from the detail page only
+    assert pulse_health(items, [], {"title": 1.0}, {"buyerName"}).ok
+
+
+def test_pulse_flags_unparsable_list_dates():
+    items = [{"id": str(i), "title": "t", "submissionDeadline": None} for i in range(10)]
+    h = pulse_health(items, [], {"title": 1.0, "submissionDeadline": 1.0}, {"title", "submissionDeadline"})
+    assert not h.ok and "submissionDeadline" in h.reason

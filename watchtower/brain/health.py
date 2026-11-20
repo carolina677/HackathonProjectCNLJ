@@ -77,18 +77,22 @@ def health_check(prev_count: int, tenders: list[dict], errors: list[str],
     return Health(True)
 
 
-def pulse_health(items: list[dict], errors: list[str], prev_fill: dict[str, float] | None) -> Health:
+def pulse_health(items: list[dict], errors: list[str], prev_fill: dict[str, float] | None,
+                 list_fields: set[str]) -> Health:
     """Between full reads: does the first list page still look like the learned layout? No model call.
 
-    The pulse sees only the first items, so a smaller count than before is not a sign of breakage."""
+    The pulse sees only the first items, so a smaller count than before is not a sign of breakage. Only fields
+    the recipe reads from the list are compared; fields from detail pages are never on the pulse's items."""
     h = health_check(0, items, errors)
-    if not h.ok:
+    if not h.ok or not items:
         return h
-    before = (prev_fill or {}).get("title", 0.0)
-    if items and before >= 0.7:
-        now = sum(t.get("title") is not None for t in items) / len(items)
+    for f in REQUIRED_VALUE_FIELDS:
+        before = (prev_fill or {}).get(f, 0.0)
+        if f not in list_fields or before < 0.7:
+            continue
+        now = sum(t.get(f) is not None for t in items) / len(items)
         if now < before - 0.3:
-            return Health(False, f"Field title is suddenly empty in most tenders ({now:.0%} filled, "
+            return Health(False, f"Field {f} is suddenly empty in most tenders ({now:.0%} filled, "
                                  f"{before:.0%} before; pulse).")
     return Health(True)
 
