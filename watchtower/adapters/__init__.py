@@ -1,9 +1,9 @@
 """Platform adapters: one recognised page → a ready recipe, no LLM. Each module has NAME, SIGNATURE, template()."""
 
 from ..fetch import Page
-from . import atexo, netserver, tenderned
+from . import atexo, evergabe, netserver, tenderned
 
-ADAPTERS = [atexo, netserver, tenderned]
+ADAPTERS = [atexo, netserver, tenderned, evergabe]
 
 
 def matching(page: Page) -> list:

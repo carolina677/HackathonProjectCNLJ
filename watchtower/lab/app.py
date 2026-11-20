@@ -9,7 +9,7 @@ import random
 from datetime import datetime, timedelta
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 from .generator import (BERLIN, NATURE_LABEL, PROC_LABEL, LabTender, make_tenders, truth, zip_bytes)
@@ -203,6 +203,13 @@ def create_lab_app() -> FastAPI:
         p = prefix(req)
         return page_shell("Chaos Lab", "<h1>Chaos Lab</h1><ul>" + "".join(
             f"<li><a href='{p}/{s}/'>{s}</a></li>" for s in SLUGS) + "</ul>")
+
+    @lab.get("/_hops/{n}")
+    async def hops(n: int, req: Request):
+        """A redirect chain, like a cookie check that bounces between load-balanced backends."""
+        if n <= 0:
+            return HTMLResponse("<p>arrived</p>")
+        return RedirectResponse(f"{prefix(req)}/_hops/{n - 1}", status_code=302)
 
     @lab.get("/{slug}/", response_class=HTMLResponse)
     async def listing(slug: str, req: Request, page: int = 1, offset: int | None = None):

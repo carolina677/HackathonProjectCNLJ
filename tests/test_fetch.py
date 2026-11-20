@@ -84,3 +84,11 @@ def test_browser_throttles_every_request_it_lets_through():
         assert route_policy(rt) == "throttle", rt
     for rt in ("image", "font", "media", "stylesheet"):
         assert route_policy(rt) == "abort", rt
+
+
+async def test_long_cookie_check_redirect_chain_is_followed(lab, fetcher):
+    f, lim = fetcher
+    base = lab.url("ssr").split("/lab/")[0]
+    page = await f.get(f"{base}/lab/_hops/15")  # e-Vergabe bounces up to ~11 times through its cookie check
+    assert page.status == 200 and page.final_url.endswith("/lab/_hops/0")
+    assert len(lim.calls) == 16

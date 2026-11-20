@@ -8,6 +8,13 @@
   holdout: false
   verified: list 50/page server-rendered; detail GET; documents page -> ZIP without login
   notes: adapter "netserver"
+- url: https://www.evergabe-online.de/search.html
+  country: DE
+  software: e-Vergabe des Bundes (Apache Wicket)
+  kind: ssr
+  holdout: false
+  verified: list 10/page, ~990 tenders; detail GET without login; next-page and document links are Wicket state links that fail over plain HTTP (403 / page again)
+  notes: adapter "evergabe"; first page only, no documents
 - url: https://marches.maximilien.fr/?page=Entreprise.EntrepriseAdvancedSearch&AllCons
   country: FR
   software: Atexo LocalTrust

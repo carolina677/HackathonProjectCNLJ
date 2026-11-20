@@ -136,3 +136,12 @@ async def test_on_list_false_stops_before_details(lab):
 
     ts = await run_recipe(ssr_recipe(lab), f, on_list=stop)
     assert len(ts) == 23 and f.calls <= 4  # 3 list pages + the empty 4th; no detail pages
+
+
+def test_label_does_not_match_a_longer_word():
+    from selectolax.lexbor import LexborHTMLParser
+    from watchtower.recipe.engine import find_by_label
+
+    root = LexborHTMLParser("<nav><span>Vergabestellen</span></nav><dl><dt>Vergabestelle:</dt><dd>Stadt Köln</dd>"
+                            "<dt>Frist (Ende)</dt><dd>x</dd></dl>").root
+    assert find_by_label(root, "Vergabestelle") == "Stadt Köln"

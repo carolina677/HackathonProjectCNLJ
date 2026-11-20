@@ -142,7 +142,7 @@ async def close_browser() -> None:
         _http = None
 
 
-MAX_REDIRECTS = 10
+MAX_REDIRECTS = 20  # same as httpx; e-Vergabe bounces ~11 times through its cookie check
 BROWSER_SKIPPED = {"image", "font", "media", "stylesheet"}
 
 

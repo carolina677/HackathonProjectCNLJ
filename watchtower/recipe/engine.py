@@ -55,7 +55,8 @@ def find_by_label(root: LexborNode, label: str) -> str | None:
     want = label.lower().rstrip(":").strip()
     for n in root.css(LABEL_TAGS):
         own = (n.text(deep=False, strip=True) or n.text(strip=True) or "").lower().rstrip(":").strip()
-        if own == want or (own.startswith(want) and len(own) <= len(want) + 3):
+        # A label may carry a short suffix ("Frist *"), but never more letters ("Vergabestellen").
+        if own == want or (own.startswith(want) and len(own) <= len(want) + 3 and not own[len(want)].isalpha()):
             sib = _next_element(n)
             if sib is not None:
                 v = sib.text(separator=" ", strip=True)

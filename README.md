@@ -6,7 +6,7 @@ An agent that attaches to EU procurement portals it has never seen, serves every
 POST /portals {url}
    │
    ▼
-Fingerprint ──known software (Atexo, AI NetServer, TenderNed)──► ready-made recipe ─┐
+Fingerprint ──known software (Atexo, AI NetServer, TenderNed, e-Vergabe)──► ready-made recipe ─┐
    │ unknown                                                                       │
    ▼                                                                               │
 Explore (Jev: which page is the list, detail, documents; login or captcha?)        │
@@ -69,6 +69,7 @@ These are **estimates** from the prompt size limits in the code (HTML trimmed to
 
 - Atexo (FR): the full document set (DCE) sits behind a form. Only the documents that are linked directly are fetched.
 - VMPCenter portals (Brandenburg, NRW, DTVP) have no adapter yet, so they go through the LLM path.
+- e-Vergabe (evergabe-online.de, federal): only the 10 newest tenders and no documents. Its next-page and download links are tied to a server-side page state that the site's load balancer loses, so they fail over plain HTTP. Tenders are never closed for missing from this partial list; they close at their deadline.
 - TenderNed lists about 2,900 open notices. At 1 request per second, the first full read takes hours, so tenders appear progressively.
 - Not yet verified by us: the `linux/amd64` Docker build (no Docker on our dev machine), live ElevenLabs and Jev Vision calls, a full run with real LLM and Jev keys, and the holdout portals in `testset/portals.yaml`.
 

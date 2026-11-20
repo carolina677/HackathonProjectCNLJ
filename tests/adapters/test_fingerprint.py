@@ -15,6 +15,7 @@ CASES = {
     "netserver": ("https://vergabe.vmstart.de/NetServer/PublicationSearchControllerServlet?function=SearchPublications"
                   "&Gesetzesgrundlage=All&Category=InvitationToTender&thContext=publications", "netserver_list.html"),
     "tenderned": ("https://www.tenderned.nl/aankondigingen/overzicht", "tenderned_overview.html"),
+    "evergabe": ("https://www.evergabe-online.de/search.html?234&cookieCheck", "evergabe_list.html"),
 }
 
 
@@ -23,7 +24,7 @@ def page(url, name):
 
 
 def test_at_least_three_adapters():
-    assert len(ADAPTERS) >= 3
+    assert len(ADAPTERS) >= 4
 
 
 @pytest.mark.parametrize("name", CASES)
@@ -128,3 +129,41 @@ async def test_tenderned_asks_only_for_open_contract_notices():
                      errors=[])
     assert "publicatieType=AAO" in seen[0] and f"sluitingsDatumVanaf={date.today().isoformat()}" in seen[0]
     assert fingerprint(page(url, f)).pagination.max_pages >= 100
+
+
+async def test_evergabe_template_extracts_list_and_detail():
+    url, f = CASES["evergabe"]
+    r = fingerprint(page(url, f))
+    assert r.pagination.kind == "next_link" and r.list_url == "https://www.evergabe-online.de/search.html"
+    r.pagination.max_pages = 1
+    ts = await run_recipe(r, FixtureFetcher({"https://www.evergabe-online.de/search.html": "evergabe_list.html",
+                                             "https://www.evergabe-online.de/tenderdetails.html?id=908814":
+                                                 "evergabe_detail.html"}), errors=[])
+    assert len(ts) == 10
+    by_id = {t["id"]: t for t in ts}
+    t = by_id["908814"]
+    assert t["url"] == "https://www.evergabe-online.de/tenderdetails.html?id=908814"
+    assert t["title"].startswith("Rahmenvereinbarung") and t["referenceNumber"] == "1366-26"
+    assert t["buyerName"] == "Bundesamt für Strahlenschutz"  # from the detail page, without the region prefix
+    assert str(t["submissionDeadline"]) == "2026-12-08 10:00:00+01:00"
+    assert str(t["publicationDate"]) == "2026-11-20" and t["procedureType"] == "open"
+    assert not t.get("documents")  # downloads need a Wicket page state the load balancer loses: left out, not guessed
+
+
+async def test_evergabe_reads_one_page_and_strips_state_prefix_from_buyer():
+    url, f = CASES["evergabe"]
+    r = fingerprint(page(url, f))
+    assert r.pagination.max_pages == 1  # next-page links are Wicket state links that answer 403 over plain HTTP
+    detail = (FX / "evergabe_detail.html").read_text().replace("Bundesamt für Strahlenschutz",
+                                                               "Sachsen-Anhalt: Stadt Genthin")
+
+    class Prefixed(FixtureFetcher):
+        async def get(self, u):
+            if "tenderdetails" in u:
+                return Page(url=u, final_url=u, status=200, html=detail, headers={})
+            return await super().get(u)
+    errors = []
+    ts = await run_recipe(r, Prefixed({"https://www.evergabe-online.de/search.html": "evergabe_list.html"}),
+                          errors=errors)
+    assert {t["buyerName"] for t in ts} == {"Stadt Genthin"}
+    assert any(e.startswith("list incomplete") for e in errors)  # so a read never closes unseen tenders
