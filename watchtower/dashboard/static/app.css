@@ -166,3 +166,28 @@ pre { background: #0007; border-radius: 10px; padding: 10px; max-height: 340px; 
 .calls .k { font-size: .72rem; font-weight: 800; text-transform: uppercase; border-radius: 99px; padding: 1px 8px; color: #0b1020; }
 .calls .k-llm { background: var(--amber); } .calls .k-jev { background: var(--violet); }
 .calls tr.new td { animation: in .4s ease-out; }
+
+/* Nav link, timelapse button & interactive tender preview modal */
+.nav-link { color: var(--muted); text-decoration: none; font-weight: 600; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.nav-link:hover { color: var(--text); border-color: var(--violet); }
+.demo-btn { background: transparent; border: 1px solid var(--amber); color: var(--amber); }
+.demo-btn:hover { background: color-mix(in srgb, var(--amber) 14%, transparent); }
+dialog.modal { width: min(920px, 94vw); max-height: 84vh; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); color: var(--text); padding: 0; box-shadow: 0 24px 60px #000b; }
+dialog.modal::backdrop { background: rgba(6, 10, 22, .72); backdrop-filter: blur(4px); }
+.modal-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; background: var(--panel); z-index: 2; }
+.modal-head h3 { margin: 0; font-size: 1.15rem; }
+.modal-head input { min-width: 220px; flex: 1; padding: 7px 11px; }
+.td-list { padding: 14px 18px; display: grid; gap: 10px; overflow-y: auto; max-height: calc(84vh - 82px); }
+.td-row { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; }
+.td-top { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.td-top a { font-weight: 700; text-decoration: none; color: var(--text); }
+.td-top a:hover { color: var(--blue); text-decoration: underline; }
+.td-meta { font-size: .85rem; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+.td-docs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.doc-chip { display: inline-flex; align-items: center; gap: 5px; font-size: .8rem; padding: 3px 9px; border-radius: 8px;
+  border: 1px solid var(--line); background: #0b1020; color: var(--blue); text-decoration: none; }
+.doc-chip:hover { border-color: var(--blue); }
+.pill-sm { font-size: .7rem; font-weight: 800; text-transform: uppercase; border-radius: 99px; padding: 1px 8px; background: var(--green); color: #06101f; }
+.pill-sm.closed { background: var(--muted); } .pill-sm.withdrawn { background: var(--red); }

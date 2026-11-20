@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, Response, StreamingResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -98,6 +98,18 @@ def register(app: FastAPI) -> None:
             "cards": cards, "counts": counts, "tenders": sum(c["p"].tenderCount for c in cards),
             "avg_usd": cost.per_portal_average(), "projected": cost.projected(4500),
             "lab": bool(request.app.state.settings.lab), "traces_ui": tracing.ui_url()})
+
+    @app.get("/briefly")
+    async def briefly():
+        return RedirectResponse("/static/briefly-preview.html")
+
+    @app.post("/demo/timelapse", status_code=202)
+    async def demo_timelapse(request: Request):
+        if not request.app.state.settings.lab:
+            raise HTTPException(404, "Chaos Lab is disabled")
+        from ..demo import run_timelapse
+
+        return await run_timelapse(request.app, str(request.base_url).rstrip("/"))
 
     @app.get("/traces")
     async def traces():

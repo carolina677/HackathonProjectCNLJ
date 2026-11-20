@@ -13,6 +13,7 @@
   <div class="banner-side">
     <div class="numbers"><div><b id="count">{{ p.tenderCount }}</b><small>tenders</small></div></div>
     <div class="actions">
+      <button type="button" class="ghost" data-tenders="{{ p.id }}" data-host="{{ c.host }}">View tenders</button>
       <button data-refresh="{{ p.id }}">Read now</button>
       <button class="violet" id="race-btn">Race Jev vs LLM</button>
       {% if c.lab %}<button class="danger" data-break="{{ p.id }}">Break it</button>{% endif %}
