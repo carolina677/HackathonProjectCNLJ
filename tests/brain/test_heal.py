@@ -68,3 +68,20 @@ def test_recipe_diff_names_leaf_changes(lab):
     assert "item: tr.tender-row → tr.vx-wor-rednet" in d
     assert "fields.id.selector: td.nr → td.vx-rn" in d
     assert all("{" not in line for line in d)
+
+
+async def test_heal_tags_llm_calls_as_repair(lab, fetcher, settings):
+    old = ssr_recipe(lab)
+    lab.mutate("ssr", "rename_classes")
+    backend = RecordingBackend(renamed(lab))
+    llm = LLM(settings, backend=backend)
+    purposes = []
+    orig = llm.complete_json
+
+    async def spy(*a, **kw):
+        purposes.append(kw.get("purpose"))
+        return await orig(*a, **kw)
+
+    llm.complete_json = spy
+    await heal("p", lab.url("ssr"), old, None, fetcher, FakeJev(), llm, reason="selectors broke")
+    assert purposes and set(purposes) == {"repair"}

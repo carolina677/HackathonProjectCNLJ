@@ -58,4 +58,4 @@
 </section>
 <section class="panel timeline"><h3>Timeline</h3><ol id="timeline"></ol></section>
 {% endblock %}
-{% block scripts %}<script src="/static/theater.js"></script><script>Theater.start("{{ p.id }}");</script>{% endblock %}
+{% block scripts %}<script src="/static/theater.js?v={{ static_v }}"></script><script>Theater.start("{{ p.id }}");</script>{% endblock %}

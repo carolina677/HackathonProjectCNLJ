@@ -44,3 +44,10 @@ async def test_events_stream_delivers_emitted_event(client):
 async def test_static_assets_served(client):
     assert (await client.get("/static/app.css")).status_code == 200
     assert (await client.get("/static/app.js")).status_code == 200
+
+
+async def test_static_urls_carry_a_version_so_updates_are_not_cached(client):
+    import re
+
+    html = (await client.get("/")).text
+    assert re.search(r'/static/app\.css\?v=\w+', html) and re.search(r'/static/app\.js\?v=\w+', html)

@@ -66,7 +66,7 @@ async def heal(portal_id: str, start_url: str, old: Recipe, old_snapshot: str | 
     for i in range(attempts):
         rep.attempts = i + 1
         try:
-            new = await induce_recipe(ex, llm, feedback=feedback, portal_id=portal_id, extra=extra)
+            new = await induce_recipe(ex, llm, feedback=feedback, portal_id=portal_id, extra=extra, purpose="repair")
         except LLMUnavailable as e:
             rep.reason = f"LLM unavailable: {e}"
             return None, rep

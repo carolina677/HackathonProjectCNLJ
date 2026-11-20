@@ -11,10 +11,12 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, Response, Streami
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from .. import cost, events
+from .. import cost, events, tracing
 
 HERE = Path(__file__).parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
+# Changes whenever a static file changes, so browsers fetch the new CSS/JS instead of a cached copy.
+templates.env.globals["static_v"] = format(max(f.stat().st_mtime_ns for f in (HERE / "static").iterdir()), "x")
 
 
 def ago(dt) -> str:
@@ -95,7 +97,15 @@ def register(app: FastAPI) -> None:
         return templates.TemplateResponse(request, "index.html", {
             "cards": cards, "counts": counts, "tenders": sum(c["p"].tenderCount for c in cards),
             "avg_usd": cost.per_portal_average(), "projected": cost.projected(4500),
-            "lab": bool(request.app.state.settings.lab)})
+            "lab": bool(request.app.state.settings.lab), "traces_ui": tracing.ui_url()})
+
+    @app.get("/traces")
+    async def traces():
+        """Recent LLM and Jev calls recorded in MLflow (empty when tracing is off)."""
+        import asyncio
+
+        rows = await asyncio.to_thread(tracing.recent, 30)
+        return {"enabled": tracing.ui_url() is not None, "ui": tracing.ui_url(), "traces": rows}
 
     @app.get("/ui/portals/{pid}/card", response_class=HTMLResponse)
     async def card(pid: str, request: Request):

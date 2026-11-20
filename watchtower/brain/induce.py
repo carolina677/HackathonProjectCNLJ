@@ -72,9 +72,9 @@ def build_prompt(ex: Exploration, feedback: list[str] | None = None, extra: str 
 
 
 async def induce_recipe(ex: Exploration, llm: LLM, *, feedback: list[str] | None = None,
-                        portal_id: str | None = None, extra: str = "") -> Recipe:
+                        portal_id: str | None = None, extra: str = "", purpose: str = "induce") -> Recipe:
     recipe = await llm.complete_json(PROMPT, build_prompt(ex, feedback, extra), Recipe,
-                                     portal_id=portal_id, purpose="induce")
+                                     portal_id=portal_id, purpose=purpose)
     if not recipe.country and ex.list_page is not None:
         recipe.country = country_from_url(ex.list_page.final_url)
     if not recipe.country:

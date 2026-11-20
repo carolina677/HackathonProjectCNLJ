@@ -134,3 +134,22 @@ pre { background: #0007; border-radius: 10px; padding: 10px; max-height: 340px; 
 .briefing { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin: -6px 0 20px; }
 .briefing p { margin: 0; max-width: 90ch; font-size: 1.05rem; color: var(--text); }
 .briefing audio { height: 36px; }
+
+/* Model calls panel (MLflow traces) */
+.calls { margin-top: 24px; }
+.calls h3 { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.calls .open { margin-left: auto; color: var(--violet); font-size: .9rem; font-weight: 600; text-decoration: none; }
+.calls .open:hover, .calls .open:focus-visible { text-decoration: underline; }
+.calls-sum { display: flex; gap: 32px; flex-wrap: wrap; margin-bottom: 10px; }
+.calls-sum b { font-size: 1.6rem; display: block; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.calls-sum small { color: var(--muted); }
+.calls-wrap { overflow-x: auto; }
+.calls table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.calls th { text-align: left; color: var(--muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.calls td { padding: 6px 8px; border-bottom: 1px dashed var(--line); white-space: nowrap; }
+.calls td.what { white-space: normal; color: var(--muted); max-width: 46ch; }
+.calls td.what span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.calls .r { text-align: right; font-variant-numeric: tabular-nums; }
+.calls .k { font-size: .72rem; font-weight: 800; text-transform: uppercase; border-radius: 99px; padding: 1px 8px; color: #0b1020; }
+.calls .k-llm { background: var(--amber); } .calls .k-jev { background: var(--violet); }
+.calls tr.new td { animation: in .4s ease-out; }

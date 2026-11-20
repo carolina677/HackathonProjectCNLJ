@@ -67,7 +67,7 @@ const Watchtower = (() => {
   function connect(onEvent) {
     const es = new EventSource("/events");
     es.onmessage = (m) => onEvent(JSON.parse(m.data));
-    for (const k of ["state", "run", "log", "judgment", "recipe", "verify", "page", "explore", "cost"])
+    for (const k of ["state", "run", "log", "judgment", "recipe", "verify", "page", "explore", "cost", "llm"])
       es.addEventListener(k, (m) => onEvent(JSON.parse(m.data)));
     return es;
   }
@@ -105,5 +105,50 @@ const Watchtower = (() => {
     setInterval(() => document.querySelectorAll(".card").forEach((c) => scheduleCard(c.dataset.id)), 60000);
   }
 
-  return { api, connect, morning, refreshCard, toast, $ };
+  /* Model calls panel: recent LLM and Jev calls as MLflow recorded them. */
+  function traces() {
+    const box = $("#traces"); if (!box) return;
+    const seen = new Set(); let timer = null;
+    const money = (v) => v == null ? "–" : v >= 0.01 ? "$" + v.toFixed(3) : "$" + v.toFixed(6);
+    const ago = (ms) => { const s = Math.max(0, (Date.now() - ms) / 1000);
+      return s < 60 ? Math.round(s) + " s ago" : s < 3600 ? Math.round(s / 60) + " min ago" : Math.round(s / 3600) + " h ago"; };
+    function message(body, text) {
+      body.textContent = ""; const tr = document.createElement("tr"), td = document.createElement("td");
+      td.colSpan = 7; td.className = "muted"; td.textContent = text; tr.append(td); body.append(tr);
+    }
+    async function load() {
+      const body = $("#t-rows"); let data;
+      try { data = await (await fetch("/traces")).json(); } catch { message(body, "Could not reach the trace store."); return; }
+      const rows = data.traces || [];
+      for (const k of ["llm", "jev"]) {
+        const rs = rows.filter((r) => r.kind === k);
+        $("#t-" + k + "-n").textContent = rs.length;
+        $("#t-" + k + "-usd").textContent = money(rs.reduce((a, r) => a + (r.usd || 0), 0));
+      }
+      if (!rows.length) { message(body, "No model calls yet. Add a portal or press Break it."); return; }
+      body.textContent = "";
+      for (const r of rows) {
+        const tr = document.createElement("tr"); if (seen.size && !seen.has(r.id)) tr.className = "new";
+        const host = document.querySelector("#card-" + r.portal_id + " .host")?.textContent || r.portal_id || "–";
+        const what = r.kind === "llm" ? (r.purpose || "") + " · " + (r.model || "") : (r.purpose || "");
+        const cells = [ago(r.at), "", host, what, (r.tokens_in ?? "–") + " / " + (r.tokens_out ?? "–"),
+                       r.ms != null ? (r.ms / 1000).toFixed(1) + " s" : "–", money(r.usd)];
+        cells.forEach((c, i) => {
+          const td = document.createElement("td");
+          if (i === 1) { const k = document.createElement("span"); k.className = "k k-" + r.kind; k.textContent = r.kind === "llm" ? "LLM" : "Jev"; td.append(k); }
+          else if (i === 3) { const w = document.createElement("span"); w.textContent = c; td.title = c; td.append(w); }
+          else td.textContent = c;
+          if (i === 3) td.className = "what"; if (i >= 4) td.className = "r";
+          tr.append(td);
+        });
+        body.append(tr);
+      }
+      rows.forEach((r) => seen.add(r.id));
+    }
+    const soon = () => { clearTimeout(timer); timer = setTimeout(load, 2500); };  // MLflow writes traces in the background
+    load(); setInterval(load, 30000);
+    connect((ev) => { if (["llm", "judgment"].includes(ev.kind)) soon(); });
+  }
+
+  return { api, connect, morning, refreshCard, toast, traces, $ };
 })();

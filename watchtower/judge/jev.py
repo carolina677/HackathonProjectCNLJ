@@ -65,7 +65,8 @@ class Jev:
         return Jev(self.settings, client=self.client, llm=None)
 
     async def _ask(self, state, questions: dict, portal_id, headers=None):
-        with tracing.span("jev", {"portal_id": portal_id, "questions": ", ".join(questions)}) as sp:
+        asked = " · ".join(getattr(q, "instructions", None) or str(k) for k, q in questions.items())
+        with tracing.span("jev", {"portal_id": portal_id, "questions": asked[:300]}) as sp:
             t0 = time.monotonic()
             r = await self.client.system_one(state, questions, extra_headers=headers)
             usd = r.usage.input_tokens / 1e6 * cost.JEV_USD_PER_MTOK

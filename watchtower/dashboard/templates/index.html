@@ -23,6 +23,19 @@
   {% for c in cards %}{% include "_card.html" %}{% endfor %}
   {% if not cards %}<p class="empty" id="empty">No portals yet. Paste a URL above{% if lab %} — or try <code>/lab/ssr/</code>{% endif %}.</p>{% endif %}
 </section>
+{% if traces_ui %}
+<section class="panel calls" id="traces">
+  <h3>Model calls <small>last 30, recorded in MLflow</small><a class="open" href="{{ traces_ui }}" target="_blank" rel="noopener">Open in MLflow ↗</a></h3>
+  <div class="calls-sum">
+    <div><b id="t-llm-n">–</b><small>LLM calls · <span id="t-llm-usd">$0</span></small></div>
+    <div><b id="t-jev-n">–</b><small>Jev checks · <span id="t-jev-usd">$0</span></small></div>
+  </div>
+  <div class="calls-wrap"><table>
+    <thead><tr><th>When</th><th>Call</th><th>Portal</th><th>What</th><th class="r">Tokens in / out</th><th class="r">Time</th><th class="r">Cost</th></tr></thead>
+    <tbody id="t-rows"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody>
+  </table></div>
+</section>
+{% endif %}
 <aside class="feed"><h3>Live</h3><ol id="feed"></ol></aside>
 {% endblock %}
-{% block scripts %}<script>Watchtower.morning();</script>{% endblock %}
+{% block scripts %}<script>Watchtower.morning(); Watchtower.traces();</script>{% endblock %}
