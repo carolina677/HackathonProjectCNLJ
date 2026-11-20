@@ -175,6 +175,9 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
     if settings.lab:
         from .lab.app import create_lab_app
 
+        from .lab.blind import create_blind_app
+
         app.mount("/lab", create_lab_app())
+        app.mount("/blind", create_blind_app())
 
     return app
