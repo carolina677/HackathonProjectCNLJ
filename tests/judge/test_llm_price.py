@@ -20,3 +20,14 @@ def test_unknown_model_without_env_is_conservative(monkeypatch):
     monkeypatch.delenv("LLM_PRICE_OUT", raising=False)
     pin, pout = _price("some-other-model")
     assert pin >= 4 and pout >= 20
+
+
+def test_price_from_env_file_settings(monkeypatch, tmp_path):
+    # Locally the server reads .env through Settings only; os.environ never sees those values.
+    from watchtower.config import Settings
+
+    monkeypatch.delenv("LLM_PRICE_IN", raising=False)
+    monkeypatch.delenv("LLM_PRICE_OUT", raising=False)
+    (tmp_path / ".env").write_text("LLM_PRICE_IN=1.25\nLLM_PRICE_OUT=10\n")
+    s = Settings(_env_file=tmp_path / ".env", data_dir=tmp_path)
+    assert _price("gpt-5.5", s) == (1.25, 10.0)

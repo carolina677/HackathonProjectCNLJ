@@ -4,7 +4,28 @@
     {
       "name": "watchtower",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "mkdir -p .devdata && WATCHTOWER_LAB=1 WATCHTOWER_DATA=.devdata exec .venv/bin/uvicorn watchtower.app:create_app --factory --port 8080"],
+      "runtimeArgs": [
+        "-c",
+        "mkdir -p .devdata && WATCHTOWER_LAB=1 WATCHTOWER_DATA=.devdata exec .venv/bin/uvicorn watchtower.app:create_app --factory --port 8080"
+      ],
+      "port": 8080
+    },
+    {
+      "name": "mlflow",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "mkdir -p .devdata && MLFLOW_DISABLE_AGENT_HINT=1 exec .venv/bin/mlflow server --host 127.0.0.1 --port 5050 --backend-store-uri sqlite:///.devdata/mlflow.db --artifacts-destination .devdata/mlartifacts"
+      ],
+      "port": 5050
+    },
+    {
+      "name": "watchtower-traced",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "mkdir -p .devdata && MLFLOW_DISABLE_AGENT_HINT=1 MLFLOW_TRACKING_URI=http://127.0.0.1:5050 WATCHTOWER_LAB=1 WATCHTOWER_DATA=.devdata exec .venv/bin/uvicorn watchtower.app:create_app --factory --port 8080"
+      ],
       "port": 8080
     }
   ]

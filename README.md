@@ -48,6 +48,7 @@ docker run -p 8080:8080 --env-file .env -v watchtower-data:/data watchtower
 | `TYPESAFE_API_KEY` | yes | Jev judgments. Without it, verification falls back to rule checks only |
 | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID` | no | spoken briefing (`/briefing.mp3`) |
 | `LLM_PRICE_IN`, `LLM_PRICE_OUT` | no | USD per 1M tokens for the cost meter. Defaults are list prices for `claude-sonnet-5-5` ($2/$10), `claude-haiku-5-5` ($0.10/$0.50) and `claude-opus-5-5` ($4/$20) |
+| `MLFLOW_TRACKING_URI`, `MLFLOW_EXPERIMENT_NAME` | no | record every LLM and Jev call as an MLflow trace (portal, purpose, tokens, USD). Needs `pip install -e '.[tracing]'`; the Docker image leaves MLflow out to stay small |
 | `WATCHTOWER_LAB` | no | `1` mounts the Chaos Lab and the Break it buttons |
 | `WATCHTOWER_DATA` | no | data directory, default `/data` |
 | `READ_INTERVAL_SECONDS` | no | time between reads, default `600` |
@@ -81,3 +82,5 @@ uv venv -p 3.12 && uv pip install -e '.[dev]' && .venv/bin/pytest -q
 python scripts/run_testset.py --api http://localhost:8080 [--holdout]
 scripts/demo_reset.sh http://localhost:8080
 ```
+
+**Tracing (optional):** `uv pip install -e '.[tracing]'`, start `mlflow server --port 5050 --backend-store-uri sqlite:///.devdata/mlflow.db --artifacts-destination .devdata/mlartifacts`, set `MLFLOW_TRACKING_URI=http://127.0.0.1:5050`. Each LLM call appears as an `llm.<purpose>` trace with the raw OpenAI or Anthropic call underneath; each Jev call as a `jev` trace. Tested live: one Break it repair produced 1 LLM trace (gpt-5.5, 5,011 tokens in, 1,529 out) and 10 Jev traces.

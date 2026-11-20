@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     data_dir: Path = Path("/data")
     read_interval_seconds: int = 600
     min_request_interval: float = 1.0
+    llm_price_in: float | None = None
+    llm_price_out: float | None = None
+    mlflow_tracking_uri: str | None = None
+    mlflow_experiment_name: str = "watchtower"
 
     def __init__(self, **kw):
         import os

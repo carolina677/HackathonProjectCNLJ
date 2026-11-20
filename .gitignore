@@ -8,3 +8,5 @@ __pycache__/
 *.egg-info/
 .devdata/
 .DS_Store
+mlartifacts/
+mlruns/

@@ -8,6 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel
 
+from . import tracing
 from .config import Settings, get_settings
 from .db import Repo
 from .models import RunKind, tender_json
@@ -39,6 +40,7 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        tracing.setup(settings)
         repo = Repo(settings.data_dir)
         await repo.init()
         app.state.repo = repo

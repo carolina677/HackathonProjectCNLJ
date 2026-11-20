@@ -10,7 +10,7 @@ from typing import Awaitable, Callable, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
-from .. import cost, events
+from .. import cost, events, tracing
 from ..config import Settings
 
 log = logging.getLogger("watchtower.llm")
@@ -31,10 +31,13 @@ PRICES = {
 UNKNOWN_PRICE = (8.0, 40.0)  # unknown model: assume a top-tier price so the cost meter never under-reports
 
 
-def _price(model: str) -> tuple[float, float]:
-    """LLM_PRICE_IN / LLM_PRICE_OUT override the table (other providers, negotiated rates)."""
+def _price(model: str, settings: Settings | None = None) -> tuple[float, float]:
+    """LLM_PRICE_IN / LLM_PRICE_OUT override the table (other providers, negotiated rates).
+    They come from the process environment or from .env via Settings (local runs only see the latter)."""
     pin, pout = PRICES.get(model, UNKNOWN_PRICE)
-    return float(os.environ.get("LLM_PRICE_IN", pin)), float(os.environ.get("LLM_PRICE_OUT", pout))
+    pin = os.environ.get("LLM_PRICE_IN") or (settings and settings.llm_price_in) or pin
+    pout = os.environ.get("LLM_PRICE_OUT") or (settings and settings.llm_price_out) or pout
+    return float(pin), float(pout)
 
 
 def _json_from_text(text: str) -> dict:
@@ -100,19 +103,28 @@ class LLM:
                             purpose: str = "llm", attempts: int = 3) -> T:
         if not self.backend:
             raise LLMUnavailable("no LLM provider configured")
+        with tracing.span(f"llm.{purpose}", {"portal_id": portal_id, "purpose": purpose,
+                                             "provider": self.settings.llm_provider,
+                                             "model": self.settings.llm_model}) as sp:
+            out, tin, tout, usd = await self._complete(system, user, schema, portal_id, purpose, attempts)
+            if sp is not None:
+                sp.set_outputs({"tokens_in": tin, "tokens_out": tout, "usd": round(usd, 6)})
+            return out
+
+    async def _complete(self, system, user, schema, portal_id, purpose, attempts):
         js = schema.model_json_schema()
         last: Exception | None = None
         for i in range(attempts):
             t0 = time.monotonic()
             try:
                 data, tin, tout = await self.backend(system, user, js)
-                pin, pout = _price(self.settings.llm_model)
+                pin, pout = _price(self.settings.llm_model, self.settings)
                 usd = tin / 1e6 * pin + tout / 1e6 * pout
                 cost.record(portal_id, "llm", tin, tout, usd)
                 out = schema.model_validate(data)
                 events.emit(portal_id, "llm", {"purpose": purpose, "ms": int((time.monotonic() - t0) * 1000),
                                                "usd": round(usd, 5), "tokens": tin + tout})
-                return out
+                return out, tin, tout, usd
             except ValidationError as e:
                 last = e
                 user = f"{user}\n\nYour previous answer did not match the schema: {e.errors()[:3]}. Try again."

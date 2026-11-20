@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from .. import cost, events
+from .. import cost, events, tracing
 from ..config import Settings
 from .llm import LLM, LLMUnavailable
 
@@ -65,11 +65,16 @@ class Jev:
         return Jev(self.settings, client=self.client, llm=None)
 
     async def _ask(self, state, questions: dict, portal_id, headers=None):
-        t0 = time.monotonic()
-        r = await self.client.system_one(state, questions, extra_headers=headers)
-        usd = r.usage.input_tokens / 1e6 * cost.JEV_USD_PER_MTOK
-        cost.record(portal_id, "jev", r.usage.input_tokens, r.usage.output_tokens, usd)
-        return r.answers, int((time.monotonic() - t0) * 1000), usd
+        with tracing.span("jev", {"portal_id": portal_id, "questions": ", ".join(questions)}) as sp:
+            t0 = time.monotonic()
+            r = await self.client.system_one(state, questions, extra_headers=headers)
+            usd = r.usage.input_tokens / 1e6 * cost.JEV_USD_PER_MTOK
+            cost.record(portal_id, "jev", r.usage.input_tokens, r.usage.output_tokens, usd)
+            if sp is not None:
+                sp.set_outputs({"answers": {k: getattr(v, "choice", None) or getattr(v, "probability", None)
+                                            for k, v in r.answers.items()},
+                                "tokens_in": r.usage.input_tokens, "usd": round(usd, 8)})
+            return r.answers, int((time.monotonic() - t0) * 1000), usd
 
     def _emit(self, portal_id, question, answer, probs, source, ms, usd=0.0, extra=None):
         events.emit(portal_id, "judgment", {"question": question, "answer": answer, "probabilities": probs,
