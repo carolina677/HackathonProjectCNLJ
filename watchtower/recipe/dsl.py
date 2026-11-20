@@ -56,3 +56,4 @@ class Recipe(BaseModel):
     country: str | None = None
     needs_js: bool = False
     platform: str | None = None
+    documents_unavailable: bool = False  # set by the pipeline, never by the LLM

@@ -1,0 +1,34 @@
+[
+  {
+    "url": "https://www.evergabe.nrw.de/VMPCenter/common/project/search.do?method=showExtendedSearch&fromExternal=true",
+    "state": "serving",
+    "reason": null,
+    "tenders": 20,
+    "docs": 210,
+    "usd": 0.07321300799999998
+  },
+  {
+    "url": "https://www.dtvp.de/Center/common/project/search.do?method=showExtendedSearch&fromExternal=true",
+    "state": "serving",
+    "reason": null,
+    "tenders": 22,
+    "docs": 29,
+    "usd": 0.061773067999999993
+  },
+  {
+    "url": "https://contrataciondelestado.es/wps/portal/licitaciones",
+    "state": "failed",
+    "reason": "The portal's firewall rejects automated requests; Watchtower does not get around it",
+    "tenders": 0,
+    "docs": 0,
+    "usd": 0.0005327280000000001
+  },
+  {
+    "url": "https://ezamowienia.gov.pl/mp-client/search/list",
+    "state": "failed",
+    "reason": "Could not find the tender list: no way to a tender list from https://ezamowienia.gov.pl/mp-client/search/list (search_form)",
+    "tenders": 0,
+    "docs": 0,
+    "usd": 0.001018794
+  }
+]

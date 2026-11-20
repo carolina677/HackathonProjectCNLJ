@@ -58,7 +58,7 @@ def health_check(prev_count: int, tenders: list[dict], errors: list[str],
             return Health(False, f"The portal answered HTTP {m.group(1)} instead of the tender list.")
         if "matched no items" in e:
             return Health(False, "The tender list no longer matches the learned layout (the page changed).")
-        if "list request failed" in e:
+        if "list request failed" in e and not tenders:  # a late page failing keeps what was read
             return Health(False, "The portal's tender API stopped answering as before.")
     n = len(tenders)
     if n == 0 and prev_count > 0:

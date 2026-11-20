@@ -102,3 +102,15 @@ async def test_json_page_evidence_cross_checked():
                                "publishedAt": "2026-11-20", "deadline": "2026-12-05T10:00:00"})}
     rep = await verify_sample(tenders, pages, FakeJev())
     assert rep.ok and rep.field_scores["submissionDeadline"] > 0.8
+
+
+async def test_only_missing_documents_is_flagged_as_such():
+    tenders = [{"id": "1", "url": "https://x/1", "title": "Neubau Kita", "_doc_urls": []}]
+    rep = await verify_sample(tenders, {"1": "<html><body>Neubau Kita</body></html>"}, FakeJev(), expect_docs=True)
+    assert not rep.ok and rep.ok_without_documents
+
+
+async def test_missing_documents_and_titles_is_not_ok_without_documents():
+    tenders = [{"id": "1", "url": "https://x/1", "title": None, "_doc_urls": []}]
+    rep = await verify_sample(tenders, {"1": "<p>x</p>"}, FakeJev(), expect_docs=True)
+    assert not rep.ok and not rep.ok_without_documents
