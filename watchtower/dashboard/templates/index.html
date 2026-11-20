@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block nav %}
+  <form class="add" action="/portals" method="post" id="add-form">
+    <input name="url" type="url" placeholder="Paste a tender portal URL…" required>
+    <button>Add portal</button>
+  </form>
+{% endblock %}
+{% block main %}
+<section class="summary">
+  <div class="stat serving"><b id="n-serving">{{ counts.serving }}</b><small>serving</small></div>
+  <div class="stat healing"><b id="n-healing">{{ counts.healing }}</b><small>healing</small></div>
+  <div class="stat integrating"><b id="n-integrating">{{ counts.integrating }}</b><small>integrating</small></div>
+  <div class="stat failed"><b id="n-failed">{{ counts.failed }}</b><small>need a human</small></div>
+  <div class="stat"><b>{{ tenders }}</b><small>tenders delivered</small></div>
+  <div class="stat"><b>${{ "%.3f" | format(avg_usd) }}</b><small>avg. cost per portal · ${{ "%.0f" | format(projected) }} for 4,500</small></div>
+</section>
+<section class="grid" id="grid">
+  {% for c in cards %}{% include "_card.html" %}{% endfor %}
+  {% if not cards %}<p class="empty" id="empty">No portals yet. Paste a URL above{% if lab %} — or try <code>/lab/ssr/</code>{% endif %}.</p>{% endif %}
+</section>
+<aside class="feed"><h3>Live</h3><ol id="feed"></ol></aside>
+{% endblock %}
+{% block scripts %}<script>Watchtower.morning();</script>{% endblock %}

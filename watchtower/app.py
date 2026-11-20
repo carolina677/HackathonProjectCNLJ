@@ -137,9 +137,9 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
         mt = mimetypes.guess_type(d.file_name)[0] or "application/octet-stream"
         return FileResponse(d.stored_path, media_type=mt, filename=d.file_name)
 
-    @app.get("/", response_class=HTMLResponse)
-    async def dashboard_placeholder():
-        return "<h1>Watchtower</h1>"
+    from .dashboard.routes import register as register_dashboard
+
+    register_dashboard(app)
 
     if settings.lab:
         from .lab.app import create_lab_app

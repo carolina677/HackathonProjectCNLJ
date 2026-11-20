@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "watchtower",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "mkdir -p .devdata && WATCHTOWER_LAB=1 WATCHTOWER_DATA=.devdata exec .venv/bin/uvicorn watchtower.app:create_app --factory --port 8080"],
+      "port": 8080
+    }
+  ]
+}
