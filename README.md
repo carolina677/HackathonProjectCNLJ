@@ -1,0 +1,81 @@
+# Watchtower
+
+An agent that attaches to EU procurement portals it has never seen, serves every open tender and its documents on `:8080`, notices when a portal breaks and repairs itself. It also has a morning dashboard with a spoken briefing.
+
+```
+POST /portals {url}
+   │
+   ▼
+Fingerprint ──known software (Atexo, AI NetServer, TenderNed)──► ready-made recipe ─┐
+   │ unknown                                                                       │
+   ▼                                                                               │
+Explore (Jev: which page is the list, detail, documents; login or captcha?)        │
+   │ blocked → failed, with the reason                                             │
+   ▼                                                                               │
+Induce: the LLM writes a declarative recipe (selectors, pagination, documents)     │
+   ▼                                                                               │
+Verify: run the recipe on 10 tenders, Jev cross-checks values against the page ◄───┘
+   │ up to 3 attempts, with feedback
+   ▼
+Serve ──every READ_INTERVAL_SECONDS──► Read: deterministic engine, no LLM
+                                         │ health check (counts, fill rates, HTTP, layout)
+                                         │ + one Jev spot check
+                                         ▼ broken
+                                       Heal: re-explore, the LLM patches the old recipe
+                                       (old snapshot + reason); last good tenders keep serving
+```
+
+**Why it scales:** the LLM runs only to learn a recipe and to repair it. Every read after that is plain code. Typed yes/no judgments go to Jev (TypeSafe), which costs far less than an LLM call. All portals share one scheduler. Each host gets at most 1 request per second, with no logins and no captcha solving.
+
+**States:** `integrating → serving ⇄ healing`, or `failed` with a reason. While a portal is `healing`, its last correct tenders stay served. A tender is `closed` once its deadline has passed or the portal stops listing it, and `withdrawn` when the portal marks it cancelled. ZIP files are unpacked, and files over 250 MB are skipped. When a value can't be verified, it is left empty instead of guessed.
+
+**Dashboard (`/`):** one card per portal with its state and story, a live event feed, and a Theater view per portal that shows the agent's steps and recipe diffs. It also has a cost meter, a race panel comparing a Jev answer with an LLM answer, and a spoken morning briefing (ElevenLabs). With `WATCHTOWER_LAB=1`, the built-in Chaos Lab (`/lab`) provides portals you can break on purpose.
+
+## Run
+
+```bash
+docker build -t watchtower .
+docker run -p 8080:8080 --env-file .env -v watchtower-data:/data watchtower
+```
+
+## Environment variables
+
+| Variable | Required | Meaning |
+|---|---|---|
+| `LLM_PROVIDER` | yes | `anthropic` (default) or `openai` |
+| `LLM_MODEL` | yes | default `claude-sonnet-5-5` |
+| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | one of them | key for the chosen provider |
+| `TYPESAFE_API_KEY` | yes | Jev judgments. Without it, verification falls back to rule checks only |
+| `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID` | no | spoken briefing (`/briefing.mp3`) |
+| `LLM_PRICE_IN`, `LLM_PRICE_OUT` | no | USD per 1M tokens for the cost meter. Defaults are list prices for `claude-sonnet-5-5` ($2/$10), `claude-haiku-5-5` ($0.10/$0.50) and `claude-opus-5-5` ($4/$20) |
+| `WATCHTOWER_LAB` | no | `1` mounts the Chaos Lab and the Break it buttons |
+| `WATCHTOWER_DATA` | no | data directory, default `/data` |
+| `READ_INTERVAL_SECONDS` | no | time between reads, default `600` |
+
+## Cost per portal
+
+These are **estimates** from the prompt size limits in the code (HTML trimmed to 30,000 + 15,000 characters, at about 3.5 characters per token), using Sonnet 5.5 list prices and Jev at $0.042 per 1M input tokens. They have **not been measured** on a real run yet. The measured value is at `GET /portals/{id}/cost`, and the dashboard shows the average and a projection to 4,500 portals.
+
+| Step | LLM | Jev | Estimated cost |
+|---|---|---|---|
+| Attach, known software (fingerprint) | 0 calls | a few checks | < $0.001 |
+| Attach, unknown portal | 1–3 calls (~14k in / ~1.5k out each) | ~20 checks | $0.04–0.13 |
+| Read (every 10 min) | 0 calls | 1 spot check | ~$0.0001 |
+| Repair | 1–3 calls | ~20 checks | $0.05–0.15 |
+
+**For 4,500 portals:** attaching all of them costs at most about $600 once. Reads cost about $80 a day at a 10-minute interval, almost all of it Jev spot checks, so a longer interval lowers this in proportion. Each repair costs about as much as an attach.
+
+## Known limits
+
+- Atexo (FR): the full document set (DCE) sits behind a form. Only the documents that are linked directly are fetched.
+- VMPCenter portals (Brandenburg, NRW, DTVP) have no adapter yet, so they go through the LLM path.
+- TenderNed lists about 2,900 open notices. At 1 request per second, the first full read takes hours, so tenders appear progressively.
+- Not yet verified by us: the `linux/amd64` Docker build (no Docker on our dev machine), live ElevenLabs and Jev Vision calls, a full run with real LLM and Jev keys, and the holdout portals in `testset/portals.yaml`.
+
+## Development
+
+```bash
+uv venv -p 3.12 && uv pip install -e '.[dev]' && .venv/bin/pytest -q
+python scripts/run_testset.py --api http://localhost:8080 [--holdout]
+scripts/demo_reset.sh http://localhost:8080
+```
