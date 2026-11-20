@@ -1,7 +1,8 @@
 """Mutation catalogue: the ways a real portal changes under us. Ground truth follows each one."""
 
 MUTATIONS = {"rename_classes", "reshuffle_layout", "pagination_style", "date_format", "api_path_move",
-             "json_keys_rename", "html_to_json", "withdraw_one", "deadline_passed", "site_down", "add_login"}
+             "json_keys_rename", "html_to_json", "withdraw_one", "deadline_passed", "site_down", "add_login",
+             "docs_login"}
 # What the "Break it" button may pick: changes a good system can repair on its own.
 REPAIRABLE = ["rename_classes", "reshuffle_layout", "pagination_style", "date_format", "api_path_move",
               "json_keys_rename"]

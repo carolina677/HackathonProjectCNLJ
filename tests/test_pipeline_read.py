@@ -207,3 +207,16 @@ async def test_pulse_uses_no_vision_and_list_fields_only(lab, repo, settings, mo
     monkeypatch.setattr(pipeline_mod, "run_recipe", fake_run)
     assert await pl.pulse(pid) is True
     assert seen["vision"] is None
+
+
+async def test_documents_turning_into_login_page_is_noticed(lab, repo, settings):
+    pid, pl = await _served_ssr(lab, repo, settings, json.loads(ssr_recipe(lab).model_dump_json()))
+    served = await repo.list_tenders(pid)
+    assert any(t.documents for t in served)
+    lab.mutate("ssr", "docs_login")  # downloads now answer HTTP 200 with a login form
+    fresh = Pipeline(repo, settings, HostLimiter(0.0), None, FakeJev(), None)  # restart: no cached downloads
+    assert str(await fresh.read(pid, "r2")) == "failed"
+    p = await repo.get_portal(pid)
+    assert p.state == PortalState.healing and "login page" in p.reason
+    after = await repo.list_tenders(pid)
+    assert all(d.fileName.endswith(".pdf") for t in after for d in t.documents)

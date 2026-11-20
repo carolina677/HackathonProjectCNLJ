@@ -124,3 +124,15 @@ def test_pulse_flags_unparsable_list_dates():
     items = [{"id": str(i), "title": "t", "submissionDeadline": None} for i in range(10)]
     h = pulse_health(items, [], {"title": 1.0, "submissionDeadline": 1.0}, {"title", "submissionDeadline"})
     assert not h.ok and "submissionDeadline" in h.reason
+
+
+def test_document_login_pages_mark_unhealthy():
+    h = health_check(5, _many(5), [], doc_counts={str(i): 0 for i in range(5)},
+                     doc_errors=["document https://x/dl?id=1: login page instead of a document"])
+    assert not h.ok and not h.transient and "login" in h.reason
+
+
+def test_document_captcha_pages_mark_unhealthy():
+    h = health_check(5, _many(5), [], doc_counts={str(i): 0 for i in range(5)},
+                     doc_errors=["document https://x/dl?id=1: captcha page instead of a document"])
+    assert not h.ok and "captcha" in h.reason

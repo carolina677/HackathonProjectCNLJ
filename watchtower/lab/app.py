@@ -269,6 +269,10 @@ def create_lab_app() -> FastAPI:
         check(slug)
         if slug == "login":
             raise HTTPException(401)
+        if STATE.has(slug, "docs_login"):  # the real-portal trap: HTTP 200 with a login form instead of the file
+            return HTMLResponse(page_shell("Anmeldung", "<h1>Bitte melden Sie sich an</h1><form method='post' "
+                                           "action='login'><input name='user'><input type='password' name='pw'>"
+                                           "<button>Anmelden</button></form>"))
         t = find(slug, tid)
         if not 1 <= n <= len(t.docs):
             raise HTTPException(404)

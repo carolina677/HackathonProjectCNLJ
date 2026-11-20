@@ -68,6 +68,10 @@ def health_check(prev_count: int, tenders: list[dict], errors: list[str],
     if doc_errors and doc_counts is not None and sum(doc_counts.values()) == 0:
         if any("HTTP 401" in e or "HTTP 403" in e for e in doc_errors):
             return Health(False, "Document downloads are blocked (HTTP 401/403).", transient=False)
+        if any("captcha page instead of a document" in e for e in doc_errors):
+            return Health(False, "Document downloads show a captcha instead of the files.", transient=False)
+        if any("login page instead of a document" in e for e in doc_errors):
+            return Health(False, "Document downloads lead to a login page instead of the files.", transient=False)
     if prev_fill:
         now = fill_rates(tenders, doc_counts=doc_counts)
         for f, before in prev_fill.items():
