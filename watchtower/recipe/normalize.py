@@ -23,10 +23,14 @@ COUNTRY_LANG = {"DE": "de", "AT": "de", "CH": "de", "FR": "fr", "BE": "fr", "LU"
                 "RO": "ro", "BG": "bg", "GR": "el", "DK": "da", "SE": "sv", "FI": "fi", "EE": "et", "LV": "lv",
                 "LT": "lt", "IE": "en", "MT": "en", "GB": "en", "NO": "nb"}
 COUNTRY_NAMES = {
-    "DE": ["deutschland", "germany", "allemagne"], "AT": ["österreich", "austria"], "FR": ["france", "frankreich"],
-    "NL": ["nederland", "netherlands", "niederlande"], "BE": ["belgique", "belgië", "belgium"],
-    "ES": ["españa", "spain", "spanien"], "PT": ["portugal"], "IT": ["italia", "italy"],
-    "PL": ["polska", "poland", "polen"], "LU": ["luxembourg"], "DK": ["danmark", "denmark"],
+    "DE": ["deutschland", "germany", "allemagne", "duitsland", "alemania", "germania", "niemcy"],
+    "AT": ["österreich", "austria", "autriche", "oostenrijk"],
+    "FR": ["france", "frankreich", "frankrijk", "francia", "francja"],
+    "NL": ["nederland", "netherlands", "niederlande", "pays-bas", "países bajos", "paesi bassi", "holandia"],
+    "BE": ["belgique", "belgië", "belgium", "belgien", "bélgica", "belgio", "belgia"],
+    "ES": ["españa", "spain", "spanien", "espagne", "spanje", "spagna", "hiszpania"], "PT": ["portugal"],
+    "IT": ["italia", "italy", "italien", "italie", "italië", "włochy"],
+    "PL": ["polska", "poland", "polen", "pologne"], "LU": ["luxembourg", "luxemburg", "luxemburgo", "lussemburgo"], "DK": ["danmark", "denmark"],
     "SE": ["sverige", "sweden"], "FI": ["suomi", "finland"], "IE": ["ireland", "éire"],
     "CZ": ["česko", "czechia", "czech republic"], "AT_": [],
 }
@@ -117,7 +121,7 @@ def parse_cpv(v) -> list[str]:
 
 PROCEDURE_KEYS = [
     (ProcedureType.restricted, ["nicht offen", "nichtoffen", "restricted", "restreint", "restringido", "niet-openbaar",
-                                "niet openbaar", "ristrett", "ograniczon", "beschränkte ausschreibung"]),
+                                "niet openbaar", "niet-openbare", "niet openbare", "ristrett", "ograniczon", "beschränkte ausschreibung"]),
     (ProcedureType.negotiated, ["verhandlung", "negotiat", "négocié", "negocie", "negociado", "onderhandel",
                                 "negoziat", "negocjac", "freihändig"]),
     (ProcedureType.other, ["wettbewerblicher dialog", "competitive dialogue", "dialogue compétitif", "diálogo competitivo",

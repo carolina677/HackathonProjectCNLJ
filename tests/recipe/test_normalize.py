@@ -60,3 +60,22 @@ def test_nature_mapping():
 def test_country():
     assert parse_country("52062 Aachen, Deutschland") == "DE"
     assert parse_country("FR") == "FR"
+
+
+def test_dutch_restricted_procedure_is_not_read_as_open():
+    from watchtower.models import ProcedureType
+    from watchtower.recipe.normalize import map_procedure
+
+    assert map_procedure("Niet-openbare procedure") == ProcedureType.restricted
+    assert map_procedure("Niet openbare aanbesteding") == ProcedureType.restricted
+    assert map_procedure("Openbare procedure") == ProcedureType.open
+
+
+def test_country_names_in_the_neighbour_languages():
+    from watchtower.recipe.normalize import parse_country
+
+    assert parse_country("Duitsland") == "DE"
+    assert parse_country("Alemania") == "DE"
+    assert parse_country("Frankrijk") == "FR"
+    assert parse_country("Pays-Bas") == "NL"
+    assert parse_country("Luxemburg") == "LU"
