@@ -64,6 +64,8 @@ def run_words(r: dict, first: bool) -> str:
     kind, res, detail = r["kind"], r["result"], r.get("detail")
     if res is None:
         return "Learning the portal…" if first else ("Repairing…" if kind == "repair" else "Reading…")
+    if detail == "interrupted by restart":  # the server stopped, the portal did nothing wrong
+        return ("Repair" if kind == "repair" else "Read") + " stopped: interrupted by restart"
     if kind == "repair":
         return "Repaired itself" if res == "ok" else "Repair failed — needs a human"
     if first:
