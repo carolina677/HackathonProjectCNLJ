@@ -51,7 +51,7 @@ docker run -p 8080:8080 --env-file .env -v watchtower-data:/data watchtower
 | `MLFLOW_TRACKING_URI`, `MLFLOW_EXPERIMENT_NAME` | no | record every LLM and Jev call as an MLflow trace (portal, purpose, tokens, USD). Needs `pip install -e '.[tracing]'`; the Docker image leaves MLflow out to stay small |
 | `WATCHTOWER_LAB` | no | `1` mounts the Chaos Lab and the Break it buttons |
 | `WATCHTOWER_DATA` | no | data directory, default `/data` |
-| `READ_INTERVAL_SECONDS` | no | time between reads, default `600` |
+| `READ_INTERVAL_SECONDS` | no | time between scheduled reads, default `43200` (12 hours). `POST /portals/{id}/refresh` reads at once at any time. Failed portals are retried every 6 intervals, at most once a day |
 
 ## Cost per portal
 
@@ -61,10 +61,10 @@ These are **estimates** from the prompt size limits in the code (HTML trimmed to
 |---|---|---|---|
 | Attach, known software (fingerprint) | 0 calls | a few checks | < $0.001 |
 | Attach, unknown portal | 1–3 calls (~14k in / ~1.5k out each) | ~20 checks | $0.04–0.13 |
-| Read (every 10 min) | 0 calls | 1 spot check | ~$0.0001 |
+| Read (every 12 h) | 0 calls | 1 spot check | ~$0.0001 |
 | Repair | 1–3 calls | ~20 checks | $0.05–0.15 |
 
-**For 4,500 portals:** attaching all of them costs at most about $600 once. Reads cost about $80 a day at a 10-minute interval, almost all of it Jev spot checks, so a longer interval lowers this in proportion. Each repair costs about as much as an attach.
+**For 4,500 portals:** attaching all of them costs at most about $600 once. Reads cost about $1 a day at the default 12-hour interval (2 reads per portal), almost all of it Jev spot checks; the cost grows in proportion to a shorter interval (about $65 a day at 10 minutes). Each repair costs about as much as an attach.
 
 ## Known limits
 

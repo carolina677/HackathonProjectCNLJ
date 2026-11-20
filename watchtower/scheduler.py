@@ -14,6 +14,14 @@ from .models import PortalState, RunKind, RunResult
 log = logging.getLogger("watchtower.scheduler")
 
 
+def retry_every(settings: Settings, state: PortalState) -> int:
+    """Seconds between scheduled reads. Failed portals wait longer (6x), but never more than a day."""
+    interval = settings.read_interval_seconds
+    if state == PortalState.failed:
+        return max(interval, min(interval * 6, 24 * 3600))
+    return interval
+
+
 class HostLimiter:
     """At most one request per second per host (brief: be polite to real portals)."""
 
@@ -122,14 +130,13 @@ class Scheduler:
             events.emit(pid, "run", {"id": rid, "status": "finished", "result": str(result), "detail": detail})
 
     async def _periodic(self) -> None:
-        interval = self.settings.read_interval_seconds
         while True:
             await asyncio.sleep(5)
             now = time.monotonic()
             for p in await self.repo.list_portals():
                 if p.id in self._tasks and not self._tasks[p.id].done():
                     continue
-                every = interval * (6 if p.state == PortalState.failed else 1)
+                every = retry_every(self.settings, p.state)
                 last = self._last_enqueued.get(p.id)
                 if last is None:
                     due = now - self._started >= self.offset(p.id) % every

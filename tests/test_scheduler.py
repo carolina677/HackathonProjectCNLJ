@@ -101,3 +101,21 @@ def test_illegal_transition_raises():
 async def test_due_portals_staggered(sched_env, settings):
     s, _, pid = sched_env
     assert 0 <= s.offset(pid) < settings.read_interval_seconds
+
+
+def test_default_read_interval_is_twelve_hours(tmp_path, monkeypatch):
+    from watchtower.config import Settings
+
+    monkeypatch.delenv("READ_INTERVAL_SECONDS", raising=False)
+    assert Settings(_env_file=None, data_dir=tmp_path).read_interval_seconds == 12 * 3600
+
+
+def test_failed_portals_retry_at_most_daily(tmp_path):
+    from watchtower.config import Settings
+    from watchtower.scheduler import retry_every
+
+    s = Settings(_env_file=None, data_dir=tmp_path, read_interval_seconds=12 * 3600)
+    assert retry_every(s, PortalState.serving) == 12 * 3600
+    assert retry_every(s, PortalState.failed) == 24 * 3600
+    s = Settings(_env_file=None, data_dir=tmp_path, read_interval_seconds=600)
+    assert retry_every(s, PortalState.failed) == 3600

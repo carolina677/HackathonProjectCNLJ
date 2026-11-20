@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     elevenlabs_voice_id: str | None = None
     lab: bool = False
     data_dir: Path = Path("/data")
-    read_interval_seconds: int = 600
+    read_interval_seconds: int = 12 * 3600  # reads cost no LLM; one Jev spot check each
     min_request_interval: float = 1.0
     llm_price_in: float | None = None
     llm_price_out: float | None = None
