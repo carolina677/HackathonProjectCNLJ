@@ -1,0 +1,49 @@
+{
+  "rows": [
+    {
+      "country": "DE",
+      "url": "https://vergabe.vmstart.de/NetServer/PublicationSearchControllerServlet?function=SearchPublications&Gesetzesgrundlage=All&Category=InvitationToTender&thContext=publications",
+      "state": "serving",
+      "reason": null,
+      "tenders": 23,
+      "docs": 543,
+      "usd": 0.000645918
+    },
+    {
+      "country": "DE",
+      "url": "https://www.evergabe-online.de/search.html",
+      "state": "serving",
+      "reason": null,
+      "tenders": 10,
+      "docs": 0,
+      "usd": 0.0009409680000000001
+    },
+    {
+      "country": "FR",
+      "url": "https://marches.maximilien.fr/?page=Entreprise.EntrepriseAdvancedSearch&AllCons",
+      "state": "serving",
+      "reason": null,
+      "tenders": 253,
+      "docs": 319,
+      "usd": 0.000629622
+    },
+    {
+      "country": "NL",
+      "url": "https://www.tenderned.nl/aankondigingen/overzicht",
+      "state": "serving",
+      "reason": null,
+      "tenders": 20,
+      "docs": 202,
+      "usd": 0.00113925
+    }
+  ],
+  "summary": {
+    "serving": 4,
+    "total": 4,
+    "tenders": 306,
+    "documents": 1064,
+    "usd_total": 0.0033557580000000004,
+    "usd_per_portal": 0.0008389395000000001,
+    "usd_4500": 3.7752277500000004
+  }
+}

@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     lab: bool = False
     data_dir: Path = Path("/data")
     read_interval_seconds: int = 12 * 3600  # reads cost no LLM; one Jev spot check each
+    pulse_interval_seconds: int = 15 * 60  # list-only check between full reads, no model call; 0 = off
+    scheduler_tick_seconds: float = 5.0
     min_request_interval: float = 1.0
     llm_price_in: float | None = None
     llm_price_out: float | None = None

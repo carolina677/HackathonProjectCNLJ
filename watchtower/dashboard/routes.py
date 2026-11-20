@@ -64,6 +64,8 @@ def run_words(r: dict, first: bool) -> str:
     kind, res, detail = r["kind"], r["result"], r.get("detail")
     if res is None:
         return "Learning the portal…" if first else ("Repairing…" if kind == "repair" else "Reading…")
+    if detail == "interrupted by restart":  # the server stopped, the portal did nothing wrong
+        return ("Repair" if kind == "repair" else "Read") + " stopped: interrupted by restart"
     if kind == "repair":
         return "Repaired itself" if res == "ok" else "Repair failed — needs a human"
     if first:
@@ -117,6 +119,14 @@ def register(app: FastAPI) -> None:
         from ..demo import run_timelapse
 
         return await run_timelapse(request.app, str(request.base_url).rstrip("/"))
+
+    @app.post("/demo/chaos", status_code=202)
+    async def demo_chaos(request: Request):
+        if not request.app.state.settings.lab:
+            raise HTTPException(404, "Chaos Lab is disabled")
+        from ..demo import run_chaos
+
+        return {"broken": await run_chaos(request.app)}
 
     @app.get("/traces")
     async def traces():

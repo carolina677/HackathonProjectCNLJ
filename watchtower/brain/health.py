@@ -68,12 +68,36 @@ def health_check(prev_count: int, tenders: list[dict], errors: list[str],
     if doc_errors and doc_counts is not None and sum(doc_counts.values()) == 0:
         if any("HTTP 401" in e or "HTTP 403" in e for e in doc_errors):
             return Health(False, "Document downloads are blocked (HTTP 401/403).", transient=False)
+        if any("captcha page instead of a document" in e for e in doc_errors):
+            return Health(False, "Document downloads show a captcha instead of the files.", transient=False)
+        if any("login page instead of a document" in e for e in doc_errors):
+            return Health(False, "Document downloads lead to a login page instead of the files.", transient=False)
     if prev_fill:
         now = fill_rates(tenders, doc_counts=doc_counts)
         for f, before in prev_fill.items():
             if before >= 0.7 and now.get(f, 0) < before - 0.3:
                 return Health(False, f"Field {f} is suddenly empty in most tenders ({now.get(f, 0):.0%} filled, "
                                      f"{before:.0%} before).")
+    return Health(True)
+
+
+def pulse_health(items: list[dict], errors: list[str], prev_fill: dict[str, float] | None,
+                 list_fields: set[str]) -> Health:
+    """Between full reads: does the first list page still look like the learned layout? No model call.
+
+    The pulse sees only the first items, so a smaller count than before is not a sign of breakage. Only fields
+    the recipe reads from the list are compared; fields from detail pages are never on the pulse's items."""
+    h = health_check(0, items, errors)
+    if not h.ok or not items:
+        return h
+    for f in REQUIRED_VALUE_FIELDS:
+        before = (prev_fill or {}).get(f, 0.0)
+        if f not in list_fields or before < 0.7:
+            continue
+        now = sum(t.get(f) is not None for t in items) / len(items)
+        if now < before - 0.3:
+            return Health(False, f"Field {f} is suddenly empty in most tenders ({now:.0%} filled, "
+                                 f"{before:.0%} before; pulse).")
     return Health(True)
 
 

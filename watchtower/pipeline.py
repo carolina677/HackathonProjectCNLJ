@@ -11,7 +11,7 @@ from . import events
 from .brain.explore import explore
 from .brain.fingerprint import fingerprint
 from .brain.heal import heal
-from .brain.health import fill_rates, health_check, pick_probe, spot_check
+from .brain.health import fill_rates, health_check, pick_probe, pulse_health, spot_check
 from .brain.induce import induce_recipe
 from .brain.verify import VerifyReport, verify_sample
 from .db import Repo
@@ -27,6 +27,7 @@ log = logging.getLogger("watchtower.pipeline")
 
 RETRY_DELAYS = (60.0, 300.0)
 MAX_TRANSIENT = 3
+MAX_REPAIR_CYCLES = 3  # repairs in a row whose new recipe never delivered: stop paying, say so
 SMALL_PORTAL_LIMIT = 50
 PROGRESSIVE_SERVE_AT = 20
 
@@ -86,12 +87,14 @@ class Pipeline:
         self.read_jev = jev.without_llm() if hasattr(jev, "without_llm") else jev
         self._followups: dict[str, tuple[RunKind, float]] = {}
         self._outages: dict[str, int] = {}
+        self._repair_cycles: dict[str, int] = {}
         self._probe_turn: dict[str, int] = {}
         self._docs: dict[tuple[str, str], tuple[tuple[str, ...], list[Document]]] = {}
 
     def forget(self, pid: str) -> None:
         self._followups.pop(pid, None)
         self._outages.pop(pid, None)
+        self._repair_cycles.pop(pid, None)
         self._probe_turn.pop(pid, None)
         for key in [k for k in self._docs if k[0] == pid]:
             self._docs.pop(key, None)
@@ -352,6 +355,7 @@ class Pipeline:
                 self.schedule_followup(pid, RunKind.repair, 0.0)
             return RunResult.failed
         self._outages.pop(pid, None)
+        self._repair_cycles.pop(pid, None)
         changed = await self.repo.upsert_tenders(pid, list(tenders.values()), now)
         # Only a fully read list says a tender is gone; a cut-off or failed page proves nothing.
         closed = await self.repo.mark_missing_closed(pid, set(tenders), now) if list_complete(errors) else 0
@@ -361,6 +365,33 @@ class Pipeline:
         events.emit(pid, "log", {"msg": f"Read {len(tenders)} tenders ({changed} changed, {closed} closed, "
                                         f"{fetcher.requests} requests, no LLM)"})
         return RunResult.ok
+
+    async def pulse(self, pid: str) -> bool:
+        """List-only check between full reads: no details, no documents, no Jev, no LLM.
+
+        True means healthy (or nothing to check). False means "read now": the full read decides the state."""
+        p = await self.repo.get_portal(pid)
+        if p is None or p.state != PortalState.serving or not p.recipe:
+            return True
+        errors: list[str] = []
+        seen: list[dict] = []
+
+        async def on_list(items, errs):
+            seen.extend(items)
+            return False
+
+        recipe = Recipe.model_validate(p.recipe)
+        fetcher = self.fetcher(pid)
+        fetcher.on_screenshot = None  # Jev Vision boxes are paid calls; the pulse must stay free
+        try:
+            await run_recipe(recipe, fetcher, limit=10, errors=errors, mask=set(p.field_mask or []),
+                             on_list=on_list)
+        except PortalCancelled:
+            return True  # deleted while pulsing
+        h = pulse_health(seen, errors, p.prev_fill or None, set(recipe.fields))
+        if not h.ok:
+            events.emit(pid, "log", {"msg": f"Pulse: {h.reason} Reading now."})
+        return h.ok
 
     # --- repair ------------------------------------------------------------
     async def repair(self, pid: str, run_id: str) -> RunResult:
@@ -447,8 +478,17 @@ class Pipeline:
                 await self.repo.mark_missing_closed(pid, set(tenders), now)
             await self.repo.mark_success(pid, len(tenders), now, fill=fill_rates(raw, doc_counts=doc_counts))
             self._outages.pop(pid, None)
+            self._repair_cycles.pop(pid, None)
             await self.transition(pid, PortalState.serving, None)
             return RunResult.ok
+        n = self._repair_cycles.get(pid, 0) + 1
+        if n >= MAX_REPAIR_CYCLES:
+            self._repair_cycles.pop(pid, None)
+            why = (f"Could not repair: {n} repairs in a row produced a recipe that did not deliver "
+                   f"({health.reason or 'no tenders'}).")
+            await self.transition(pid, PortalState.failed, why)
+            return RunResult.failed
+        self._repair_cycles[pid] = n
         self.schedule_followup(pid, RunKind.read, 60.0)
         return RunResult.failed
 

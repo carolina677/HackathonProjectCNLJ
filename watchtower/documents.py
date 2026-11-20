@@ -129,6 +129,30 @@ async def _unpack(store: _Store, zpath: Path, depth: int) -> None:
             await store.keep(tmp, name, sha, size)
 
 
+_CAPTCHA = re.compile(rb"captcha|g-recaptcha|h-captcha|hcaptcha|cf-turnstile|friendlycaptcha", re.I)
+_LOGIN = re.compile(rb"type=[\"']?password|\b(log ?in|sign ?in|anmelden|einloggen|connexion|se connecter|"
+                    rb"iniciar sesi|inloggen|aanmelden|zaloguj|accedi)\b", re.I)
+
+
+def not_a_document(path: Path, headers: dict, size: int) -> str | None:
+    """Why a download is not a tender document, or None. Portals often answer HTTP 200 with a login page."""
+    if size == 0:
+        return "empty file instead of a document"
+    h = {k.lower(): v for k, v in headers.items()}
+    if "attachment" in h.get("content-disposition", "").lower():
+        return None
+    with open(path, "rb") as f:
+        head = f.read(65536)
+    start = head.lstrip()[:512].lower()
+    if not (start.startswith(b"<!doctype html") or b"<html" in start):
+        return None  # PDFs, ZIPs, office files, XML: whatever the content-type claims
+    if _CAPTCHA.search(head):
+        return "captcha page instead of a document"
+    if _LOGIN.search(head):
+        return "login page instead of a document"
+    return "HTML page instead of a document"
+
+
 async def fetch_documents(portal_id: str, tender_id: str, urls: list[str], fetcher, *, repo,
                           data_dir: Path, errors: list[str] | None = None) -> list[Document]:
     store = _Store(repo, data_dir, portal_id, tender_id)
@@ -150,6 +174,9 @@ async def fetch_documents(portal_id: str, tender_id: str, urls: list[str], fetch
                             raise TooLarge
                         h.update(chunk)
                         out.write(chunk)
+            why = not_a_document(tmp, headers, n)
+            if why:
+                raise IOError(why)
             name = filename_from(url, headers)
             if _is_zip(tmp, name):
                 try:

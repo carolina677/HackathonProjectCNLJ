@@ -1,37 +1,17 @@
 # Watchtower
 
-An agent that attaches to EU procurement portals it has never seen, serves every open tender and its documents on `:8080`, notices when a portal breaks and repairs itself. It also has a morning dashboard with a spoken briefing.
+Give it the URL of an EU procurement portal it has never seen. It serves every open tender and its documents on `:8080`, notices by itself when the portal changes, and repairs itself. Where it cannot help, such as a login wall, it says so instead of guessing.
 
 ```
-POST /portals {url}
-   │
-   ▼
-Fingerprint ──known software (Atexo, AI NetServer, TenderNed, e-Vergabe)──► ready-made recipe ─┐
-   │ unknown                                                                       │
-   ▼                                                                               │
-Explore (Jev: which page is the list, detail, documents; login or captcha?)        │
-   │ blocked → failed, with the reason                                             │
-   ▼                                                                               │
-Induce: the LLM writes a declarative recipe (selectors, pagination, documents)     │
-   ▼                                                                               │
-Verify: run the recipe on 10 tenders, Jev cross-checks values against the page ◄───┘
-   │ up to 3 attempts, with feedback
-   ▼
-Serve ──every READ_INTERVAL_SECONDS──► Read: deterministic engine, no LLM
-                                         │ health check (counts, fill rates, HTTP, layout)
-                                         │ + one Jev spot check
-                                         ▼ broken
-                                       Heal: re-explore, the LLM patches the old recipe
-                                       (old snapshot + reason); last good tenders keep serving
+POST /portals {url} → fingerprint (known software → ready recipe, no LLM)
+                    → unknown: explore (Jev) → LLM writes a declarative recipe → verify on 10 tenders (Jev)
+serving ── pulse every 15 min: list page only, no model call ── read every 12 h: deterministic engine
+   │ health check (counts, fill rates, layout, documents are real files, not login pages)
+   ▼ broken → healing: the LLM patches the recipe; the last good tenders stay served
+             → 3 repairs that don't deliver → failed, with the reason
 ```
 
-**Why it scales:** the LLM runs only to learn a recipe and to repair it. Every read after that is plain code. Typed yes/no judgments go to Jev (TypeSafe), which costs far less than an LLM call. All portals share one scheduler. Each host gets at most 1 request per second, with no logins and no captcha solving.
-
-**States & reliability:** `integrating → serving ⇄ healing`, or `failed` with a reason. A portal stays `integrating` until its initial tenders and documents are actually stored (with progressive serving on huge portals), and while `healing`, its last correct tenders stay served until refreshed data is verified. Transient `5xx`/`429`/timeout outages retry with backoff before triggering a repair, and fill rates (including document delivery) plus per-portal model costs persist in SQLite across restarts. Login or captcha walls on list, detail, or document pages report `failed` honestly; portals showing a captcha whose documents download freely are still served. A tender is `closed` once its deadline has passed or the portal stops listing it, and `withdrawn` when the portal marks it cancelled. ZIP files are unpacked (Word, Excel and other office files stay whole), and files over 250 MB are skipped. A tender is only marked `closed` for missing from the list when every list page was read. When a value can't be verified, it is left empty instead of guessed.
-
-**JS apps & APIs:** supports plain HTML, XPath/CSS selectors, PRADO/ASP.NET post-backs, JS-rendered pages (`needs_js`), and both `GET` and `POST` JSON APIs captured from Playwright network traffic.
-
-**Dashboard (`/`):** one card per portal with its state and story, live SSE updates and summary counters, and a Theater view per portal that shows the agent's steps and before-vs-after recipe diffs. It also has a cost meter, a race panel comparing a Jev answer with an LLM answer, and a spoken morning briefing (ElevenLabs). With `WATCHTOWER_LAB=1`, the built-in Chaos Lab (`/lab`) provides portals you can break on purpose.
+**Why it scales to 4,500 portals:** the LLM runs only to learn a recipe or repair it. Every read after that is plain code. Yes/no checks go to Jev (TypeSafe), which costs far less than an LLM call. Each host gets at most 1 request per second, with no logins and no captcha solving.
 
 ## Run
 
@@ -40,50 +20,54 @@ docker build -t watchtower .
 docker run -p 8080:8080 --env-file .env -v watchtower-data:/data watchtower
 ```
 
-## Environment variables
+`.env`: `LLM_PROVIDER` (`openai` or `anthropic`), `LLM_MODEL`, the matching API key, and `TYPESAFE_API_KEY`. Optional variables:
+- `PULSE_INTERVAL_SECONDS` (900; 0 turns the pulse off)
+- `READ_INTERVAL_SECONDS` (43200)
+- `WATCHTOWER_LAB=1` mounts the Chaos Lab and the Blind Lab
+- `ELEVENLABS_*` for the spoken briefing
+- `MLFLOW_TRACKING_URI` for traces
 
-| Variable | Required | Meaning |
+The full list is in `.env.example`.
+
+## Measured (gpt-5.5 + Jev, 20 Nov 2026)
+
+| Test | Result | Model cost |
 |---|---|---|
-| `LLM_PROVIDER` | yes | `anthropic` (default) or `openai` (auto-falls back if only the other key is set) |
-| `LLM_MODEL` | yes | default `claude-sonnet-5-5` (list prices also built in for `gpt-5.5`, `gpt-5`, `gpt-4.1`, `gpt-4o`) |
-| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | one of them | key for the chosen provider |
-| `TYPESAFE_API_KEY` | **yes** (hand in) | Jev judgments (exploration, link ranking, field verification, spot checks). Without it, verification falls back to rule checks only |
-| `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID` | no | spoken briefing (`/briefing.mp3`) |
-| `LLM_PRICE_IN`, `LLM_PRICE_OUT` | no | USD per 1M tokens for the cost meter. Defaults are list prices for `claude-sonnet-5-5` ($2/$10), `claude-haiku-5-5` ($0.10/$0.50) and `claude-opus-5-5` ($4/$20) |
-| `MLFLOW_TRACKING_URI`, `MLFLOW_EXPERIMENT_NAME` | no | record every LLM and Jev call as an MLflow trace (portal, purpose, tokens, USD). Needs `pip install -e '.[tracing]'`; the Docker image leaves MLflow out to stay small |
-| `WATCHTOWER_LAB` | no | `1` mounts the Chaos Lab and the Break it buttons |
-| `WATCHTOWER_DATA` | no | data directory, default `/data` |
-| `READ_INTERVAL_SECONDS` | no | time between scheduled reads, default `43200` (12 hours). `POST /portals/{id}/refresh` reads at once at any time. Failed portals are retried every 6 intervals, at most once a day |
+| 4 real portals, known software (DE, FR, NL) | 4/4 serving | $0.001 / portal |
+| **Blind portals**: generated from a random seed at run time (layout, language, date format, pagination, URLs, JSON keys); nobody saw them before | run 1: 3/3 serving, all tenders, all 105 PDFs, quality 0.87 · run 2 (after 2 normalizer fixes): 3/3, quality 0.99, 0 wrong values | $0.024–0.028 / portal |
+| **Holdout**: 6 real portals, never used during development, run once at tag `holdout-run-1` | **2/6 serving**: LU (204 tenders, 204 docs), FR marches-publics (82 tenders, 182 docs). 4 end `failed` with the reason: ES and PL (tender list sits behind a JS search form), NRW VMPCenter (no document links found), DTVP (its API stopped answering) | $0.055 / portal (NRW alone $0.26) |
+| Live break (Chaos Lab, no refresh pressed) | layout changes are noticed by the pulse and repaired in about 2 min | a few cents / repair |
 
-## Cost per portal
+Raw data: `docs/results-*.json`. Reproduce:
 
-These are **estimates** from the prompt size limits in the code (HTML trimmed to 30,000 + 15,000 characters, at about 3.5 characters per token), using Sonnet 5.5 list prices and Jev at $0.042 per 1M input tokens. They have **not been measured** on a real run yet. The measured value is at `GET /portals/{id}/cost`, and the dashboard shows the average and a projection to 4,500 portals.
+```bash
+python scripts/run_testset.py --api http://localhost:8080 [--holdout]
+python scripts/blind_test.py --api http://localhost:8080 --seeds 3
+python scripts/repair_matrix.py --api http://localhost:8080
+```
 
-| Step | LLM | Jev | Estimated cost |
-|---|---|---|---|
-| Attach, known software (fingerprint) | 0 calls | a few checks | < $0.001 |
-| Attach, unknown portal | 1–3 calls (~14k in / ~1.5k out each) | ~20 checks | $0.04–0.13 |
-| Read (every 12 h) | 0 calls | 1 spot check | ~$0.0001 |
-| Repair | 1–3 calls | ~20 checks | $0.05–0.15 |
+The repair matrix needs `PULSE_INTERVAL_SECONDS=60`.
 
-**For 4,500 portals:** attaching all of them costs at most about $600 once. Reads cost about $1 a day at the default 12-hour interval (2 reads per portal), almost all of it Jev spot checks; the cost grows in proportion to a shorter interval (about $65 a day at 10 minutes). Each repair costs about as much as an attach.
+**For 4,500 portals:**
+- Attaching them all costs about $110 once, at $0.025 per unknown portal.
+- The pulse and the reads cost nothing in model calls, apart from a Jev spot check per read.
+
+## Dashboard (`/`)
+
+- One card per portal with its state and what happened.
+- A cost meter with a projection to 4,500 portals.
+- **Theater:** the agent's steps for each portal, with a before-vs-after diff of the recipe.
+- **⚡ Run demo:** a replay of one night in which three portals break and repair, plus one that needs a person.
+- **💥 Break 3 portals live:** real breaks and real repairs, with real model calls.
 
 ## Known limits
 
-- Atexo (FR): the full document set (DCE) sits behind a form. Only the documents that are linked directly are fetched.
-- VMPCenter portals (Brandenburg, NRW, DTVP) have no adapter yet, so they go through the LLM path.
-- e-Vergabe (evergabe-online.de, federal): only the 10 newest tenders and no documents. Its next-page and download links are tied to a server-side page state that the site's load balancer loses, so they fail over plain HTTP. Tenders are never closed for missing from this partial list; they close at their deadline.
-- TenderNed lists about 2,900 open notices. At 1 request per second, the first full read takes hours, so tenders appear progressively.
-- Live-tested with `LLM_PROVIDER=openai`, `LLM_MODEL=gpt-5.5` and real Jev: the lab portal was learned and, after Break it, repaired in 39 s, with all 13 fields correct both times. The Claude path is covered by unit tests only; we had no Anthropic key.
-- The `linux/amd64` image is built and smoke-tested on every push by `.github/workflows/docker.yml` (GitHub's x86_64 runner): build about 50 s, image about 1.2 GB, Chromium starts, and the API on :8080 answers as the appendix specifies.
-- Not yet verified by us: live ElevenLabs and Jev Vision calls, and the holdout portals in `testset/portals.yaml`.
+- Holdout shows the main gap: portals whose list only appears after submitting a JS search form (ES, PL), and VMPCenter portals (NRW, DTVP), which have no adapter yet.
+- The pulse sees only the list page. A change in pagination, or a date that only appears on detail pages, is caught by the 12-hour read instead.
+- Logins and captchas are never bypassed. Such portals end `failed` with the reason. Atexo (FR) serves only directly linked documents.
+- e-Vergabe (federal DE) serves only the 10 newest tenders and no documents: its paging state is lost behind the site's load balancer.
+- TenderNed lists about 2,900 notices. At 1 request per second, the first full read takes hours, so tenders appear progressively.
+- The Claude path is covered by unit tests. The live measurements above ran on gpt-5.5.
+- CI builds and smoke-tests the `linux/amd64` image on every push (`.github/workflows/docker.yml`).
 
-## Development
-
-```bash
-uv venv -p 3.12 && uv pip install -e '.[dev]' && .venv/bin/pytest -q
-python scripts/run_testset.py --api http://localhost:8080 [--holdout]
-scripts/demo_reset.sh http://localhost:8080
-```
-
-**Tracing (optional):** `uv pip install -e '.[tracing]'`, start `mlflow server --port 5050 --backend-store-uri sqlite:///.devdata/mlflow.db --artifacts-destination .devdata/mlartifacts`, set `MLFLOW_TRACKING_URI=http://127.0.0.1:5050`. Each LLM call appears as an `llm.<purpose>` trace with the raw OpenAI or Anthropic call underneath; each Jev call as a `jev` trace. With tracing on, the dashboard gets a **Model calls** panel listing the last 30 calls (kind, portal, question or purpose, tokens, time, USD) with a link into MLflow; `GET /traces` returns the same rows as JSON. Tested live: one Break it repair produced 1 LLM trace (gpt-5.5, 5,011 tokens in, 1,529 out) and 10 Jev traces.
+Development: `uv venv -p 3.12 && uv pip install -e '.[dev]' && .venv/bin/pytest -q`

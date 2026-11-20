@@ -128,3 +128,51 @@ async def test_zip_without_extension_still_unpacked(repo, settings):
     docs = await _fetch(repo, settings, {"https://x/DownloadTenderDocuments?oid=1": (z, {})},
                         ["https://x/DownloadTenderDocuments?oid=1"])
     assert [d.fileName for d in docs] == ["a.pdf"]
+
+
+async def _fetch_err(repo, settings, files, urls):
+    errors: list[str] = []
+    docs = await fetch_documents("p", "t", urls, FakeFetcher(files), repo=repo, data_dir=settings.data_dir,
+                                 errors=errors)
+    return docs, errors
+
+
+LOGIN = b"<!DOCTYPE html><html><body><form action='/login'><input type='password' name='pw'>Anmelden</form></body></html>"
+
+
+async def test_login_page_is_not_stored_as_document(repo, settings):
+    docs, errors = await _fetch_err(repo, settings, {"https://x/dl?id=1": (LOGIN, {"content-type": "text/html"})},
+                                    ["https://x/dl?id=1"])
+    assert docs == [] and len(errors) == 1 and "login page" in errors[0]
+
+
+async def test_captcha_page_is_not_stored_as_document(repo, settings):
+    page = b"<html><body><div class='g-recaptcha' data-sitekey='x'></div></body></html>"
+    docs, errors = await _fetch_err(repo, settings, {"https://x/dl?id=2": (page, {"content-type": "text/html"})},
+                                    ["https://x/dl?id=2"])
+    assert docs == [] and "captcha page" in errors[0]
+
+
+async def test_other_html_page_is_not_a_document(repo, settings):
+    page = b"<html><body><h1>Vergabeunterlagen</h1><a href='/a.pdf'>a</a></body></html>"
+    docs, errors = await _fetch_err(repo, settings, {"https://x/dl?id=3": (page, {"content-type": "text/html"})},
+                                    ["https://x/dl?id=3"])
+    assert docs == [] and "HTML page" in errors[0]
+
+
+async def test_html_sent_as_attachment_is_kept(repo, settings):
+    hdr = {"content-type": "text/html", "content-disposition": 'attachment; filename="Leistung.html"'}
+    docs, errors = await _fetch_err(repo, settings, {"https://x/dl?id=4": (b"<html>LV</html>", hdr)},
+                                    ["https://x/dl?id=4"])
+    assert len(docs) == 1 and errors == []
+
+
+async def test_pdf_with_wrong_html_content_type_is_kept(repo, settings):
+    docs, errors = await _fetch_err(repo, settings, {"https://x/a.pdf": (b"%PDF-1.4 x", {"content-type": "text/html"})},
+                                    ["https://x/a.pdf"])
+    assert len(docs) == 1 and errors == []
+
+
+async def test_empty_file_is_not_a_document(repo, settings):
+    docs, errors = await _fetch_err(repo, settings, {"https://x/b.pdf": (b"", {})}, ["https://x/b.pdf"])
+    assert docs == [] and "empty" in errors[0]

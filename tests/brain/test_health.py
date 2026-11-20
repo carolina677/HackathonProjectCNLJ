@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from tests.brain.fakes import FakeJev, NoJudge
-from watchtower.brain.health import fill_rates, health_check, pick_probe, spot_check
+from watchtower.brain.health import fill_rates, health_check, pick_probe, pulse_health, spot_check
 
 T = {"id": "a", "title": "t", "buyerName": "b", "publicationDate": "x", "submissionDeadline": "y"}
 
@@ -92,3 +92,47 @@ def test_document_403_block_is_unhealthy():
     h = health_check(5, items, [], doc_counts={str(i): 0 for i in range(5)},
                      doc_errors=["document https://p.example/doc.pdf: HTTP 403"])
     assert not h.ok and "401/403" in h.reason
+
+
+def test_pulse_ignores_count_drop():
+    items = [{"id": str(i), "title": "t"} for i in range(10)]
+    assert pulse_health(items, [], {"title": 1.0}, {"title"}).ok  # prev_count is 80; pulse only sees page one
+
+
+def test_pulse_flags_layout_change():
+    h = pulse_health([], ["list selector matched no items on https://x/"], None, {"title"})
+    assert not h.ok and "learned layout" in h.reason
+
+
+def test_pulse_flags_empty_titles():
+    items = [{"id": str(i), "title": None} for i in range(10)]
+    h = pulse_health(items, [], {"title": 1.0}, {"title"})
+    assert not h.ok and "title" in h.reason
+
+
+def test_pulse_transient_is_marked_transient():
+    h = pulse_health([], ["HTTP 503 on https://x/"], None, {"title"})
+    assert not h.ok and h.transient
+
+
+def test_pulse_ignores_fields_read_on_detail_pages():
+    items = [{"id": str(i), "title": None} for i in range(10)]  # title comes from the detail page only
+    assert pulse_health(items, [], {"title": 1.0}, {"buyerName"}).ok
+
+
+def test_pulse_flags_unparsable_list_dates():
+    items = [{"id": str(i), "title": "t", "submissionDeadline": None} for i in range(10)]
+    h = pulse_health(items, [], {"title": 1.0, "submissionDeadline": 1.0}, {"title", "submissionDeadline"})
+    assert not h.ok and "submissionDeadline" in h.reason
+
+
+def test_document_login_pages_mark_unhealthy():
+    h = health_check(5, _many(5), [], doc_counts={str(i): 0 for i in range(5)},
+                     doc_errors=["document https://x/dl?id=1: login page instead of a document"])
+    assert not h.ok and not h.transient and "login" in h.reason
+
+
+def test_document_captcha_pages_mark_unhealthy():
+    h = health_check(5, _many(5), [], doc_counts={str(i): 0 for i in range(5)},
+                     doc_errors=["document https://x/dl?id=1: captcha page instead of a document"])
+    assert not h.ok and "captcha" in h.reason

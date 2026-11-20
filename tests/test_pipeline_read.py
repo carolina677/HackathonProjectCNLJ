@@ -178,3 +178,95 @@ async def test_repair_delivers_refreshed_tenders_before_serving(lab, repo, setti
     assert p.state == PortalState.serving and p.recipe["item"] == "tr.vx-wor-rednet"
     assert len(await repo.list_tenders(pid)) == 23
     assert pl.pop_followup(pid) is None
+
+
+async def test_pulse_uses_no_vision_and_list_fields_only(lab, repo, settings, monkeypatch):
+    from watchtower import pipeline as pipeline_mod
+
+    pid = await repo.create_portal(lab.url("ssr"))
+    recipe = json.loads(ssr_recipe(lab).model_dump_json())
+    await repo.set_recipe(pid, recipe)
+    await repo.set_state(pid, PortalState.serving, None)
+    await repo.mark_success(pid, 23, datetime.now(timezone.utc), fill={"title": 1.0})
+    pl = Pipeline(repo, settings, HostLimiter(0.0), None, FakeJev(), None)
+    real = pl.fetcher
+
+    def with_vision(p):
+        f = real(p)
+        f.on_screenshot = lambda png, url: None  # what a real Jev client installs (paid locate calls)
+        return f
+
+    monkeypatch.setattr(pl, "fetcher", with_vision)
+    seen = {}
+
+    async def fake_run(recipe, fetcher, **kw):
+        seen["vision"] = fetcher.on_screenshot
+        await kw["on_list"]([{"id": "1", "title": "t"}], [])
+        return []
+
+    monkeypatch.setattr(pipeline_mod, "run_recipe", fake_run)
+    assert await pl.pulse(pid) is True
+    assert seen["vision"] is None
+
+
+async def test_documents_turning_into_login_page_is_noticed(lab, repo, settings):
+    pid, pl = await _served_ssr(lab, repo, settings, json.loads(ssr_recipe(lab).model_dump_json()))
+    served = await repo.list_tenders(pid)
+    assert any(t.documents for t in served)
+    lab.mutate("ssr", "docs_login")  # downloads now answer HTTP 200 with a login form
+    fresh = Pipeline(repo, settings, HostLimiter(0.0), None, FakeJev(), None)  # restart: no cached downloads
+    assert str(await fresh.read(pid, "r2")) == "failed"
+    p = await repo.get_portal(pid)
+    assert p.state == PortalState.healing and "login page" in p.reason
+    after = await repo.list_tenders(pid)
+    assert all(d.fileName.endswith(".pdf") for t in after for d in t.documents)
+
+
+def _useless_heal(recipe):
+    """A repair that 'succeeds' with a recipe whose own verification read then fails."""
+    from watchtower.brain.heal import HealReport
+    from watchtower.recipe.dsl import Recipe
+
+    async def heal(*a, **kw):
+        return Recipe.model_validate(recipe), HealReport(ok=True, attempts=1)
+    return heal
+
+
+async def test_repeated_useless_repairs_end_in_failed(lab, repo, settings, monkeypatch):
+    from watchtower import pipeline as pipeline_mod
+
+    recipe = json.loads(ssr_recipe(lab).model_dump_json())
+    pid, pl = await _served_ssr(lab, repo, settings, recipe)
+    lab.mutate("ssr", "rename_classes")
+    monkeypatch.setattr(pipeline_mod, "heal", _useless_heal(recipe))
+    assert str(await pl.read(pid, "r")) == "failed"
+    for cycle in (1, 2, 3):
+        assert pl.pop_followup(pid) == (RunKind.repair, 0.0)
+        assert str(await pl.repair(pid, f"rep{cycle}")) == "failed"
+        p = await repo.get_portal(pid)
+        if cycle < 3:
+            assert p.state == PortalState.healing and pl.pop_followup(pid) == (RunKind.read, 60.0)
+            assert str(await pl.read(pid, f"read{cycle}")) == "failed"
+    assert p.state == PortalState.failed and "3 repairs" in p.reason
+    assert pl.pop_followup(pid) is None
+
+
+async def test_healthy_read_resets_repair_cycles(lab, repo, settings, monkeypatch):
+    from watchtower import pipeline as pipeline_mod
+
+    recipe = json.loads(ssr_recipe(lab).model_dump_json())
+    pid, pl = await _served_ssr(lab, repo, settings, recipe)
+    monkeypatch.setattr(pipeline_mod, "heal", _useless_heal(recipe))
+    for _ in range(2):  # two useless repairs, then the portal recovers on its own
+        lab.mutate("ssr", "rename_classes")
+        await pl.read(pid, "r")
+        pl.pop_followup(pid)
+        await pl.repair(pid, "rep")
+        pl.pop_followup(pid)
+        lab.reset("ssr")
+        assert str(await pl.read(pid, "ok")) == "ok"
+    lab.mutate("ssr", "rename_classes")
+    await pl.read(pid, "r")
+    pl.pop_followup(pid)
+    await pl.repair(pid, "rep")
+    assert (await repo.get_portal(pid)).state == PortalState.healing  # a fresh count, not the 3rd strike

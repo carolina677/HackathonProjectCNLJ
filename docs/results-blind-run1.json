@@ -1,0 +1,61 @@
+{
+  "rows": [
+    {
+      "seed": 142526605,
+      "portal": "cards/json/nl/iso/offset",
+      "state": "serving",
+      "reason": null,
+      "attach": 1.0,
+      "quality": 0.8075601374570447,
+      "wrong": 28,
+      "missing": 0,
+      "wrong_examples": [
+        "DOS47701.placeOfPerformance: got {'postalCode': '50667', 'city': 'K\u00f6ln', 'countryCode': None}, want {'postalCode': '50667', 'city': 'K\u00f6ln', 'countryCode': 'DE'}",
+        "DOS70262.procedureType: got 'open', want 'restricted'",
+        "DOS70262.placeOfPerformance: got {'postalCode': '52062', 'city': 'Aachen', 'countryCode': None}, want {'postalCode': '52062', 'city': 'Aachen', 'countryCode': 'DE'}"
+      ],
+      "docs": 35,
+      "usd": 0.024499464,
+      "seconds": 268.99145724996924
+    },
+    {
+      "seed": 976615901,
+      "portal": "table/html/de/slash/page",
+      "state": "serving",
+      "reason": null,
+      "attach": 1.0,
+      "quality": 1.0,
+      "wrong": 0,
+      "missing": 0,
+      "wrong_examples": [],
+      "docs": 35,
+      "usd": 0.03228032,
+      "seconds": 459.57007191702724
+    },
+    {
+      "seed": 629197344,
+      "portal": "table/html/nl/dmy/next",
+      "state": "serving",
+      "reason": null,
+      "attach": 1.0,
+      "quality": 0.8144329896907216,
+      "wrong": 27,
+      "missing": 0,
+      "wrong_examples": [
+        "80244.placeOfPerformance: got {'postalCode': '50667', 'city': 'K\u00f6ln', 'countryCode': None}, want {'postalCode': '50667', 'city': 'K\u00f6ln', 'countryCode': 'DE'}",
+        "95150.placeOfPerformance: got {'postalCode': '52349', 'city': 'D\u00fcren', 'countryCode': None}, want {'postalCode': '52349', 'city': 'D\u00fcren', 'countryCode': 'DE'}",
+        "54669.placeOfPerformance: got {'postalCode': '52349', 'city': 'D\u00fcren', 'countryCode': None}, want {'postalCode': '52349', 'city': 'D\u00fcren', 'countryCode': 'DE'}"
+      ],
+      "docs": 35,
+      "usd": 0.026074025999999997,
+      "seconds": 371.32599037513137
+    }
+  ],
+  "summary": {
+    "serving": 3,
+    "total": 3,
+    "attach_avg": 1.0,
+    "quality_avg": 0.8739977090492554,
+    "usd_per_portal": 0.027617936666666665
+  }
+}

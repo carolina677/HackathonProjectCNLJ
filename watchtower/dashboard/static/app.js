@@ -196,10 +196,101 @@ const Watchtower = (() => {
     while (list.children.length > 14) list.lastChild.remove();
   }
 
+  /* Demo stage: the whole story (portals, what happened, what it was worth) on one screen, from live events. */
+  const Stage = (() => {
+    let on = false, t0 = 0, clock = null, mode = "replay", base = {};
+    let portals = new Map(), spent = {}, durations = [], healStart = {};
+    const n = { noticed: 0, repairs: 0, human: 0, kept: 0 };
+    const LABEL = { serving: "delivering", healing: "repairing…", failed: "needs a person", integrating: "learning…" };
+    const host = (u) => { try { const x = new URL(u); return x.pathname.includes("/lab/") ? x.pathname.split("/lab/")[1].replace(/\/$/, "") : x.host; } catch { return u; } };
+    const fmtT = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+    function bump(id, text) {
+      const el = byId(id); if (!el || el.textContent === String(text)) return;
+      el.textContent = text; const box = el.parentElement; box.classList.remove("bump"); void box.offsetWidth; box.classList.add("bump");
+    }
+    function values() {
+      let tenders = 0; for (const p of portals.values()) tenders += p.tenderCount || 0;
+      bump("sv-tenders", tenders); bump("sv-kept", n.kept); bump("sv-noticed", n.noticed); bump("sv-repairs", n.repairs);
+      bump("sv-human", n.human);
+      bump("sv-ttr", durations.length ? `${Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)} s` : "–");
+      const usd = Object.values(spent).reduce((a, b) => a + b, 0);
+      bump("sv-usd", "$" + usd.toFixed(usd < 1 ? 3 : 2)); bump("sv-hours", `${n.repairs * 2} h`);
+    }
+    function tiles() {
+      const box = byId("stage-portals"); if (!box) return; box.textContent = "";
+      for (const [id, p] of portals) {
+        const b = document.createElement("button"); b.type = "button"; b.className = `sp ${p.state}`; b.title = p.url;
+        b.addEventListener("click", () => window.open(`/portals/${encodeURIComponent(id)}/theater`, "_blank"));
+        const name = document.createElement("b"); name.textContent = host(p.url);
+        const st = document.createElement("span"); st.className = "sp-state"; st.textContent = LABEL[p.state] || p.state;
+        const note = document.createElement("span"); note.className = "sp-note";
+        note.textContent = p.state === "serving" ? `${p.tenderCount || 0} tenders` : (p.reason || "");
+        b.append(name, st, note); box.append(b);
+      }
+    }
+    function say(step, text) {
+      const ol = byId("stage-story"); if (!ol) return;
+      const li = document.createElement("li"); li.className = step || "";
+      const t = document.createElement("time"); t.textContent = fmtT(Date.now() - t0);
+      li.append(t, document.createTextNode(text)); ol.prepend(li);
+    }
+    async function load(filterLab) {
+      const all = (await api("GET", "/portals")) || [];
+      portals = new Map(all.filter((p) => !filterLab || p.url.includes("/lab/")).map((p) => [p.id, p]));
+      n.human = [...portals.values()].filter((p) => p.state === "failed").length;
+      await Promise.all([...portals.keys()].filter((id) => !(id in base)).map(async (id) => {
+        try { base[id] = (await api("GET", `/portals/${encodeURIComponent(id)}/cost`))?.total_usd || 0; } catch { base[id] = 0; }
+      }));
+      tiles(); values();
+    }
+    async function start(m) {
+      const box = byId("stage"); if (!box) return;
+      mode = m; base = mode === "live" ? {} : Object.fromEntries([...portals.keys()].map((id) => [id, 0]));
+      on = true; t0 = Date.now(); spent = {}; durations = []; healStart = {}; Object.assign(n, { noticed: 0, repairs: 0, human: 0, kept: 0 });
+      byId("stage-mode").textContent = mode === "live" ? "LIVE · REAL MODEL CALLS" : "REPLAY OF THE REAL FLOW · NO MODEL CALLS";
+      byId("sv-usd-label").textContent = mode === "live" ? "Model cost, live (measured)" : "Model cost (replayed, typical)";
+      byId("stage-title").textContent = mode === "live" ? "Breaking portals live" : "One night at the watchtower";
+      byId("stage-story").textContent = ""; box.hidden = false; window.scrollTo({ top: 0, behavior: "smooth" });
+      clearInterval(clock); clock = setInterval(() => { byId("stage-clock").textContent = fmtT(Date.now() - t0); }, 500);
+      await load(true);
+    }
+    function stop() { on = false; clearInterval(clock); const box = byId("stage"); if (box) box.hidden = true; }
+    async function onEvent(ev) {
+      if (!on) return;
+      const d = ev.data || {};
+      if (ev.kind === "story") { say(d.step, d.text); return; }
+      if (ev.kind === "cost" && ev.portal_id && portals.has(ev.portal_id)) {
+        spent[ev.portal_id] = Math.max(0, (d.total_usd || 0) - (base[ev.portal_id] || 0)); values(); return;
+      }
+      if (ev.kind !== "state" || !ev.portal_id) return;
+      let p = portals.get(ev.portal_id);
+      if (!p) { try { p = await api("GET", `/portals/${encodeURIComponent(ev.portal_id)}`); } catch { return; } if (!p.url.includes("/lab/")) return; }
+      const name = host(p.url);
+      if (d.from === "serving" && d.to === "healing") {
+        n.noticed += 1; n.kept += p.tenderCount || 0; healStart[ev.portal_id] = Date.now();
+        if (mode === "live") say("notice", `Pulse noticed ${name} without a refresh: ${d.reason || "it changed"} Its ${p.tenderCount || 0} tenders stay served.`);
+      }
+      if (d.from === "healing" && d.to === "serving" && healStart[ev.portal_id]) {
+        const secs = (Date.now() - healStart[ev.portal_id]) / 1000;
+        n.repairs += 1; durations.push(secs); delete healStart[ev.portal_id];
+        if (mode === "live") say("repaired", `${name} repaired itself, ${Math.round(secs)} s after the break was noticed. Open its Theater for before vs after.`);
+      }
+      if (d.to === "failed" && d.from !== "failed") {
+        n.human += 1;
+        if (mode === "live") say("honest", `${name} needs a person: ${d.reason || "no reason given"}`);
+      }
+      try { p = await api("GET", `/portals/${encodeURIComponent(ev.portal_id)}`); } catch {}
+      portals.set(ev.portal_id, { ...p, state: d.to, reason: d.reason || p.reason });
+      tiles(); values();
+    }
+    byId("stage-close")?.addEventListener("click", stop);
+    return { start, stop, onEvent, reload: async () => { if (mode === "replay") base = {}; await load(true); if (mode === "replay") for (const id of portals.keys()) base[id] = 0; } };
+  })();
+
   function connect(onEvent) {
     const es = new EventSource("/events");
     es.onmessage = (m) => onEvent(JSON.parse(m.data));
-    for (const k of ["state", "run", "log", "judgment", "recipe", "verify", "page", "explore", "cost", "llm", "compare"]) {
+    for (const k of ["state", "run", "log", "judgment", "recipe", "verify", "page", "explore", "cost", "llm", "compare", "story"]) {
       es.addEventListener(k, (m) => onEvent(JSON.parse(m.data)));
     }
     return es;
@@ -727,24 +818,35 @@ const Watchtower = (() => {
     byId("timelapse-btn")?.addEventListener("click", async (e) => {
       const btn = e.currentTarget;
       btn.disabled = true;
-      btn.textContent = "Running timelapse…";
       try {
+        await Stage.start("replay");
         const res = await api("POST", "/demo/timelapse");
         const liveIds = new Set((res?.portals || []).map((p) => p.id));
         document.querySelectorAll(".card").forEach((c) => {
           if (!liveIds.has(c.dataset.id) && c.textContent.includes("/lab/")) c.remove();
         });
+        await Stage.reload();
         if (res?.portals) await Promise.all(res.portals.map((p) => refreshCard(p.id)));
         await refreshSummary();
         await loadTenders();
-        toast("Offline timelapse started: watch /lab/ssr/ break (amber) and self-heal back to green.");
       } catch (err) {
         toast(err.message, "error");
       } finally {
-        setTimeout(() => {
-          btn.disabled = false;
-          btn.textContent = "⚡ Run offline self-healing timelapse";
-        }, 7500);
+        setTimeout(() => { btn.disabled = false; }, 8000);
+      }
+    });
+
+    byId("chaos-btn")?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      try {
+        await Stage.start("live");
+        const res = await api("POST", "/demo/chaos");
+        if (!res?.broken?.length) toast("No serving lab portal to break: run the replay first, or attach /lab/ssr/.", "error");
+      } catch (err) {
+        toast(err.message, "error");
+      } finally {
+        setTimeout(() => { btn.disabled = false; }, 5000);
       }
     });
 
@@ -780,7 +882,8 @@ const Watchtower = (() => {
         showRepairView(location.hash.slice("#repair/".length));
       }
       if (ev.kind === "cost") scheduleSummary();
-      feed(ev);
+      Stage.onEvent(ev);
+      if (ev.kind !== "story") feed(ev);
     });
     setInterval(() => {
       document.querySelectorAll(".card").forEach((c) => scheduleCard(c.dataset.id));

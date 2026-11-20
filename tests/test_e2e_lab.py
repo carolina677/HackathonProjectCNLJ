@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from contextlib import asynccontextmanager
 
 import httpx
 import pytest
@@ -35,20 +36,32 @@ class ReplayLLM:
         return r, 20000, 1500
 
 
-@pytest.fixture
-async def e2e(lab, settings, monkeypatch):
+@asynccontextmanager
+async def _e2e_app(lab, settings, monkeypatch, **update):
     from watchtower import pipeline
     from watchtower.app import create_app
     from watchtower.fetch import close_browser
 
     replay = ReplayLLM(lab)
     monkeypatch.setattr(pipeline, "make_judges", lambda s: (FakeJev(), LLM(s, backend=replay)))
-    s = settings.model_copy(update={"min_request_interval": 0.02})
+    s = settings.model_copy(update={"min_request_interval": 0.02, **update})
     app = create_app(s, start_scheduler=True)
     async with app.router.lifespan_context(app):
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
             yield c, lab, replay, app
     await close_browser()
+
+
+@pytest.fixture
+async def e2e(lab, settings, monkeypatch):
+    async with _e2e_app(lab, settings, monkeypatch) as env:
+        yield env
+
+
+@pytest.fixture
+async def e2e_pulse(lab, settings, monkeypatch):
+    async with _e2e_app(lab, settings, monkeypatch, pulse_interval_seconds=1, scheduler_tick_seconds=0.1) as env:
+        yield env
 
 
 async def until(c, pid, pred, timeout=60.0):
@@ -179,3 +192,19 @@ async def test_repair_keeps_before_and_after_view(e2e):
     before = (await c.get(f"/portals/{pid}/repairs/1/before.html")).text
     after = (await c.get(f"/portals/{pid}/repairs/1/after.html")).text
     assert "wt-gone" in before and "wt-new" in after and after.count("wt-item") >= 10
+
+
+async def test_pulse_notices_break_without_refresh(e2e_pulse):
+    c, lab, replay, app = e2e_pulse
+    pid = await _attach(c, lab.url("ssr"))
+    await until(c, pid, lambda p: p["state"] == "serving" and p["tenderCount"] == 23)
+    await idle(app, pid)
+    n = replay.calls
+    assert await app.state.pipeline.pulse(pid) is True and replay.calls == n  # a healthy pulse costs no model call
+    lab.mutate("ssr", "rename_classes")
+    p = await until(c, pid, lambda p: p["state"] == "healing", 30)  # nobody pressed refresh
+    assert p["reason"]
+    await until(c, pid, lambda p: p["state"] == "serving", 90)
+    await idle(app, pid)
+    runs = (await c.get(f"/portals/{pid}/runs")).json()
+    assert any(r["kind"] == "repair" and r["result"] == "ok" for r in runs)

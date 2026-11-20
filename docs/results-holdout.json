@@ -1,0 +1,67 @@
+{
+  "rows": [
+    {
+      "country": "DE",
+      "url": "https://www.evergabe.nrw.de/VMPCenter/common/project/search.do?method=showExtendedSearch&fromExternal=true",
+      "state": "failed",
+      "reason": "Could not learn a reliable recipe: no document URLs extracted",
+      "tenders": 0,
+      "docs": 0,
+      "usd": 0.255682174
+    },
+    {
+      "country": "DE",
+      "url": "https://www.dtvp.de/Center/common/project/search.do?method=showExtendedSearch&fromExternal=true",
+      "state": "failed",
+      "reason": "The portal's tender API stopped answering as before.",
+      "tenders": 0,
+      "docs": 0,
+      "usd": 0.07316048
+    },
+    {
+      "country": "LU",
+      "url": "https://pmp.b2g.etat.lu/entreprise",
+      "state": "serving",
+      "reason": null,
+      "tenders": 204,
+      "docs": 204,
+      "usd": 0.00042680400000000003
+    },
+    {
+      "country": "ES",
+      "url": "https://contrataciondelestado.es/wps/portal/licitaciones",
+      "state": "failed",
+      "reason": "Could not find the tender list: no way to a tender list from https://contrataciondelestado.es/wps/portal/licitaciones (error)",
+      "tenders": 0,
+      "docs": 0,
+      "usd": 0.000560868
+    },
+    {
+      "country": "PL",
+      "url": "https://ezamowienia.gov.pl/mp-client/search/list",
+      "state": "failed",
+      "reason": "Could not find the tender list: no way to a tender list from https://ezamowienia.gov.pl/mp-client/search/list (search_form)",
+      "tenders": 0,
+      "docs": 0,
+      "usd": 0.00101913
+    },
+    {
+      "country": "FR",
+      "url": "https://www.marches-publics.gouv.fr/?page=Entreprise.EntrepriseAdvancedSearch&AllCons",
+      "state": "serving",
+      "reason": null,
+      "tenders": 82,
+      "docs": 182,
+      "usd": 0.0005790960000000001
+    }
+  ],
+  "summary": {
+    "serving": 2,
+    "total": 6,
+    "tenders": 286,
+    "documents": 386,
+    "usd_total": 0.331428552,
+    "usd_per_portal": 0.055238091999999996,
+    "usd_4500": 248.57141399999998
+  }
+}
