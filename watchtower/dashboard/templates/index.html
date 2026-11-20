@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block top_actions %}
   <form class="add" action="/portals" method="post" id="add-form">
-    <input name="url" type="text" inputmode="url" placeholder="Add portal URL (e.g. evergabe-online.de)…" required>
+    <input name="url" type="text" inputmode="url" placeholder="Add portal URL (e.g. https://www.evergabe-online.de)…" required>
     <button class="primary" type="submit">Add portal</button>
   </form>
   <button id="search-shortcut" class="top-btn" type="button" aria-keyshortcuts="Alt+/">Find a tender <kbd aria-hidden="true">Alt /</kbd></button>

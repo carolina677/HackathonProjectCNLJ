@@ -164,7 +164,7 @@ const Theater = (() => {
     for (const k of kinds) es.addEventListener(k, (m) => { const ev = JSON.parse(m.data); if (ev.portal_id === pid) handle(ev); });
     $("#race-btn").addEventListener("click", async (e) => {
       e.target.disabled = true; e.target.textContent = "Racing…";
-      try { const r = await fetch(`/portals/${pid}/race`, { method: "POST" }); if (!r.ok) throw new Error((await r.json()).error); }
+      try { const r = await fetch(`/portals/${pid}/race`, { method: "POST" }); if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || `The race failed (HTTP ${r.status}).`); } }
       catch (err) { Watchtower.toast(err.message, "error"); }
       finally { e.target.disabled = false; e.target.textContent = "Race Jev vs LLM"; }
     });

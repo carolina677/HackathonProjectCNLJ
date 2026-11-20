@@ -1,27 +1,78 @@
-# Demo video (≤ 3:00)
+# Watchtower: demo video script (about 2:45)
 
-## Before recording (5 minutes)
+**Format:** a short hook on camera, then a screen recording with your voice.
+**Label:** the replay as "Replay", the live part as "Live", any cut wait as "⏩ time compressed".
 
-1. Start the server with the lab and a fast pulse: `WATCHTOWER_LAB=1 PULSE_INTERVAL_SECONDS=60`, with real keys in `.env`.
-   - Docker: `docker run -p 8080:8080 --env-file .env -e WATCHTOWER_LAB=1 -e PULSE_INTERVAL_SECONDS=60 watchtower`
-2. Run `scripts/demo_reset.sh http://localhost:8080`. It attaches 3 real portals (DE NetServer, FR Atexo, NL TenderNed) and 2 lab portals.
-3. Wait until the real portals are green (`serving`). Open http://localhost:8080 at browser zoom 90 % and hide the bookmarks bar.
-4. Set up the voice-over: record it separately (ElevenLabs or your own voice) and lay it over the footage afterwards. Don't talk while clicking.
+## Before recording
 
-## Shot list
+1. Run `scripts/demo_reset.sh http://localhost:8090`. Wait until the portals show **delivering**.
+2. Browser: only `localhost:8090` open, zoom 90 %, bookmarks bar hidden, Do Not Disturb on.
+3. Record with `Cmd+Shift+5` and your microphone, one clip per scene.
+4. **Nothing in the main path waits on a live model call.** The replay runs about 30 seconds from start to the morning summary.
 
-| Time | Screen | Narration |
-|---|---|---|
-| 0:00–0:15 | Dashboard, real portals green. Slowly hover over the cards. | "Patterno reads tenders from 4,500 public procurement portals. Every portal is built differently, and they change without warning. Today, when one breaks, nobody notices for days." |
-| 0:15–0:45 | Type a portal URL into **Add portal**. The card says *Learning the portal…*. Open **Theater**: the agent's steps, then the Jev checks. | "We give Watchtower nothing but a URL. Known portal software is recognised at once. An unknown portal is explored by the LLM once: it writes a recipe, and Jev checks ten tenders against the page before anything is served. Documents come along, ZIPs unpacked." |
-| 0:45–1:45 | Press **⚡ Run demo**. The demo stage opens at the top of the page and nobody scrolls. Three portals turn amber at the same time, then green one after another. The value counters climb. One portal ends red: *documents behind a login*. | "Now it's night, and three portals change their layout at the same time. Nobody presses refresh: the 15-minute pulse notices it by itself, at zero model cost. Customers keep getting every tender while the portals are broken. One after another, Watchtower repairs itself, for a few cents each. And when a portal locks its documents behind a login, it doesn't guess. It says so: this one needs a person." |
-| 1:45–2:15 | Click a repaired portal → **Theater** → **Before vs after**. Point at the recipe diff. | "Every repair can be checked: here is exactly what changed on the page, and exactly what the system changed in its recipe." |
-| 2:15–2:35 | Press **💥 Break 3 portals live**. Within a minute the cards turn amber, then green: real repairs, real model calls. Show the **Model calls** panel. | "This was not a recording: these are real repairs with real model calls. Reading a portal costs no LLM at all. Here you see every call and what it cost." |
-| 2:35–2:50 | Value counters and *Avg. cost / portal* with the 4,500 projection. | "That's what makes 4,500 portals affordable: [measured number] per portal, plus a few cents per repair." |
-| 2:50–3:00 | Press **▶ Morning briefing**, let it play for 5 s, end on the dashboard. | "Watchtower. Attach, notice, repair, every morning." |
+---
 
-## Rules for the recording
+## 0:00–0:12 · Hook (on camera, or a black screen with text)
 
-- **Don't promise anything the screen doesn't show.** If there is no measured cost number yet, say "a few cents per repair" and no more.
-- **⚡ Run demo is a replay of the real flow; label it so.** The proof is the live part with **💥 Break 3 portals live**. Show it, even if it takes 60 s; cut the waiting time in the edit.
-- **If something goes wrong live:** `scripts/demo_reset.sh`, then wait 2 minutes and start the shot again.
+**On-screen text:** `POV: it's 3 a.m. and a procurement portal just redesigned its website.`
+
+> "Every night, some of Patterno's 4,500 portals change without warning. A scraper breaks, and nobody notices for days. Meanwhile customers miss tenders and reports are built on stale data."
+>
+> "So we built Watchtower. Let's do a value check."
+
+## 0:12–1:35 · One night, replayed (label: "Replay")
+
+**Click:** **⚡ Run demo: one night (replay)** on the Overview page. Then just talk; don't click anything until the purple morning line appears (about 30 s).
+
+What happens on screen, in order:
+- **0:00–0:08 (replay clock):** a new card **spa** appears with *learning…*. The story says: only a URL; Jev sees a JavaScript tender list; one LLM call writes a recipe ($0.025); Jev checks 10 tenders. The card turns green: *delivering*.
+- **0:12–0:14:** three portals turn amber at the same time.
+- **0:15–0:25:** they turn green one by one; the counters climb.
+- **0:26–0:28:** one portal ends red: *needs a person* (documents behind a login).
+- **0:30:** purple morning summary: 3 repaired, 92 tenders stayed served, cost tonight $0.19.
+
+> "All Watchtower gets is a URL. It explores the portal once, an LLM writes a recipe, and Jev, a small and cheap model, checks ten tenders against the real pages before anything is served. From then on every read is plain code, with no LLM."
+>
+> "Now the night. Three portals change their layout at once. Nobody presses refresh: a 15-minute pulse notices it by itself, at zero model cost. While a portal is broken, customers keep getting the last verified tenders. Watchtower repairs itself, one portal after another, for a few cents each."
+>
+> "And this one put its documents behind a login. Watchtower doesn't break in and doesn't guess. It says: this one needs a person, and here's why."
+
+## 1:35–1:55 · Proof of a repair
+
+**Screen:** open a repaired portal, then **Theater**, then **Before vs after**. Point at the old and new selector.
+
+> "Every repair can be checked: what changed on the page, and exactly how the recipe followed."
+
+## 1:55–2:25 · Live, real model calls (optional)
+
+Skip this scene if you are short on time; the replay already shows the whole flow.
+
+**Screen:**
+1. Press **💥 Break 3 portals live**.
+2. Stop the recording, wait until the cards turn green again (1–2 min), record again. Label the cut "⏩ time compressed".
+3. Show the **Model calls** panel.
+
+> "That was a replay of the real flow. This is live: three real breaks, real repairs, real model calls. You can see every call and what it cost."
+
+## 2:25–2:45 · The numbers (honest)
+
+**Screen:** the cost tile with the projection to 4,500 portals.
+
+> "Here's what we measured:
+> - Known portal software costs a tenth of a cent per portal.
+> - An unseen portal costs about two and a half cents to learn.
+> - On six portals generated blind at run time, Watchtower attached six out of six.
+> - On real holdout portals it managed two out of six on the first run, and four out of six after general fixes.
+> - The rest fail with a clear reason, never with wrong data."
+>
+> "Watchtower: it attaches, it notices, it repairs. Every morning."
+
+**Final overlay:** `Measured: $0.025 per unseen portal · reads cost no LLM · Docker, linux/amd64 · API + dashboard on :8080`
+
+---
+
+### If something goes wrong
+
+- Run `scripts/demo_reset.sh http://localhost:8090` and press **⚡ Run demo** again; the replay can run as often as you like.
+- The live repair takes 1–2 minutes. Cut it, don't talk over the wait.
+- Only say numbers that are shown on screen or written in the README.

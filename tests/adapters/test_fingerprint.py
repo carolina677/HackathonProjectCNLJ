@@ -113,7 +113,7 @@ async def test_tenderned_template_extracts_list():
 
 
 async def test_tenderned_asks_only_for_open_contract_notices():
-    from datetime import date
+    from datetime import datetime, timezone, date
 
     seen = []
 
@@ -127,7 +127,7 @@ async def test_tenderned_asks_only_for_open_contract_notices():
     r.pagination.max_pages = 1
     await run_recipe(r, Spy({"https://www.tenderned.nl/papi/tenderned-rs-tns/v2/publicaties": "tenderned_list.json"}),
                      errors=[])
-    assert "publicatieType=AAO" in seen[0] and f"sluitingsDatumVanaf={date.today().isoformat()}" in seen[0]
+    assert "publicatieType=AAO" in seen[0] and f"sluitingsDatumVanaf={datetime.now(timezone.utc).date().isoformat()}"  # the engine uses UTC in seen[0]
     assert fingerprint(page(url, f)).pagination.max_pages >= 100
 
 

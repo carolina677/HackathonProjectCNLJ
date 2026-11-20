@@ -124,3 +124,20 @@ async def test_replayed_portals_stay_watched_by_the_pulse(app):
     finally:
         STATE.reset()
         await sched.stop()
+
+
+async def test_replay_opens_with_a_new_portal_being_learned(app, client):
+    STATE.reset()
+    try:
+        await run_timelapse(app, "http://test", speed=200.0)
+        await asyncio.gather(*list(app.state.demo_tasks))
+        story = [e["data"] for e in events.history(kinds={"story"})]
+        steps = [s["step"] for s in story]
+        assert steps.index("attach") < steps.index("learned") < steps.index("break")
+        learned = story[steps.index("learned")]
+        assert "23 tenders" in learned["text"] and "no LLM" in learned["text"]
+        spa = [e["data"] for e in events.history(kinds={"state"})
+               if e["data"].get("to") == "serving" and e["data"].get("from") == "integrating"]
+        assert spa, "the new portal goes from learning to delivering on screen"
+    finally:
+        STATE.reset()

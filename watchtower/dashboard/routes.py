@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -256,7 +256,14 @@ def register(app: FastAPI) -> None:
             html = f.read_text() if f.exists() else None
         if html is None:
             limiter = getattr(st, "limiter", None) or HostLimiter(st.settings.min_request_interval)
-            pg = await Fetcher(pid, limiter).get(p.url)
+            from ..pipeline import open_start, unreachable_reason
+
+            try:
+                pg, _ = await open_start(Fetcher(pid, limiter), p.url)  # same www. fallback as attaching
+            except Exception as e:
+
+                return JSONResponse({"error": "The race could not load the portal's page. "
+                                              + unreachable_reason(e, p.url)}, status_code=409)
             html, final = pg.html, pg.final_url
         else:
             final = p.url
