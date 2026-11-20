@@ -73,6 +73,9 @@ def select_html(root: LexborNode, rule: FieldRule) -> list[str]:
         return [v] if v else []
     if not rule.selector:
         return []
+    if rule.selector in (".", ":self"):
+        v = _node_value(root, rule.attr)
+        return [v] if v else []
     if rule.selector.startswith("/") or rule.selector.startswith("./"):
         doc = lxml_html.fromstring(root.html or "<div/>")
         out = []
