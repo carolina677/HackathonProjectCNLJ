@@ -1,0 +1,208 @@
+{
+ "content": [
+  {
+   "publicatieId": "450447",
+   "publicatieDatum": "2026-11-20",
+   "typePublicatie": {
+    "code": "REC",
+    "omschrijving": "Rectificatie"
+   },
+   "aanbestedingNaam": "Kindcentrum Jeanne d`Arc Tilburg",
+   "opdrachtgeverNaam": "Stichting Xpect013",
+   "sluitingsDatum": "2026-09-30T09:00:00",
+   "sluitingsDatumMarktconsultatie": "2026-09-30",
+   "aantalDagenTotSluitingsDatum": -51,
+   "procedure": {
+    "code": "NOP",
+    "omschrijving": "Niet-openbaar"
+   },
+   "typeOpdracht": {
+    "code": "W",
+    "omschrijving": "Werken"
+   },
+   "digitaal": true,
+   "europees": true,
+   "publicatiecode": {
+    "code": "EF16",
+    "omschrijving": "Aankondiging van een opdracht - algemene richtlijn, standaardregeling"
+   },
+   "publicatiestatus": {
+    "code": "PUB",
+    "omschrijving": "Gepubliceerd"
+   },
+   "isVroegtijdigeBeeindiging": false,
+   "opdrachtBeschrijving": "Doelstelling van de aanbesteding is het vinden van een aannemer voor de realisatie van Kindcentrum Jeanne d`Arc. De bouwsom bedraagt ongeveer € 6.900.000 exclusief btw. De te realiseren nieuwbouw telt ongeveer 2.671 vierkante meter BVO.",
+   "isEformsWijziging": true,
+   "score": null,
+   "kenmerk": 608605,
+   "link": {
+    "href": "https://www.tenderned.nl/aankondigingen/overzicht/450447",
+    "title": "self"
+   }
+  },
+  {
+   "publicatieId": "450441",
+   "publicatieDatum": "2026-11-20",
+   "typePublicatie": {
+    "code": "REC",
+    "omschrijving": "Rectificatie"
+   },
+   "aanbestedingNaam": "B006-Multifunctionals",
+   "opdrachtgeverNaam": "Stichting Curio Onderwijsgroep West-Brabant",
+   "sluitingsDatum": "2026-12-08T13:00:00",
+   "sluitingsDatumMarktconsultatie": "2026-12-08",
+   "aantalDagenTotSluitingsDatum": 18,
+   "procedure": {
+    "code": "OPE",
+    "omschrijving": "Openbaar"
+   },
+   "typeOpdracht": {
+    "code": "D",
+    "omschrijving": "Diensten"
+   },
+   "digitaal": true,
+   "europees": true,
+   "publicatiecode": {
+    "code": "EF16",
+    "omschrijving": "Aankondiging van een opdracht - algemene richtlijn, standaardregeling"
+   },
+   "publicatiestatus": {
+    "code": "PUB",
+    "omschrijving": "Gepubliceerd"
+   },
+   "isVroegtijdigeBeeindiging": false,
+   "opdrachtBeschrijving": "Het leveren en onderhouden van 127 Multifunctionele Printers en 9 printers inclusief beheer- en printmanagementsoftware. Leveren en onderhouden van 127 Multifunctionele Printers en 9 printers inclusief beheer- en printmanagementsoftware.",
+   "isEformsWijziging": true,
+   "score": null,
+   "kenmerk": 599494,
+   "link": {
+    "href": "https://www.tenderned.nl/aankondigingen/overzicht/450441",
+    "title": "self"
+   }
+  },
+  {
+   "publicatieId": "450432",
+   "publicatieDatum": "2026-11-20",
+   "typePublicatie": {
+    "code": "AGO",
+    "omschrijving": "Aankondiging gegunde opdracht"
+   },
+   "aanbestedingNaam": "Ondersteuning Gezinnen",
+   "opdrachtgeverNaam": "Gemeente Alkmaar",
+   "procedure": {
+    "code": "OZB",
+    "omschrijving": "Onderhandelingsprocedure zonder voorafgaande oproep tot mededinging"
+   },
+   "typeOpdracht": {
+    "code": "D",
+    "omschrijving": "Diensten"
+   },
+   "digitaal": false,
+   "europees": false,
+   "publicatiecode": {
+    "code": "EF33",
+    "omschrijving": "Aankondiging gegunde opdracht - algemene richtlijn, lichte regeling"
+   },
+   "publicatiestatus": {
+    "code": "PUB",
+    "omschrijving": "Gepubliceerd"
+   },
+   "isVroegtijdigeBeeindiging": false,
+   "opdrachtBeschrijving": "De dienstverlening richt zich op het voorkomen van verergering van gezinsproblematiek en het verminderen van de inzet van zwaardere vormen van jeugdhulp. De ondersteuning draagt bij aan een veilige en positieve ontwikkeling van kinderen, het versterken van opvoedvaardigheden van ouders, het vergroten van sociale netwerken en het bevorderen van sociale cohesie en onderlinge betrokkenheid in de wijk of gemeente Overeenkomst omvat een looptijd van 6 jaar.",
+   "isEformsWijziging": false,
+   "score": null,
+   "kenmerk": 619765,
+   "link": {
+    "href": "https://www.tenderned.nl/aankondigingen/overzicht/450432",
+    "title": "self"
+   }
+  },
+  {
+   "publicatieId": "450411",
+   "publicatieDatum": "2026-11-20",
+   "typePublicatie": {
+    "code": "REC",
+    "omschrijving": "Rectificatie"
+   },
+   "aanbestedingNaam": "Rijksbrede Europese Aanbesteding Inkoop(advies)diensten en Contract- en leveranciersmanagement 2027 - 2031",
+   "opdrachtgeverNaam": "Ministerie van Infrastructuur en Waterstaat",
+   "sluitingsDatum": "2026-12-18T11:00:00",
+   "sluitingsDatumMarktconsultatie": "2026-12-18",
+   "aantalDagenTotSluitingsDatum": 28,
+   "procedure": {
+    "code": "OPE",
+    "omschrijving": "Openbaar"
+   },
+   "typeOpdracht": {
+    "code": "D",
+    "omschrijving": "Diensten"
+   },
+   "digitaal": true,
+   "europees": true,
+   "publicatiecode": {
+    "code": "EF16",
+    "omschrijving": "Aankondiging van een opdracht - algemene richtlijn, standaardregeling"
+   },
+   "publicatiestatus": {
+    "code": "PUB",
+    "omschrijving": "Gepubliceerd"
+   },
+   "isVroegtijdigeBeeindiging": false,
+   "opdrachtBeschrijving": "Het doel van deze aanbesteding is het sluiten van een raamovereenkomst met per perceel een aantal dienstverleners op het gebied van inkoopdiensten en contract- en leveranciersmanagement. De opdracht bestaat uit drie percelen:\nPerceel 1: Operationele en tactische inkoopdiensten;\nPerceel 2: Strategisch en specialistische inkoop(advies)diensten;\nPerceel 3: Contract- en leveranciersmanagement.\nMeer informatie over bovenstaande drie hoofdonderdelen treft u aan in paragraaf 2.1.4 van het beschrijvend document.\nDe raamovereenkomsten worden gesloten voor een initiële periode van 24 maanden. Na de initiële periode bestaat de mogelijkheid voor de opdrachtgever om de Raamovereenkomsten tweemaal stilzwijgend met maximaal 12 maanden per keer te verlengen. Maximale waarde € 430.000.000",
+   "isEformsWijziging": true,
+   "score": null,
+   "kenmerk": 604666,
+   "link": {
+    "href": "https://www.tenderned.nl/aankondigingen/overzicht/450411",
+    "title": "self"
+   }
+  },
+  {
+   "publicatieId": "450410",
+   "publicatieDatum": "2026-11-20",
+   "typePublicatie": {
+    "code": "VAK",
+    "omschrijving": "Vooraankondiging"
+   },
+   "aanbestedingNaam": "Bouwblok Goos Papendorp",
+   "opdrachtgeverNaam": "Gemeente Utrecht",
+   "sluitingsDatum": "2026-12-17T13:00:00",
+   "sluitingsDatumMarktconsultatie": "2026-12-17",
+   "aantalDagenTotSluitingsDatum": 27,
+   "procedure": {
+    "code": "NOP",
+    "omschrijving": "Niet-openbaar"
+   },
+   "typeOpdracht": {
+    "code": "W",
+    "omschrijving": "Werken"
+   },
+   "digitaal": false,
+   "europees": false,
+   "publicatiecode": {
+    "code": "EF10",
+    "omschrijving": "Vooraankondiging gebruikt als oproep tot mededinging - algemene richtlijn, standaardregeling"
+   },
+   "publicatiestatus": {
+    "code": "PUB",
+    "omschrijving": "Gepubliceerd"
+   },
+   "isVroegtijdigeBeeindiging": false,
+   "opdrachtBeschrijving": "Bedrijven- en kantorenpark Papendorp in Utrecht ontwikkelt zich de komende jaren tot een levendige stadswijk waar we wonen, werken, voorzieningen en groen combineren. Aan het gebied worden circa 3.650 woningen met bijbehorende voorzieningen (bijvoorbeeld een basisschool en supermarkt) toegevoegd. Zo ontstaat een moderne, levendige, complete stadswijk met goede verbindingen naar de binnenstad, de stad en het omliggende buitengebied. De gemeente Utrecht zoekt een professionele en ambitieuze partij die deze uitdaging met ons wil aangaan en op één van de eerste bouwvelden gelegen in Bouwblok Goos in het gebied een mooi woongebouw realiseert dat mede de toon zet voor deze ontwikkeling. Maximaal 300 woningen in categorieën midden huur, betaalbare en dure koop",
+   "isEformsWijziging": false,
+   "score": null,
+   "kenmerk": 626477,
+   "link": {
+    "href": "https://www.tenderned.nl/aankondigingen/overzicht/450410",
+    "title": "self"
+   }
+  }
+ ],
+ "first": true,
+ "last": false,
+ "totalElements": 147351,
+ "totalPages": 29471,
+ "size": 5,
+ "numberOfElements": 5,
+ "number": 0
+}

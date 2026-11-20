@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Watchtower{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css?v={{ static_v }}">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="/"><span class="eye"></span>Watchtower</a>
+    <nav>{% block nav %}{% endblock %}</nav>
+  </header>
+  <main>{% block main %}{% endblock %}</main>
+  <script src="/static/app.js?v={{ static_v }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% set p = c.p %}
+{% block title %}Theater · {{ c.host }}{% endblock %}
+{% block nav %}<a class="back" href="/">← All portals</a>{% endblock %}
+{% block main %}
+<section class="banner state-{{ p.state.value }}" id="banner" data-id="{{ p.id }}">
+  <div>
+    <span class="pill" id="state">{{ p.state.value }}</span>
+    <h1>{{ c.host }}</h1>
+    <a class="url" href="{{ p.url }}" target="_blank" rel="noopener">{{ p.url }}</a>
+    <p class="reason" id="reason" {% if not p.reason %}hidden{% endif %}>{{ p.reason or "" }}</p>
+  </div>
+  <div class="banner-side">
+    <div class="numbers"><div><b id="count">{{ p.tenderCount }}</b><small>tenders</small></div></div>
+    <div class="actions">
+      <button data-refresh="{{ p.id }}">Read now</button>
+      <button class="violet" id="race-btn">Race Jev vs LLM</button>
+      {% if c.lab %}<button class="danger" data-break="{{ p.id }}">Break it</button>{% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="panel compare" id="compare" hidden>
+  <h3>Before vs after <small id="cmp-title">what the portal changed, and how the recipe followed</small></h3>
+  <div class="cmp-bar">
+    <div class="legend">
+      <span class="lg lg-item">what the recipe reads</span>
+      <span class="lg lg-gone">gone from the page</span>
+      <span class="lg lg-new">new on the page</span>
+    </div>
+    <label class="cmp-pick" hidden>Repair <select id="cmp-pick"></select></label>
+  </div>
+  <div class="cmp-grid">
+    <figure>
+      <figcaption id="cmp-before-cap">Before</figcaption>
+      <iframe id="cmp-before" sandbox title="The list page when the old recipe worked" loading="lazy"></iframe>
+    </figure>
+    <figure>
+      <figcaption id="cmp-after-cap">After</figcaption>
+      <iframe id="cmp-after" sandbox title="The list page now, read by the repaired recipe" loading="lazy"></iframe>
+    </figure>
+  </div>
+  <ul id="cmp-diff" class="diff"></ul>
+</section>
+
+<section class="theater">
+  <div class="col">
+    <div class="panel">
+      <h3>What the agent sees <small id="shot-url"></small></h3>
+      <div class="shot" id="shot"><p class="muted">Screenshots appear when the agent opens a page in its browser.</p></div>
+    </div>
+    <div class="panel">
+      <h3>Decisions <small>every judgment, typed, with probabilities</small></h3>
+      <div id="decisions" class="decisions"></div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="panel cost">
+      <h3>Model cost for this portal</h3>
+      <div class="numbers">
+        <div><b id="c-jev">{{ "%.3f" | format(c.cost.jev_usd * 100) }}¢</b><small>Jev · {{ c.cost.jev_calls }} calls</small></div>
+        <div><b id="c-llm">{{ "%.3f" | format(c.cost.llm_usd * 100) }}¢</b><small>LLM · {{ c.cost.llm_calls }} calls</small></div>
+        <div><b id="c-proj">${{ "%.0f" | format(projected) }}</b><small>for 4,500 portals</small></div>
+      </div>
+      <p class="muted">Regular reads run the learned recipe: no model call.</p>
+    </div>
+    <div class="panel" id="race" hidden>
+      <h3>Race: same question, two models</h3>
+      <div class="race"></div>
+    </div>
+    <div class="panel">
+      <h3>Recipe <small id="recipe-why">what the system learned</small></h3>
+      <ul id="diff" class="diff"></ul>
+      <pre id="recipe">{{ recipe | tojson(indent=1) if recipe else "Not learned yet." }}</pre>
+    </div>
+    <div class="panel">
+      <h3>Verification <small>per field, sampled tenders vs. their pages</small></h3>
+      <div id="heat" class="heat"><p class="muted">Runs after a recipe is written.</p></div>
+    </div>
+  </div>
+</section>
+<section class="panel timeline"><h3>Timeline</h3><ol id="timeline"></ol></section>
+{% endblock %}
+{% block scripts %}<script src="/static/theater.js?v={{ static_v }}"></script><script>Theater.start("{{ p.id }}");</script>{% endblock %}

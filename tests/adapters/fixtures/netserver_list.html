@@ -1,0 +1,3643 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <title >AI Vergabeplattform - Administration Intelligence AG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" href="_commonfiles/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="_commonfiles/css/fontawesome.min.css" />
+  <link rel="stylesheet" href="_commonfiles/css/regular.min.css" />
+  <link rel="stylesheet" href="_commonfiles/css/solid.min.css" />
+<!-- sta edit  <link rel="shortcut icon" type="image/x-icon" href="_images/img/favicon.jpg" />-->
+  <link rel="stylesheet" type="text/css" href="_commonfiles/css/jquery-ui/jquery-ui.min.css"/>
+  <link href="_commonfiles/css/style.css" rel="stylesheet"/>
+  <link href="_commonfiles/css/table.css" rel="stylesheet"/>
+  <link href="_commonfiles/css/steps.css" rel="stylesheet"/>
+  <link href="_commonfiles/css/bootstrap-toggle.min.css" rel="stylesheet"/>
+  <link href="_commonfiles/css/contrast.css" rel="stylesheet"/>
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+  <!--  sta custom -->
+  <link href="_images/img/favicon.png" rel="shortcut icon" type="image/png"/>
+  <link href="_images/img/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
+  <link href="_images/img/favicon-96x96.png" rel="icon" sizes="96x96" type="image/png">
+  <link href="_images/img/apple-touch-icon.png" rel="apple-touch-icon" sizes="140x140">
+  <link rel="shortcut icon" type="image/x-icon" href="_images/img/favicon.ico"/>
+
+  <link href="_commonfiles/css/registrationPrint.css" rel="stylesheet"/>
+  <link href="_commonfiles/css/slick.css" rel="stylesheet"/>
+  <link href="_commonfiles/css/slick-theme.css" rel="stylesheet"/>
+  
+  
+  <!--sta custom end-->
+
+  <meta name="keywords" lang="de" content="Ausschreibung, Elektronische Ausschreibung, Vergabe, Elektronische Vergabe, Ausschreibungsplattform, Vergabeplattform, Ausschreibungssoftware, Vergabesoftware, Vergabesystem, Vergabeworkflow, Elektronische Angebote, Elektronische Teilnahmeantr&auml;ge, Digitale Signatur" />
+  <meta name="keywords" lang="en" content="eGovernment, tender, electronic tender, tendering, electronic tendering, public tender, platform solution, signature, tendering management"/>
+  <meta name="page-type" content="Elektronische Vergabe, Elektronische Ausschreibung" />
+  <meta name="page-topic" content="Elektronische Vergabe, Elektronische Ausschreibung" />
+  
+</head>
+<body>
+  <div class="page">
+    
+    
+    <header id="head">
+        <div class="fbo-header-wrapper">
+            <div class="container">
+                <div class="row fbo-row-reverse">
+                    <div class="col-sm-0 col-lg-3 col-xl-4">
+                        <div class="fbo-header-logo">
+                            <a href="/" title="home">
+                                <img alt="logo auftragsboerse.de" src="_images/img/logo_mrn.png">
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-2 col-lg-3  col-xl-4">
+                        <div class="fbo-saar-bubble fbo-show-in-header fbo-color-blue">
+                            <div class="fbo-saar-bubble-innerwrapper">
+                                <h2>Per<br>Mausklick<br>zum Auftrag</h2>
+                                <p>Ausschreibungen der Region</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-12 col-lg-6 col-xl-4 fbo-header-meta">
+                        <div class="fbo-header-meta-nav">
+                            <nav class="navbar grey-links">
+                                <ul class="changefloat nav nav-pills navbar-right">
+                                    <li>
+                                        <a href="/kontakt">Kontakt</a>
+                                    </li>
+                                    <li>
+                                        <a href="LoginControllerServlet?function=LoginForm&thContext=participant">Registrieren</a>
+                                    </li>
+                                    <li>
+                                        <a href="LoginControllerServlet?function=LoginForm&thContext=participant">Anmelden</a>
+                                        
+                                    </li>
+<!--                                    <li th:ref="injectLanguage"/> SBW-Custom-->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </header>
+
+    
+
+
+    
+    <nav class="navbar navbar-default" data-spy="affix" data-offset-top="442">
+    <div class="page-wrapper">
+        <div class="container-fluid">
+            
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+                    <span class="displayNone">_</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+            <div class="navbar-collapse collapse" id="myNavbar">
+                <ul class="nav navbar-nav nav-pills nav-stacked" role="tablist">
+                    
+                    <li></li>
+                    
+                    <li class="dropdown" role="tab" data-toggle="tab">
+                        <!--
+                        <a th:href="@{/}" class="dropdown-toggle start navElem" data-toggle="dropdown" th:title="#{navi.Home}" th:utext="#{navi.GoHome}" th:ref="navStartActive"></a>
+                        -->
+                        <a href="/" class="dropdown-toggle start navElem" data-toggle="dropdown"
+                           title="Startseite">Startseite</a>
+                    </li>
+                    
+                    <li class="dropdown" role="tab" data-toggle="tab">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                            <span>Vorinformationen</span>
+                            <span class="caret" aria-haspopup="true"></span>
+                        </a>
+                        <ul class="dropdown-menu nav nav-pills nav-stacked">
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=All&amp;Category=PriorInformation&amp;thContext=preinformations">Alle Vorinformationen</a>
+                            </li>
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=VOL&amp;Category=PriorInformation&amp;thContext=preinformations">Liefer- und Dienstleistungen<br/></a>
+                            </li>
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=VOB&amp;Category=PriorInformation&amp;thContext=preinformations">Bauleistungen<br/></a>
+                            </li>
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=VOF&amp;Category=PriorInformation&amp;thContext=preinformations">Architekten- und Ingenieurleistungen<br/></a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <li class="dropdown" role="tab" data-toggle="tab">
+                        <a class="dropdown-toggle navActive" data-toggle="dropdown" href="#">
+                            <span>Ausschreibungen</span>
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu nav nav-pills nav-stacked">
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=All&amp;Category=InvitationToTender&amp;thContext=publications">Alle Ausschreibungen</a>
+                            </li>
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=VOL&amp;Category=InvitationToTender&amp;thContext=publications">
+                                    <span>Liefer- und Dienstleistungen<br/></span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=VOB&amp;Category=InvitationToTender&amp;thContext=publications">
+                                    <span>Bauleistungen<br/></span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=VOF&amp;Category=InvitationToTender&amp;thContext=publications">
+                                    <span>Architekten- und Ingenieurleistungen<br/></span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <li class="dropdown" role="tab" data-toggle="tab">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                            <span>Vergebene Aufträge</span>
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu nav nav-pills nav-stacked">
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=All&amp;Category=ContractAward&amp;thContext=awardPublications">Alle vergebenen Auftr&auml;ge</a>
+                            </li>
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=VOL&amp;Category=ContractAward&amp;thContext=awardPublications">Liefer- und Dienstleistungen<br/></a>
+                            </li>
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=VOB&amp;Category=ContractAward&amp;thContext=awardPublications">Bauleistungen<br/></a>
+                            </li>
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=VOF&amp;Category=ContractAward&amp;thContext=awardPublications">Architekten- und Ingenieurleistungen<br/></a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <li class="dropdown" role="tab" data-toggle="tab">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                            <span>Qualifizierungssysteme</span>
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu nav nav-pills nav-stacked">
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=All&amp;Category=QualificationSystem&amp;thContext=qualificationSystems">Alle Qualifizierungssysteme</a>
+                            </li>
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=VOL&amp;Category=QualificationSystem&amp;thContext=qualificationSystems">Liefer- und Dienstleistungen<br/></a>
+                            </li>
+                            <li>
+                                <a class="navElem" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Gesetzesgrundlage=VOB&amp;Category=QualificationSystem&amp;thContext=qualificationSystems">Bauleistungen<br/></a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <li class="dropdown" role="tab" data-toggle="tab">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                            <span>Mein Konto</span>
+                            <span class="caret" aria-haspopup="true"></span>
+                        </a>
+                        
+                        <ul class="dropdown-menu nav nav-pills nav-stacked openLeft">
+                            <li>
+                                <a id="bidderInbox" class="navElem" href="LoginControllerServlet?function=LoginForm">
+                                    <span>Registrieren</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a id="bidderInbox" class="navElem" href="LoginControllerServlet?function=LoginForm">
+                                    <span>Anmelden</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="dropdown" role="tab" data-toggle="tab">
+                        <!--
+                        <a th:href="@{/}" class="dropdown-toggle start navElem" data-toggle="dropdown" th:title="#{navi.Home}" th:utext="#{navi.GoHome}" th:ref="navStartActive"></a>
+                        -->
+                        <a href="/service" class="dropdown-toggle start navElem" data-toggle="dropdown"
+                           title="Service">Service</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+    
+    <div class="container" role="main">
+  <div class="content border">
+    <div class="xyz">
+      <h1 class="color-main" id="singleTopic">
+      
+      Ausschreibungen
+      
+      <small class="spaceTop">Übersicht über alle gefundenen Ausschreibungen</small>
+      
+      
+     </h1>
+      <br/>
+<!--        Sta-custom-->
+        <div data-id="sta-custom" class="main-search-wrapper">
+            <form class="main-page-search-form" role="search" name="searchForm" action="PublicationSearchControllerServlet">
+                <label class="labelInlineBlock" for="searchVisible"></label>
+                <input type="hidden" name="function" value="Search"/>
+                <input type="hidden" name="PublicationType" value=""/>
+                <input class="main-page-search border-blue" type="text" placeholder="Suchbegriff ..." id="searchVisible" autofocus="autofocus" name="Searchkey" value=""/>
+                <button class="btn btn-primary btn-mainSearch"><span >Suchen</span></button>
+            </form>
+        </div>
+      <!--<th:block th:ref="hasPublications">-->
+        <!--<button id="btnSearchSubmit" class="btn btn-primary showFilter" th:utext="#{Common.ShowFilter}" />-->
+        <!--<br/>-->
+        <!--<br/>-->
+      <!--</th:block>-->
+      <div class="border col-lg-12">
+        
+        <br />
+        <div class="filterHide">
+          <form method="get" name="FilterForm" action="PublicationSearchControllerServlet">
+            <label for="tableFilterSelect" class="displayNone">Anzahl der Ergebnisse pro Seite</label>
+            
+            <select class="dropdownselect left" id="tableFilterSelect" onchange="this.form.submit()" name="Max">
+  
+  <option value="10">10</option>
+  
+  <option value="25">25</option>
+  
+  <option value="50" selected="selected">50</option>
+  
+  <option value="100">100</option>
+</select>
+            <span><input id="searchSubmit" type="submit" class="btn btn-primary js-hide" value="Suchen" /></span>
+            
+            
+              <input type="hidden" name="Category" value="InvitationToTender"/>
+            
+              <input type="hidden" name="Gesetzesgrundlage" value="All"/>
+            
+              <input type="hidden" name="function" value="SearchPublications"/>
+            
+              <input type="hidden" name="thContext" value="publications"/>
+            
+          </form>
+        </div>
+        <br/>
+        
+        <div class="tableSwitch">
+  <table class="table table-responsive table-striped table-hover tableHorizontalHeader">
+    <caption >Suchergebnisse</caption>
+    
+    <thead>
+  <tr>
+    
+    <th class="tabelleFirstLine background-blue">
+      <a href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=Publishing&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications" title="Nach dem Erscheinungsdatum sortieren" class=" tableActive">Erschienen am</a>
+    </th>
+    
+    <th class="tabelleFirstLine background-blue">
+      <a class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications" title="Nach dem Namen der Veröffentlichung sortieren">Ausschreibung</a>
+    </th>
+    
+    <th class="tabelleFirstLine background-blue">
+      <a class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications" title="Nach dem Namen der ausschreibenden Stelle sortieren">Vergabestelle</a>
+    </th>
+    
+    <th class="tabelleFirstLine background-blue">
+      <a class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications" title="Nach der Verfahrensart sortieren">Verfahrensart</a>
+    </th>
+    
+    <th class="tabelleFirstLine background-blue">
+      <a class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications" title="Nach dem Rechtsrahmen sortieren">Rechtsrahmen</a>
+    </th>
+    
+    <th class="tabelleFirstLine background-blue">
+      <a class="activeChange" id="tableLastHeader" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications" title="Nach der Abgabefrist sortieren">Abgabefrist</a>
+    </th>
+  </tr>
+</thead>
+    
+    <tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1f7ed8af8-349e6e0f2a0e8dc8" data-category="InvitationToTender">
+  
+  <td >20.11.2026</td>
+  
+  <td class="tender">
+    3090-1 Ladenburg SBBZ Martinsschule Einbau Wärmepumpe (RNK_EBBAU-2026-0061)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Rhein-Neckar-Kreis, EB Bau_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">11.12.2026 09:30</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1f8411364-5ec3d0ffa29074e6" data-category="InvitationToTender">
+  
+  <td >20.11.2026</td>
+  
+  <td class="tender">
+    Neubau Kita - Sanitär (SGS-2026-0036)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Grünstadt_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">10.12.2026 11:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e851003a-be5109714738be1" data-category="InvitationToTender">
+  
+  <td >19.11.2026</td>
+  
+  <td class="tender">
+    Betriebsträgerschaft - Kindertagesstätte Carl-Villinger-Straße (110_2026-EU)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Worms_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">22.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1f363fc98-477dfda92e848e6e" data-category="InvitationToTender">
+  
+  <td >19.11.2026</td>
+  
+  <td class="tender">
+    Neubau - Kita Heizung (SGS-2026-0034)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Grünstadt_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">10.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1f88df532-774d9cc8c7892bc4" data-category="InvitationToTender">
+  
+  <td >19.11.2026</td>
+  
+  <td class="tender">
+    Neubau einer Mensa mit Pausenräumen an der Mönchhofschule in Heidelberg (HD_65_2026_004)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Heidelberg-Hochbauamt_</td>
+  
+  <td class="tenderType">Verhandlungsverfahren mit Teilnahmewettbewerb</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">21.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1f37d6636-4616c20c12b18d9d" data-category="InvitationToTender">
+  
+  <td >19.11.2026</td>
+  
+  <td class="tender">
+    Neubau Kita- Lüftung (SGS-2026-0035)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Grünstadt_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">10.12.2026 10:30</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1affa0886-34d0aaf8dd3bf663" data-category="InvitationToTender">
+  
+  <td >18.11.2026</td>
+  
+  <td class="tender">
+    Digitales Farb- und Schwarzweißdrucksystem  (15-41-101873100-004)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Mannheim Fachbereich Informationstechnologie (FB 12)_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">07.12.2026 10:45</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e41c8154-9c0db5c3a432395" data-category="InvitationToTender">
+  
+  <td >18.11.2026</td>
+  
+  <td class="tender">
+    Sanierung und Erweiterung Kita Sonnenschein mit Umbau Paternusschule als Kita-Ausweichquartier - HLS (108-2026-EU)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Worms_</td>
+  
+  <td class="tenderType">Verhandlungsverfahren mit Teilnahmewettbewerb</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">17.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ed619c6b-668bc034af5d6873" data-category="InvitationToTender">
+  
+  <td >18.11.2026</td>
+  
+  <td class="tender">
+    Lieferleistung von 5 Sperrabfallpresscontainern sowie von einem Nassabfallpresscontainer nach Ludwigshafen am Rhein (2026 / 321)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">03.12.2026 10:15</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ee29edea-311ca63ca9265beb" data-category="InvitationToTender">
+  
+  <td >18.11.2026</td>
+  
+  <td class="tender">
+    Sanierung RHA - Elektroarbeiten (SGS-2026-0040)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Grünstadt_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">09.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ee517cf5-2616ebe3d784217b" data-category="InvitationToTender">
+  
+  <td >18.11.2026</td>
+  
+  <td class="tender">
+    Sanierung RHA - Photovoltaikanlage (SGS-2026-0041)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Grünstadt_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">09.12.2026 10:30</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e8405941-7c2a0c103e254435" data-category="InvitationToTender">
+  
+  <td >17.11.2026</td>
+  
+  <td class="tender">
+    6003-1 Sinsheim, Neubau Funktionstrakt, Campusverkabelung (RNK_EBBAU-2026-0060)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Rhein-Neckar-Kreis, EB Bau_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">08.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e9282bf8-3114c753175592b0" data-category="InvitationToTender">
+  
+  <td >17.11.2026</td>
+  
+  <td class="tender">
+    Sanierung RHA - Sanitär (SGS-2026-0039)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Grünstadt_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">08.12.2026 11:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e90b1bc5-4ea743ed817fcc43" data-category="InvitationToTender">
+  
+  <td >17.11.2026</td>
+  
+  <td class="tender">
+    Funktionsgebäude RHA - Heizung (SGS-2026-0037)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Grünstadt_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">08.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e913b4ab-670a81105f6196b8" data-category="InvitationToTender">
+  
+  <td >17.11.2026</td>
+  
+  <td class="tender">
+    Sanierung RHA - Lüftung (SGS-2026-0038)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Grünstadt_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">08.12.2026 10:30</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e9d10160-10d3d9bbc6f3ea01" data-category="InvitationToTender">
+  
+  <td >17.11.2026</td>
+  
+  <td class="tender">
+    Teil-Erneuerung Fußgängerbrücke über die DB am Schwimmbad (2025-BRÜ-02.05)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Neckargemünd_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">11.12.2026 12:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ed438ebf-19e12441c38c8382" data-category="InvitationToTender">
+  
+  <td >16.11.2026</td>
+  
+  <td class="tender">
+    Roden Baumwurzelstöcke an Straßen, Schulen und Kindertagesstätten in Lu - Landschaftsgärtnerische Arbeiten (2026 / 320)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">08.12.2026 10:15</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e3899854-681e1ae397a49277" data-category="InvitationToTender">
+  
+  <td >16.11.2026</td>
+  
+  <td class="tender">
+    Beschaffung von gebrauchten Office-Lizenzen  (111_2026)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Worms_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">01.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e86cb2ff-7598ab16e562de60" data-category="InvitationToTender">
+  
+  <td >16.11.2026</td>
+  
+  <td class="tender">
+    Sanierung der Kurt-Kaufmann-Halle in der Ortsgemeinde Schwegenheim; Gerüstbauarbeiten (4145-N02)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Verbandsgemeindeverwaltung Lingenfeld, FB 2_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">03.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e36e1adc-d57eb846337f1e6" data-category="InvitationToTender">
+  
+  <td >16.11.2026</td>
+  
+  <td class="tender">
+    Frischkost für die Kinder der 59 städt. Tageseinrichtungen Los 1  - 3 (56-41-021873400-007)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Mannheim Fachbereich Servicestelle Vergabe von Lieferleistungen/ Zentraler Einkauf (FB 60.13)_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">17.12.2026 10:15</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1d4aeed86-4b4f4e4c02f082c7" data-category="InvitationToTender">
+  
+  <td >15.11.2026</td>
+  
+  <td class="tender">
+    071/26 Feuerwehr Sinsheim - Lieferung Wechsellader (071/26)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Sinsheim_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">15.12.2026 10:30</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1cea76d0a-41ec0d317307115d" data-category="InvitationToTender">
+  
+  <td >15.11.2026</td>
+  
+  <td class="tender">
+    6003-1 Sinsheim, GRN-Klinik, Neubau Funktionstrakt, Chirurgiegeräte (RNK_EBBAU-2026-0055)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Rhein-Neckar-Kreis, EB Bau_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">14.12.2026 11:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ce9dd611-27009dccd1c97bd" data-category="InvitationToTender">
+  
+  <td >15.11.2026</td>
+  
+  <td class="tender">
+    6003-1 Sinsheim, GRN-Klinik, Neubau Funktionstrakt, Unfalltransporter (RNK_EBBAU-2026-0054)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Rhein-Neckar-Kreis, EB Bau_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">14.12.2026 10:30</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1d389f995-5c5c2aa341de888" data-category="InvitationToTender">
+  
+  <td >15.11.2026</td>
+  
+  <td class="tender">
+    Fördertechnik Hubbühne OPS und Podesterie (NTM-01-10.058-VE4.074)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Nationaltheater Mannheim_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">14.12.2026 12:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1cf69d8bd-79a4b459914d6c8c" data-category="InvitationToTender">
+  
+  <td >15.11.2026</td>
+  
+  <td class="tender">
+    Sanierung und Erweiterung Kita Sonnenschein mit Umbau Paternusschule als Kita-Ausweichquartier - Elektroplanung  (101-2026-EU)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Worms_</td>
+  
+  <td class="tenderType">Verhandlungsverfahren mit Teilnahmewettbewerb</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">15.12.2026 10:10</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1d43ffce6-4517bf052a57ecd6" data-category="InvitationToTender">
+  
+  <td >13.11.2026</td>
+  
+  <td class="tender">
+    Neubau Kita in der Carl-Villinger-Straße - Schreinerarbeiten Einbaumöbel  (109-2026-EU)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Worms_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">15.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1c9cbbc5e-27e79d69c7eb3b42" data-category="InvitationToTender">
+  
+  <td >13.11.2026</td>
+  
+  <td class="tender">
+    Neubau Kita Kuhweid und MGH Weinheim, Tischlerarbeiten Einbaumöbel und Küchen (SWEIN-2026-0024)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Weinheim_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">16.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1c9743250-18daad38e6d373ad" data-category="InvitationToTender">
+  
+  <td >13.11.2026</td>
+  
+  <td class="tender">
+    Lieferung von insgesamt sechs (6) Fahrgestellen 3,5t /Doppelkabinen mit Aufbau Dreiseitenkipper; Lieferung nach Ludwigshafen am Rhein (2026 / 319)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Ludwigshafen, Bereich Gebäudemanagement</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">15.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1c9504a58-358d06b465a314df" data-category="InvitationToTender">
+  
+  <td >13.11.2026</td>
+  
+  <td class="tender">
+    2000-6 Erweiterung VG Heidelberg - Bodenbelag: Linoleum (RNK_EBBAU-2025-0079)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Rhein-Neckar-Kreis, EB Bau_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">14.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1c94e20e1-381345095f90ac22" data-category="InvitationToTender">
+  
+  <td >13.11.2026</td>
+  
+  <td class="tender">
+    2000-6 Erweiterung VG Heidelberg - Bodenbelag: Teppich (RNK_EBBAU-2025-0081)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Rhein-Neckar-Kreis, EB Bau_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">14.12.2026 09:30</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e4898962-2850ba69ca7ab9b9" data-category="InvitationToTender">
+  
+  <td >13.11.2026</td>
+  
+  <td class="tender">
+    Baumpflanzungen im Stadtgebiet Germersheim Los 1-4 (ZVGERM-2026-0163-GER)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Zentrale Vergabestelle Germersheim - Bellheim - Jockgrim - Rülzheim_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">02.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1c94ababc-2549dbc17021ccc2" data-category="InvitationToTender">
+  
+  <td >13.11.2026</td>
+  
+  <td class="tender">
+    2000-6 Erweiterung VG Heidelberg - Büroschränke (RNK_EBBAU-2025-0083)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Rhein-Neckar-Kreis, EB Bau_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">14.12.2026 10:30</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ceadbafe-129ca3afa2c0e7cd" data-category="InvitationToTender">
+  
+  <td >12.11.2026</td>
+  
+  <td class="tender">
+    6003-1 Sinsheim, GRN-Klinik, Neubau Funktionstrakt, Behandlungswagen (RNK_EBBAU-2026-0059)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Rhein-Neckar-Kreis, EB Bau_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">14.12.2026 13:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ceaad7ba-39c9c4fb00297a84" data-category="InvitationToTender">
+  
+  <td >12.11.2026</td>
+  
+  <td class="tender">
+    6003-1 Sinsheim, GRN-Klinik, Neubau Funktionstrakt, elektromed. Geräte (RNK_EBBAU-2026-0057)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Rhein-Neckar-Kreis, EB Bau_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">14.12.2026 11:30</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ce997269-77d47c65d4b1a48a" data-category="InvitationToTender">
+  
+  <td >12.11.2026</td>
+  
+  <td class="tender">
+    6003-1 Sinsheim, GRN-Klinik, Neubau Funktionstrakt, Sichtschutz (RNK_EBBAU-2026-0051)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Rhein-Neckar-Kreis, EB Bau_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">14.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e35e6d7f-7923f66efa9a1f13" data-category="InvitationToTender">
+  
+  <td >12.11.2026</td>
+  
+  <td class="tender">
+    Neubau Mehrfamilienhäuser Wieslocher Straße, Abdichtungsarbeiten auf Decke über Tiefgarage (2026_880.29.C21.34/se)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Walldorf_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">15.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ed4e647e-469ceccaddaf2601" data-category="InvitationToTender">
+  
+  <td >12.11.2026</td>
+  
+  <td class="tender">
+    Grundschule Niederfeld - Aufwertung des Schulhofes (Projekt im Förderprogramm GaFöG) - Landschaftsgärtnerische Arbeiten (2026 / 324)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">09.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1cfd6184b-7ca5252a2970046c" data-category="InvitationToTender">
+  
+  <td >12.11.2026</td>
+  
+  <td class="tender">
+    Modernisierung Kreishaus - Baustelleneinrichtung (11-2026-018)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Kreisverwaltung Südliche Weinstraße_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">10.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1e36028d7-16097718c1e777d3" data-category="InvitationToTender">
+  
+  <td >12.11.2026</td>
+  
+  <td class="tender">
+    Neubau Mehrfamilienhäuser Wieslocher Straße, Metallbauarbeiten (2026_880.29.C21.48.1/se)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Walldorf_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">15.12.2026 10:15</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ce762a55-6ff3ccc550f01416" data-category="InvitationToTender">
+  
+  <td >11.11.2026</td>
+  
+  <td class="tender">
+    Neuausschreibung der Ganztagsschulverpflegung - Annweiler und Bad Bergzabern (11-2026-017)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Kreisverwaltung Südliche Weinstraße_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">16.12.2026 11:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ce7e7a64-60a6efc8b5477385" data-category="InvitationToTender">
+  
+  <td >11.11.2026</td>
+  
+  <td class="tender">
+    Auslagerung SAP Betriebsleistungen nebst Migration S/4HANA  (2026 / 322)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+  
+  <td class="tenderType">Verhandlungsverfahren mit Teilnahmewettbewerb</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">14.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ca99ec38-3b545030162021ff" data-category="InvitationToTender">
+  
+  <td >11.11.2026</td>
+  
+  <td class="tender">
+    Sanierung Bürgermeister- Ludwig- Reichert- Haus - Umbau der Außenanlage - Landschaftsgärtnerische Arbeiten (2026 / 325)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">01.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1cac1a36c-4935e2ce42b526db" data-category="InvitationToTender">
+  
+  <td >11.11.2026</td>
+  
+  <td class="tender">
+    Erweiterung der Grundschule in 67360 Lingenfeld; Lieferung und Montage von Containern (7152-Z03)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Verbandsgemeindeverwaltung Lingenfeld, FB 2_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">26.11.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ce68e1d5-45b4ade0a4dcd997" data-category="InvitationToTender">
+  
+  <td >11.11.2026</td>
+  
+  <td class="tender">
+    Modernisierung Kreishaus - Fenster und Verschattung (11-2026-005)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Kreisverwaltung Südliche Weinstraße_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">17.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1c957debb-2007e2d8b0577b4b" data-category="InvitationToTender">
+  
+  <td >11.11.2026</td>
+  
+  <td class="tender">
+    Lieferleistung von Abrollcontainern und Absetzmulden nach Ludwigshafen am Rhein (2026 / 316)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">UVgO/VgV</td>
+  
+  <td class="tenderDeadline">26.11.2026 10:15</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1ce6d1677-f2688515c38bec" data-category="InvitationToTender">
+  
+  <td >11.11.2026</td>
+  
+  <td class="tender">
+    Modernisierung Kreishaus - Gebäudeautomation Bestandsanlagen (11-2026-016)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Kreisverwaltung Südliche Weinstraße_</td>
+  
+  <td class="tenderType">Offenes Verfahren</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">16.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1c95875cc-53e2314884d372ba" data-category="InvitationToTender">
+  
+  <td >10.11.2026</td>
+  
+  <td class="tender">
+    Jahresvertrag für grabenlose Kanal- und Schachtsanierung einschließlich Handsanierung begehbarer Kanäle im Stadtgebiet Ludwigshafen 2027 (2026 / 294)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">02.12.2026 10:00</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1c5a53249-58724cebb4f847af" data-category="InvitationToTender">
+  
+  <td >10.11.2026</td>
+  
+  <td class="tender">
+    Neubau Feuerwehrhaus und kommunaler Bauhof Klingenmünster -Rohbauarbeiten-  (950/3/2026/11-4)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Verbandsgemeindeverwaltung Bad Bergzabern_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">10.12.2026 10:15</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1c5c01a94-427a57b2da02d248" data-category="InvitationToTender">
+  
+  <td >10.11.2026</td>
+  
+  <td class="tender">
+    Neubau Feuerwehrhaus und kommunaler Bauhof Klingenmünster -Gerüstbauarbeiten- (950/3/2026/11-5)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Verbandsgemeindeverwaltung Bad Bergzabern_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">10.12.2026 10:30</td>
+</tr><tr class="tableRow clickable-row publicationDetail" tabindex="0" style="cursor: pointer;" data-oid="54321-NetTender-1a1c53a91de-42c9e2ccd16e1223" data-category="InvitationToTender">
+  
+  <td >10.11.2026</td>
+  
+  <td class="tender">
+    Neubau Feuerwehrhaus und kommunaler Bauhof Klingenmünster -Erdbauarbeiten- (950/3/2026/11-3)
+    
+  </td>
+  
+  <td class="tenderAuthority" >Verbandsgemeindeverwaltung Bad Bergzabern_</td>
+  
+  <td class="tenderType">Öffentliche Ausschreibung</td>
+  
+  <td class="tenderType">VOB</td>
+  
+  <td class="tenderDeadline">10.12.2026 10:00</td>
+</tr>
+  </table>
+  
+  <table class="table tableLeftHeader">
+  <caption>Teilnahmen</caption>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1f7ed8af8-349e6e0f2a0e8dc8" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          3090-1 Ladenburg SBBZ Martinsschule Einbau Wärmepumpe (RNK_EBBAU-2026-0061)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Rhein-Neckar-Kreis, EB Bau_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >11.12.2026 09:30</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1f8411364-5ec3d0ffa29074e6" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neubau Kita - Sanitär (SGS-2026-0036)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Grünstadt_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >10.12.2026 11:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e851003a-be5109714738be1" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Betriebsträgerschaft - Kindertagesstätte Carl-Villinger-Straße (110_2026-EU)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Worms_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >22.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1f363fc98-477dfda92e848e6e" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neubau - Kita Heizung (SGS-2026-0034)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Grünstadt_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >10.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1f88df532-774d9cc8c7892bc4" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neubau einer Mensa mit Pausenräumen an der Mönchhofschule in Heidelberg (HD_65_2026_004)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Heidelberg-Hochbauamt_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Verhandlungsverfahren mit Teilnahmewettbewerb</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >21.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1f37d6636-4616c20c12b18d9d" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neubau Kita- Lüftung (SGS-2026-0035)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Grünstadt_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >10.12.2026 10:30</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1affa0886-34d0aaf8dd3bf663" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Digitales Farb- und Schwarzweißdrucksystem  (15-41-101873100-004)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Mannheim Fachbereich Informationstechnologie (FB 12)_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >07.12.2026 10:45</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e41c8154-9c0db5c3a432395" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Sanierung und Erweiterung Kita Sonnenschein mit Umbau Paternusschule als Kita-Ausweichquartier - HLS (108-2026-EU)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Worms_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Verhandlungsverfahren mit Teilnahmewettbewerb</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >17.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ed619c6b-668bc034af5d6873" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Lieferleistung von 5 Sperrabfallpresscontainern sowie von einem Nassabfallpresscontainer nach Ludwigshafen am Rhein (2026 / 321)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >03.12.2026 10:15</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ee29edea-311ca63ca9265beb" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Sanierung RHA - Elektroarbeiten (SGS-2026-0040)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Grünstadt_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >09.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ee517cf5-2616ebe3d784217b" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Sanierung RHA - Photovoltaikanlage (SGS-2026-0041)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Grünstadt_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >09.12.2026 10:30</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e8405941-7c2a0c103e254435" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          6003-1 Sinsheim, Neubau Funktionstrakt, Campusverkabelung (RNK_EBBAU-2026-0060)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Rhein-Neckar-Kreis, EB Bau_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >08.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e9282bf8-3114c753175592b0" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Sanierung RHA - Sanitär (SGS-2026-0039)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Grünstadt_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >08.12.2026 11:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e90b1bc5-4ea743ed817fcc43" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Funktionsgebäude RHA - Heizung (SGS-2026-0037)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Grünstadt_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >08.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e913b4ab-670a81105f6196b8" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Sanierung RHA - Lüftung (SGS-2026-0038)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Grünstadt_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >08.12.2026 10:30</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e9d10160-10d3d9bbc6f3ea01" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Teil-Erneuerung Fußgängerbrücke über die DB am Schwimmbad (2025-BRÜ-02.05)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Neckargemünd_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >11.12.2026 12:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ed438ebf-19e12441c38c8382" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Roden Baumwurzelstöcke an Straßen, Schulen und Kindertagesstätten in Lu - Landschaftsgärtnerische Arbeiten (2026 / 320)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >08.12.2026 10:15</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e3899854-681e1ae397a49277" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Beschaffung von gebrauchten Office-Lizenzen  (111_2026)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Worms_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >01.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e86cb2ff-7598ab16e562de60" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Sanierung der Kurt-Kaufmann-Halle in der Ortsgemeinde Schwegenheim; Gerüstbauarbeiten (4145-N02)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Verbandsgemeindeverwaltung Lingenfeld, FB 2_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >03.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e36e1adc-d57eb846337f1e6" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Frischkost für die Kinder der 59 städt. Tageseinrichtungen Los 1  - 3 (56-41-021873400-007)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Mannheim Fachbereich Servicestelle Vergabe von Lieferleistungen/ Zentraler Einkauf (FB 60.13)_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >17.12.2026 10:15</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1d4aeed86-4b4f4e4c02f082c7" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          071/26 Feuerwehr Sinsheim - Lieferung Wechsellader (071/26)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Sinsheim_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >15.12.2026 10:30</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1cea76d0a-41ec0d317307115d" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          6003-1 Sinsheim, GRN-Klinik, Neubau Funktionstrakt, Chirurgiegeräte (RNK_EBBAU-2026-0055)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Rhein-Neckar-Kreis, EB Bau_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >14.12.2026 11:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ce9dd611-27009dccd1c97bd" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          6003-1 Sinsheim, GRN-Klinik, Neubau Funktionstrakt, Unfalltransporter (RNK_EBBAU-2026-0054)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Rhein-Neckar-Kreis, EB Bau_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >14.12.2026 10:30</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1d389f995-5c5c2aa341de888" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Fördertechnik Hubbühne OPS und Podesterie (NTM-01-10.058-VE4.074)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Nationaltheater Mannheim_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >14.12.2026 12:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1cf69d8bd-79a4b459914d6c8c" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Sanierung und Erweiterung Kita Sonnenschein mit Umbau Paternusschule als Kita-Ausweichquartier - Elektroplanung  (101-2026-EU)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Worms_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Verhandlungsverfahren mit Teilnahmewettbewerb</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >15.12.2026 10:10</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1d43ffce6-4517bf052a57ecd6" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neubau Kita in der Carl-Villinger-Straße - Schreinerarbeiten Einbaumöbel  (109-2026-EU)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Worms_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >15.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1c9cbbc5e-27e79d69c7eb3b42" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neubau Kita Kuhweid und MGH Weinheim, Tischlerarbeiten Einbaumöbel und Küchen (SWEIN-2026-0024)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Weinheim_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >16.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1c9743250-18daad38e6d373ad" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Lieferung von insgesamt sechs (6) Fahrgestellen 3,5t /Doppelkabinen mit Aufbau Dreiseitenkipper; Lieferung nach Ludwigshafen am Rhein (2026 / 319)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Ludwigshafen, Bereich Gebäudemanagement</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >15.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1c9504a58-358d06b465a314df" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          2000-6 Erweiterung VG Heidelberg - Bodenbelag: Linoleum (RNK_EBBAU-2025-0079)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Rhein-Neckar-Kreis, EB Bau_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >14.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1c94e20e1-381345095f90ac22" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          2000-6 Erweiterung VG Heidelberg - Bodenbelag: Teppich (RNK_EBBAU-2025-0081)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Rhein-Neckar-Kreis, EB Bau_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >14.12.2026 09:30</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e4898962-2850ba69ca7ab9b9" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Baumpflanzungen im Stadtgebiet Germersheim Los 1-4 (ZVGERM-2026-0163-GER)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Zentrale Vergabestelle Germersheim - Bellheim - Jockgrim - Rülzheim_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >02.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1c94ababc-2549dbc17021ccc2" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          2000-6 Erweiterung VG Heidelberg - Büroschränke (RNK_EBBAU-2025-0083)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Rhein-Neckar-Kreis, EB Bau_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >14.12.2026 10:30</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ceadbafe-129ca3afa2c0e7cd" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          6003-1 Sinsheim, GRN-Klinik, Neubau Funktionstrakt, Behandlungswagen (RNK_EBBAU-2026-0059)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Rhein-Neckar-Kreis, EB Bau_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >14.12.2026 13:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ceaad7ba-39c9c4fb00297a84" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          6003-1 Sinsheim, GRN-Klinik, Neubau Funktionstrakt, elektromed. Geräte (RNK_EBBAU-2026-0057)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Rhein-Neckar-Kreis, EB Bau_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >14.12.2026 11:30</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ce997269-77d47c65d4b1a48a" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          6003-1 Sinsheim, GRN-Klinik, Neubau Funktionstrakt, Sichtschutz (RNK_EBBAU-2026-0051)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Rhein-Neckar-Kreis, EB Bau_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >14.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e35e6d7f-7923f66efa9a1f13" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neubau Mehrfamilienhäuser Wieslocher Straße, Abdichtungsarbeiten auf Decke über Tiefgarage (2026_880.29.C21.34/se)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Walldorf_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >15.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ed4e647e-469ceccaddaf2601" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Grundschule Niederfeld - Aufwertung des Schulhofes (Projekt im Förderprogramm GaFöG) - Landschaftsgärtnerische Arbeiten (2026 / 324)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >09.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1cfd6184b-7ca5252a2970046c" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Modernisierung Kreishaus - Baustelleneinrichtung (11-2026-018)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Kreisverwaltung Südliche Weinstraße_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >10.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1e36028d7-16097718c1e777d3" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neubau Mehrfamilienhäuser Wieslocher Straße, Metallbauarbeiten (2026_880.29.C21.48.1/se)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Walldorf_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >15.12.2026 10:15</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ce762a55-6ff3ccc550f01416" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neuausschreibung der Ganztagsschulverpflegung - Annweiler und Bad Bergzabern (11-2026-017)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Kreisverwaltung Südliche Weinstraße_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >16.12.2026 11:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ce7e7a64-60a6efc8b5477385" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Auslagerung SAP Betriebsleistungen nebst Migration S/4HANA  (2026 / 322)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Verhandlungsverfahren mit Teilnahmewettbewerb</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >14.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ca99ec38-3b545030162021ff" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Sanierung Bürgermeister- Ludwig- Reichert- Haus - Umbau der Außenanlage - Landschaftsgärtnerische Arbeiten (2026 / 325)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >01.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1cac1a36c-4935e2ce42b526db" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Erweiterung der Grundschule in 67360 Lingenfeld; Lieferung und Montage von Containern (7152-Z03)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Verbandsgemeindeverwaltung Lingenfeld, FB 2_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >26.11.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ce68e1d5-45b4ade0a4dcd997" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Modernisierung Kreishaus - Fenster und Verschattung (11-2026-005)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Kreisverwaltung Südliche Weinstraße_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >17.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1c957debb-2007e2d8b0577b4b" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Lieferleistung von Abrollcontainern und Absetzmulden nach Ludwigshafen am Rhein (2026 / 316)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >UVgO/VgV</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >26.11.2026 10:15</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1ce6d1677-f2688515c38bec" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Modernisierung Kreishaus - Gebäudeautomation Bestandsanlagen (11-2026-016)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Kreisverwaltung Südliche Weinstraße_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Offenes Verfahren</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >16.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1c95875cc-53e2314884d372ba" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Jahresvertrag für grabenlose Kanal- und Schachtsanierung einschließlich Handsanierung begehbarer Kanäle im Stadtgebiet Ludwigshafen 2027 (2026 / 294)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Stadt Ludwigshafen, Zentrale Vergabestelle und Baukoordinierung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >02.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1c5a53249-58724cebb4f847af" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neubau Feuerwehrhaus und kommunaler Bauhof Klingenmünster -Rohbauarbeiten-  (950/3/2026/11-4)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Verbandsgemeindeverwaltung Bad Bergzabern_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >10.12.2026 10:15</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1c5c01a94-427a57b2da02d248" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neubau Feuerwehrhaus und kommunaler Bauhof Klingenmünster -Gerüstbauarbeiten- (950/3/2026/11-5)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Verbandsgemeindeverwaltung Bad Bergzabern_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >10.12.2026 10:30</td>
+      </tr>
+    </tbody>
+    <tbody>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  
+    <tbody class="tableLeftHeaderBlock clickable-row publicationDetail" tabindex="0" data-oid="54321-NetTender-1a1c53a91de-42c9e2ccd16e1223" data-category="InvitationToTender">
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der Veröffentlichung sortieren" class="activeChange tableActive" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Ausschreibung</a>
+        </td>
+        <td>
+          
+          Neubau Feuerwehrhaus und kommunaler Bauhof Klingenmünster -Erdbauarbeiten- (950/3/2026/11-3)
+          
+        </td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Namen der ausschreibenden Stelle sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=AuthorityName&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Vergabestelle</a>
+        </td>
+        <td >Verbandsgemeindeverwaltung Bad Bergzabern_</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Verfahrensart sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderKind&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Verfahrensart</a>
+        </td>
+        <td >Öffentliche Ausschreibung</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach dem Rechtsrahmen sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=TenderLawCaption&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Rechtsrahmen</a>
+        </td>
+        <td >VOB</td>
+      </tr>
+      
+      <tr class="tableRowLeft">
+        <td class="tableHeaderLeft">
+          <a title="Nach der Abgabefrist sortieren" class="activeChange" href="PublicationSearchControllerServlet?function=SearchPublications&amp;OrderBy=EndTime&amp;Order=desc&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;thContext=publications">Abgabefrist</a>
+        </td>
+        <td >10.12.2026 10:00</td>
+      </tr>
+    </tbody>
+    
+  
+</table>
+</div>
+        
+        <div class="tableFooter">
+  <div class="tableFooterWrappingDiv">
+    
+    <!--<p class="tableFooterText" th:ref="paginationStatsText" />-->
+  </div>
+  <div class="tableFooterPaginationDiv">
+    <ul class="pagination">
+      
+      
+      
+        
+        <li class="active">
+          <a class="active background-blue-important border-blue-important" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;Start=0&amp;thContext=publications">1</a>
+        </li>
+        
+        
+        
+        
+        
+        
+      
+        
+        
+        
+        
+        
+        <li>
+          <a class="color-main-important" href="PublicationSearchControllerServlet?function=SearchPublications&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;Start=50&amp;thContext=publications">2</a>
+        </li>
+        
+        
+      
+        
+        
+        
+        
+        
+        
+        
+        <li>
+          <a href="PublicationSearchControllerServlet?function=SearchPublications&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;Start=100&amp;thContext=publications" class="color-main-important">3</a>
+        </li>
+      
+      
+      <li>
+        <a href="PublicationSearchControllerServlet?function=SearchPublications&amp;Category=InvitationToTender&amp;Gesetzesgrundlage=All&amp;Start=50&amp;thContext=publications" title="Next Page"><span class="color-main">&rsaquo;</span></a>
+      </li>
+    </ul>
+  </div>
+  <div class="tableFooterWrappingDiv">&nbsp;</div>
+</div>
+      </div>
+      
+      <br />
+      
+      <br/>
+      <br/>
+    </div>
+  </div>
+</div>
+    
+    <footer>
+    <div class="page-wrapper" style="width: 100%; font-size: 11.4px;">
+    <div class="container"
+             style="text-align: left; display: block; height: 90px; padding: 27px 30px 0 3px; margin: 25px 15px;">
+		<div style="text-align: right; position: relative; float: right; margin-top: -12px;">
+                <a href="/">
+                    <img src="_images//img/logo_mrn.png" width="110">
+                </a>
+		 </div>
+		<h2 class="displayNone">Common.Footer</h2>
+		
+            &copy; 2022 Alle Rechte vorbehalten &nbsp; &nbsp; &nbsp;&nbsp;
+		
+		<a href="/impressum/">Impressum</a>
+            &nbsp; &nbsp; &nbsp;&nbsp;
+		<a href="/datenschutz/">Datenschutz</a>
+		
+            &nbsp; &nbsp; &nbsp;&nbsp;
+		
+		<a href="/teilnahmebedingungen/">Teilnahmebedingungen</a>
+
+		<br>
+		<span class="blackFooter" style="color: #c9c9c9">Zeit der Vergabeplattform</span>
+		<span class="blackFooter" style="color: #c9c9c9">20.11.2026 16:53:39</span>
+
+
+  </div>
+ </div>
+</footer>
+  </div>
+
+  
+</body>
+
+</html>

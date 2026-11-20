@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block nav %}
+  <form class="add" action="/portals" method="post" id="add-form">
+    <input name="url" type="url" placeholder="Paste a tender portal URL…" required>
+    <button>Add portal</button>
+  </form>
+{% endblock %}
+{% block main %}
+<section class="summary">
+  <div class="stat serving"><b id="n-serving">{{ counts.serving }}</b><small>serving</small></div>
+  <div class="stat healing"><b id="n-healing">{{ counts.healing }}</b><small>healing</small></div>
+  <div class="stat integrating"><b id="n-integrating">{{ counts.integrating }}</b><small>integrating</small></div>
+  <div class="stat failed"><b id="n-failed">{{ counts.failed }}</b><small>need a human</small></div>
+  <div class="stat"><b id="n-tenders">{{ tenders }}</b><small>tenders delivered</small></div>
+  <div class="stat"><b id="n-avg-usd">${{ "%.3f" | format(avg_usd) }}</b><small>avg. cost per portal · <span id="n-projected">${{ "%.0f" | format(projected) }}</span> for 4,500</small></div>
+</section>
+<section class="briefing">
+  <button class="violet" id="brief-btn">▶ Morning briefing</button>
+  <p id="brief-text" class="muted" hidden></p>
+  <audio id="brief-audio" hidden></audio>
+</section>
+<section class="grid" id="grid">
+  {% for c in cards %}{% include "_card.html" %}{% endfor %}
+  {% if not cards %}<p class="empty" id="empty">No portals yet. Paste a URL above{% if lab %} — or try <code>/lab/ssr/</code>{% endif %}.</p>{% endif %}
+</section>
+{% if traces_ui %}
+<section class="panel calls" id="traces">
+  <h3>Model calls <small>last 30, recorded in MLflow</small><a class="open" href="{{ traces_ui }}" target="_blank" rel="noopener">Open in MLflow ↗</a></h3>
+  <div class="calls-sum">
+    <div><b id="t-llm-n">–</b><small>LLM calls · <span id="t-llm-usd">$0</span></small></div>
+    <div><b id="t-jev-n">–</b><small>Jev checks · <span id="t-jev-usd">$0</span></small></div>
+  </div>
+  <div class="calls-wrap"><table>
+    <thead><tr><th>When</th><th>Call</th><th>Portal</th><th>What</th><th class="r">Tokens in / out</th><th class="r">Time</th><th class="r">Cost</th></tr></thead>
+    <tbody id="t-rows"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody>
+  </table></div>
+</section>
+{% endif %}
+<aside class="feed"><h3>Live</h3><ol id="feed"></ol></aside>
+{% endblock %}
+{% block scripts %}<script>Watchtower.morning(); Watchtower.traces();</script>{% endblock %}

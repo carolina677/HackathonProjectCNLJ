@@ -1,0 +1,27 @@
+{% set p = c.p %}
+<article class="card state-{{ p.state.value }}" id="card-{{ p.id }}" data-id="{{ p.id }}">
+  <div class="card-head">
+    <span class="pill">{{ p.state.value }}</span>
+    {% if c.platform %}<span class="tag">{{ c.platform }}</span>{% endif %}
+    {% if c.country %}<span class="tag">{{ c.country }}</span>{% endif %}
+  </div>
+  <h2 class="host" title="{{ p.url }}">{{ c.host }}</h2>
+  <a class="url" href="{{ p.url }}" target="_blank" rel="noopener">{{ p.url }}</a>
+  <div class="numbers">
+    <div><b>{{ p.tenderCount }}</b><small>tenders</small></div>
+    <div><b>{{ p.lastSuccessAt | ago }}</b><small>last success</small></div>
+    <div><b>{{ "%.2f" | format(c.cost.total_usd * 100) }}¢</b><small>model cost</small></div>
+  </div>
+  {% if p.reason %}<p class="reason">{{ p.reason }}</p>{% endif %}
+  <ol class="story">
+    {% for s in c.story %}<li class="run-{{ s.result }}"><span>{{ s.text }}</span><time>{{ s.when }}</time></li>
+    {% else %}<li class="run-running"><span>Queued</span></li>{% endfor %}
+  </ol>
+  <div class="actions">
+    <a href="/portals/{{ p.id }}/theater">Theater</a>
+    <a href="/portals/{{ p.id }}/tenders" target="_blank">Tenders JSON</a>
+    <button data-refresh="{{ p.id }}">Refresh</button>
+    {% if c.lab %}<button class="danger" data-break="{{ p.id }}">Break it</button>{% endif %}
+    <button class="ghost" data-delete="{{ p.id }}">Remove</button>
+  </div>
+</article>

@@ -1,0 +1,52 @@
+# Builds the hand-in image the way the jury will (docker build . on linux/amd64) and smoke-tests it.
+# No API keys needed: it checks that the image builds, the server starts on :8080, the API answers,
+# and Chromium launches inside the container.
+name: docker
+
+on:
+  push:
+    branches: [build, main]
+  workflow_dispatch:
+
+jobs:
+  build-and-smoke-test:
+    runs-on: ubuntu-latest   # x86_64 = linux/amd64
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: docker build . (linux/amd64)
+        run: |
+          start=$(date +%s)
+          docker build --platform linux/amd64 -t watchtower .
+          echo "Build took $(( $(date +%s) - start )) s"
+          docker image inspect watchtower --format 'Image size: {{.Size}} bytes, arch: {{.Architecture}}'
+
+      - name: Chromium launches inside the image
+        run: |
+          docker run --rm --platform linux/amd64 watchtower python -c "
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              b = p.chromium.launch(); pg = b.new_page(); pg.set_content('<h1>ok</h1>')
+              assert pg.inner_text('h1') == 'ok'; b.close(); print('chromium ok')"
+
+      - name: Default command serves API and dashboard on :8080
+        run: |
+          docker run -d --name wt --platform linux/amd64 -p 8080:8080 -e WATCHTOWER_LAB=1 watchtower
+          for i in $(seq 1 60); do curl -fsS localhost:8080/portals >/dev/null 2>&1 && break; sleep 1; done
+          set -x
+          test "$(curl -s localhost:8080/portals)" = "[]"
+          curl -fsS localhost:8080/ | grep -q "Watchtower"
+          code=$(curl -s -o /tmp/add.json -w '%{http_code}' -X POST localhost:8080/portals \
+                   -H 'content-type: application/json' -d '{"url": "http://localhost:8080/lab/ssr/"}')
+          test "$code" = "201"
+          id=$(python3 -c "import json; print(json.load(open('/tmp/add.json'))['id'])")
+          curl -fsS localhost:8080/portals/$id | python3 -c "import json,sys; p=json.load(sys.stdin); print(p); assert p['state'] in ('integrating','serving','failed')"
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/portals/does-not-exist)" = "404"
+          code=$(curl -s -o /tmp/run.json -w '%{http_code}' -X POST localhost:8080/portals/$id/refresh)
+          test "$code" = "202"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X DELETE localhost:8080/portals/$id)" = "204"
+
+      - name: Container log
+        if: always()
+        run: docker logs wt 2>&1 | tail -80 || true
