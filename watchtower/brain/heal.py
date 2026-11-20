@@ -24,6 +24,7 @@ class HealReport:
     verify: VerifyReport | None = None
     exploration_error: str | None = None
     diff: list[str] = field(default_factory=list)
+    list_page: object | None = None     # the list page as it looks now (for the before/after view)
 
 
 def _leaves(v, path: str, out: dict) -> None:
@@ -51,6 +52,7 @@ async def heal(portal_id: str, start_url: str, old: Recipe, old_snapshot: str | 
                reason: str, attempts: int = 3, mask: set[str] | None = None) -> tuple[Recipe | None, HealReport]:
     rep = HealReport(reason=reason)
     ex = await explore(start_url, fetcher, jev, portal_id=portal_id)
+    rep.list_page = ex.list_page
     if ex.blocked:
         rep.blocked = ex.blocked
         return None, rep

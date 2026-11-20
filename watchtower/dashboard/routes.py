@@ -133,6 +133,26 @@ def register(app: FastAPI) -> None:
         await _portal(request, pid)
         return events.history(pid, limit=400)
 
+    @app.get("/portals/{pid}/repairs")
+    async def repair_list(pid: str, request: Request):
+        """Every repair of this portal, newest first, with what changed (for the before/after view)."""
+        from .. import repairs
+
+        await _portal(request, pid)
+        return repairs.list_repairs(request.app.state.settings.data_dir, pid)
+
+    @app.get("/portals/{pid}/repairs/{n}/{side}.html", response_class=HTMLResponse)
+    async def repair_page(pid: str, n: int, side: str, request: Request):
+        """The list page before or after a repair, highlighted and inert (scripts forbidden)."""
+        from .. import repairs
+
+        await _portal(request, pid)
+        html = repairs.page(request.app.state.settings.data_dir, pid, n, side)
+        if html is None:
+            raise HTTPException(404, "no such repair snapshot")
+        return HTMLResponse(html, headers={"Content-Security-Policy": repairs.CSP, "X-Content-Type-Options": "nosniff",
+                                           "Cache-Control": "no-store"})
+
     @app.get("/portals/{pid}/cost")
     async def portal_cost(pid: str, request: Request):
         await _portal(request, pid)
@@ -267,6 +287,7 @@ def register(app: FastAPI) -> None:
                     sent += 1
             finally:
                 nxt.cancel()
+                await asyncio.gather(nxt, return_exceptions=True)  # let the pending read stop before closing
                 await sub.aclose()
 
         return StreamingResponse(gen(), media_type="text/event-stream",

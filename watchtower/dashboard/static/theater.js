@@ -105,9 +105,47 @@ const Theater = (() => {
       case "cost": costEv(ev); break;
       case "llm": line(ev, `LLM (${d.purpose}): ${d.tokens} tokens, ${fmtUsd(d.usd)}, ${d.ms} ms`); break;
       case "race": race(d); break;
+      case "compare": if (live) loadRepairs(d.n); line(ev, d.ok ? `Before vs after #${d.n} ready: see the top of the page` : `Repair #${d.n} failed: before vs after shows why`, d.ok ? "hi" : "warn"); break;
       case "run": if (d.status === "finished") { line(ev, `Run ${d.result}${d.detail ? ": " + d.detail : ""}`); if (live) refreshCount(); } break;
       case "log": line(ev, d.msg); break;
     }
+  }
+
+  // --- Before vs after: the last repair, side by side -------------------------------------
+  let repairs = [];
+
+  function showRepair(r) {
+    const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+    const cap = (side, label) => {
+      const s = r[side];
+      const reads = s.source === "json_api" ? "reads a JSON API (not drawn on the page)" : `reads ${plural(s.items, "tender row")}`;
+      const what = side === "before" ? `${plural(s.changed, "page element")} changed or gone` : `${plural(s.changed, "page element")} new or changed`;
+      return `${label} · ${side === "before" ? "old" : "new"} recipe ${reads} · ${what}`;
+    };
+    $("#cmp-title").textContent = r.ok
+      ? `repair #${r.n}, ${new Date(r.at).toLocaleString()} · healed after ${plural(r.attempts, "attempt")}`
+      : `repair #${r.n}, ${new Date(r.at).toLocaleString()} · could not repair: a person is needed`;
+    $("#cmp-before-cap").textContent = cap("before", "Before");
+    $("#cmp-after-cap").textContent = r.ok ? cap("after", "After") : "After · no working recipe yet";
+    $("#cmp-before").src = `/portals/${pid}/repairs/${r.n}/before.html`;
+    $("#cmp-after").src = `/portals/${pid}/repairs/${r.n}/after.html`;
+    const diff = $("#cmp-diff"); diff.innerHTML = "";
+    for (const d of (r.diff || []).slice(0, 12)) diff.append(el("li", null, d));
+    if (!r.ok && r.reason) diff.append(el("li", null, r.reason));
+    $("#compare").hidden = false;
+  }
+
+  async function loadRepairs(pick) {
+    const r = await fetch(`/portals/${pid}/repairs`);
+    if (!r.ok) return;
+    repairs = await r.json();
+    if (!repairs.length) return;
+    const sel = $("#cmp-pick"); sel.innerHTML = "";
+    for (const x of repairs) sel.append(new Option(`#${x.n} · ${new Date(x.at).toLocaleTimeString()} · ${x.ok ? "healed" : "failed"}`, x.n));
+    sel.closest("label").hidden = repairs.length < 2;
+    const chosen = repairs.find((x) => x.n === pick) || repairs[0];
+    sel.value = chosen.n;
+    showRepair(chosen);
   }
 
   async function refreshCount() {
@@ -119,8 +157,10 @@ const Theater = (() => {
     pid = id;
     for (const ev of await (await fetch(`/portals/${pid}/timeline`)).json()) handle(ev);
     live = true;
+    await loadRepairs();
+    $("#cmp-pick").addEventListener("change", (e) => { const r = repairs.find((x) => x.n === Number(e.target.value)); if (r) showRepair(r); });
     const es = new EventSource(`/events?portal=${pid}`);
-    const kinds = ["page", "vision", "judgment", "links", "explore", "recipe", "verify", "state", "cost", "llm", "race", "run", "log"];
+    const kinds = ["page", "vision", "judgment", "links", "explore", "recipe", "verify", "state", "cost", "llm", "race", "run", "log", "compare"];
     for (const k of kinds) es.addEventListener(k, (m) => { const ev = JSON.parse(m.data); if (ev.portal_id === pid) handle(ev); });
     $("#race-btn").addEventListener("click", async (e) => {
       e.target.disabled = true; e.target.textContent = "Racing…";

@@ -20,6 +20,29 @@
   </div>
 </section>
 
+<section class="panel compare" id="compare" hidden>
+  <h3>Before vs after <small id="cmp-title">what the portal changed, and how the recipe followed</small></h3>
+  <div class="cmp-bar">
+    <div class="legend">
+      <span class="lg lg-item">what the recipe reads</span>
+      <span class="lg lg-gone">gone from the page</span>
+      <span class="lg lg-new">new on the page</span>
+    </div>
+    <label class="cmp-pick" hidden>Repair <select id="cmp-pick"></select></label>
+  </div>
+  <div class="cmp-grid">
+    <figure>
+      <figcaption id="cmp-before-cap">Before</figcaption>
+      <iframe id="cmp-before" sandbox title="The list page when the old recipe worked" loading="lazy"></iframe>
+    </figure>
+    <figure>
+      <figcaption id="cmp-after-cap">After</figcaption>
+      <iframe id="cmp-after" sandbox title="The list page now, read by the repaired recipe" loading="lazy"></iframe>
+    </figure>
+  </div>
+  <ul id="cmp-diff" class="diff"></ul>
+</section>
+
 <section class="theater">
   <div class="col">
     <div class="panel">

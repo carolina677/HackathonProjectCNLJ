@@ -159,3 +159,24 @@ async def test_delete_stops_work(e2e):
     assert (await c.delete(f"/portals/{pid}")).status_code == 204
     await asyncio.sleep(1)
     assert pid not in app.state.scheduler._tasks or app.state.scheduler._tasks[pid].done()
+
+
+async def test_repair_keeps_before_and_after_view(e2e):
+    c, lab, replay, app = e2e
+    pid = await _attach(c, lab.url("ssr"))
+    await until(c, pid, lambda p: p["state"] == "serving" and p["tenderCount"] == 23)
+    await idle(app, pid)
+    lab.mutate("ssr", "rename_classes")
+    await c.post(f"/portals/{pid}/refresh")
+    await until(c, pid, lambda p: p["state"] == "healing")
+    await until(c, pid, lambda p: p["state"] == "serving", 90)
+    await idle(app, pid)
+    reps = (await c.get(f"/portals/{pid}/repairs")).json()
+    assert len(reps) == 1 and reps[0]["ok"] and reps[0]["diff"]
+    r = reps[0]
+    assert r["before"]["item"] == "tr.tender-row" and r["after"]["item"] == "tr.vx-wor-rednet"
+    assert r["before"]["items"] >= 10 and r["after"]["items"] >= 10      # each recipe reads its own page
+    assert r["before"]["changed"] >= 1 and r["after"]["changed"] >= 1   # renamed structure shows on both sides
+    before = (await c.get(f"/portals/{pid}/repairs/1/before.html")).text
+    after = (await c.get(f"/portals/{pid}/repairs/1/after.html")).text
+    assert "wt-gone" in before and "wt-new" in after and after.count("wt-item") >= 10

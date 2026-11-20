@@ -298,16 +298,35 @@ class Pipeline:
                 why = f"Could not repair automatically after {rep.attempts} attempts ({p.reason})"
                 if rep.exploration_error:
                     why += f": {rep.exploration_error}"
+            self._record_repair(pid, p, old, None, rep, ok=False, reason=why,
+                                after_ref=fetcher.snapshot(rep.list_page) if rep.list_page else None)
             await self.transition(pid, PortalState.failed, why)
             return RunResult.failed
-        page = await fetcher.open(p.url)
-        await self.repo.set_recipe(pid, json.loads(new.model_dump_json()), snapshot_ref=fetcher.snapshot(page) or None,
+        page = rep.list_page or await fetcher.open(p.url)
+        after_ref = fetcher.snapshot(page) or None
+        self._record_repair(pid, p, old, new, rep, ok=True, reason=p.reason, after_ref=after_ref)
+        await self.repo.set_recipe(pid, json.loads(new.model_dump_json()), snapshot_ref=after_ref,
                                    field_mask=rep.verify.mask if rep.verify else None, country=new.country)
         self._prev_fill.pop(pid, None)
         await self.transition(pid, PortalState.serving, None)
         events.emit(pid, "log", {"msg": "Repaired: " + ("; ".join(rep.diff[:4]) or "recipe re-learned")})
         self.schedule_followup(pid, RunKind.read)
         return RunResult.ok
+
+    def _record_repair(self, pid: str, p, old: Recipe, new: Recipe | None, rep, *, ok: bool, reason: str | None,
+                       after_ref: str | None) -> None:
+        """Keep the before/after pages of this repair for the Agent Theater (display only, never raises)."""
+        if not self.settings:
+            return
+        from . import repairs
+
+        row = repairs.record(
+            Path(self.settings.data_dir), pid, ok=ok, reason=reason, diff=rep.diff, attempts=rep.attempts,
+            before_ref=p.snapshot_ref, before_url=old.list_url, before_recipe=json.loads(old.model_dump_json()),
+            after_ref=after_ref, after_url=getattr(rep.list_page, "final_url", None) or p.url,
+            after_recipe=json.loads(new.model_dump_json()) if new else None)
+        if row:
+            events.emit(pid, "compare", {"n": row["n"], "ok": ok})
 
 
 def build_pipeline(repo: Repo, settings, limiter, is_cancelled) -> Pipeline:
