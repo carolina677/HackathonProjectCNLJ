@@ -32,6 +32,42 @@ MAX_REPAIR_CYCLES = 3  # repairs in a row whose new recipe never delivered: stop
 SMALL_PORTAL_LIMIT = 50
 PROGRESSIVE_SERVE_AT = 20
 
+_DNS = ("nodename nor servname", "Name or service not known", "getaddrinfo failed",
+        "No address associated", "Temporary failure in name resolution")
+
+
+def _is_dns_error(e: Exception) -> bool:
+    return any(t in str(e) for t in _DNS)
+
+
+async def open_start(fetcher, url: str):
+    """Open the portal's start page. A bare host that does not exist is retried once as www.<host>."""
+    from .urls import www_variant
+
+    try:
+        return await fetcher.open(url), url
+    except PortalCancelled:
+        raise
+    except Exception as e:
+        alt = www_variant(url) if _is_dns_error(e) else None
+        if alt is None:
+            raise
+        try:
+            return await fetcher.open(alt), alt
+        except PortalCancelled:
+            raise
+        except Exception:
+            raise e
+
+
+def unreachable_reason(e: Exception, url: str) -> str:
+    from .urls import host_key
+
+    if _is_dns_error(e):
+        return f"Could not reach the portal: the address {host_key(url)} does not exist. Check the URL."
+    return f"Could not reach the portal: {e}"
+
+
 BLOCK_REASONS = {
     "login": "Portal requires a login",
     "captcha": "Portal shows a captcha and documents are not reachable without it",
@@ -174,12 +210,14 @@ class Pipeline:
         v: VerifyReport | None = None
         sample: list[dict] = []
         try:
-            start = await fetcher.open(p.url)
+            start, url = await open_start(fetcher, p.url)
         except PortalCancelled:
             raise
         except Exception as e:
-            await self.transition(pid, PortalState.failed, f"Could not reach the portal: {e}")
+            await self.transition(pid, PortalState.failed, unreachable_reason(e, p.url))
             return RunResult.failed
+        if url != p.url and await self.repo.set_url(pid, url):
+            events.emit(pid, "log", {"msg": f"{p.url} does not exist; using {url}"})
         known = fingerprint(start)
         if known is not None:
             events.emit(pid, "log", {"msg": f"Recognised platform {known.platform}; using its adapter"})
@@ -188,7 +226,7 @@ class Pipeline:
         ex = None
         docs_less: Recipe | None = None
         if recipe is None:
-            ex = await explore(p.url, fetcher, self.jev, portal_id=pid)
+            ex = await explore(url, fetcher, self.jev, portal_id=pid)
             if ex.blocked:
                 await self.transition(pid, PortalState.failed, BLOCK_REASONS[ex.blocked])
                 return RunResult.failed

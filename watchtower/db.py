@@ -168,6 +168,15 @@ class Repo:
         await self.db.execute("DELETE FROM costs WHERE portal_id=?", (pid,))
         await self.db.commit()
 
+    async def set_url(self, pid: str, url: str) -> bool:
+        """Point a portal at a corrected address; False if another portal already has it."""
+        try:
+            await self.db.execute("UPDATE portals SET url=? WHERE id=?", (normalize_url(url), pid))
+            await self.db.commit()
+            return True
+        except Exception:
+            return False
+
     async def set_state(self, pid: str, state: PortalState, reason: str | None) -> None:
         await self.db.execute("UPDATE portals SET state=?, reason=? WHERE id=?", (state, reason, pid))
         await self.db.commit()

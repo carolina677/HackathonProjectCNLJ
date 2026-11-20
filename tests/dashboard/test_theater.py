@@ -74,3 +74,10 @@ async def test_vision_emits_boxes_and_never_breaks(monkeypatch):
     seen.clear()
     await look(Broken(), b"png", "p1", "https://x/")
     assert seen == []
+
+
+async def test_race_on_an_unreachable_portal_explains_itself_as_json(client):
+    pid = (await client.post("/portals", json={"url": "http://127.0.0.1:9/nothing"})).json()["id"]
+    r = await client.post(f"/portals/{pid}/race")
+    assert r.status_code == 409
+    assert "could not load" in r.json()["error"].lower()

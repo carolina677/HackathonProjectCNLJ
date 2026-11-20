@@ -26,3 +26,15 @@ def normalize_url(url: str) -> str:
 
 def host_key(url: str) -> str:
     return (urlsplit(url).hostname or "").lower()
+
+
+def www_variant(url: str) -> str | None:
+    """https://example.de/x → https://www.example.de/x, for bare public host names only."""
+    p = urlsplit(url)
+    host = (p.hostname or "").lower()
+    if not host or host.startswith("www.") or host == "localhost" or "." not in host:
+        return None
+    if host.replace(".", "").isdigit() or ":" in host:
+        return None
+    netloc = "www." + p.netloc.split("@")[-1]
+    return urlunsplit((p.scheme, netloc, p.path, p.query, p.fragment))
