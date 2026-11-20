@@ -141,4 +141,9 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
     async def dashboard_placeholder():
         return "<h1>Watchtower</h1>"
 
+    if settings.lab:
+        from .lab.app import create_lab_app
+
+        app.mount("/lab", create_lab_app())
+
     return app
