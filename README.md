@@ -35,7 +35,8 @@ The full list is in `.env.example`.
 |---|---|---|
 | 4 real portals, known software (DE, FR, NL) | 4/4 serving | $0.001 / portal |
 | **Blind portals**: generated from a random seed at run time (layout, language, date format, pagination, URLs, JSON keys); nobody saw them before | run 1: 3/3 serving, all tenders, all 105 PDFs, quality 0.87 · run 2 (after 2 normalizer fixes): 3/3, quality 0.99, 0 wrong values | $0.024–0.028 / portal |
-| **Holdout**: 6 real portals, never used during development, run once at tag `holdout-run-1` | **2/6 serving**: LU (204 tenders, 204 docs), FR marches-publics (82 tenders, 182 docs). 4 end `failed` with the reason: ES and PL (tender list sits behind a JS search form), NRW VMPCenter (no document links found), DTVP (its API stopped answering) | $0.055 / portal (NRW alone $0.26) |
+| **Holdout**: 6 real portals, never used during development, run once at tag `holdout-run-1` | **2/6 serving**: LU (204 tenders, 204 docs), FR marches-publics (82 tenders, 182 docs). 4 ended `failed` with a reason | $0.055 / portal (NRW alone $0.26) |
+| Same 4 failed portals after 3 general fixes (**no longer blind**) | **NRW and DTVP now serve** (DTVP: 8,320 tenders listed, filled in progressively). ES: firewall rejects automated requests (reported, not bypassed). PL: list only behind a JS search form | $0.06–0.07 / portal |
 | Live break (Chaos Lab, no refresh pressed) | layout changes are noticed by the pulse and repaired in about 2 min | a few cents / repair |
 
 Raw data: `docs/results-*.json`. Reproduce:
@@ -62,7 +63,7 @@ The repair matrix needs `PULSE_INTERVAL_SECONDS=60`.
 
 ## Known limits
 
-- Holdout shows the main gap: portals whose list only appears after submitting a JS search form (ES, PL), and VMPCenter portals (NRW, DTVP), which have no adapter yet.
+- Holdout gaps: portals whose list only appears after submitting a JS search form (PL) are not handled yet. Portals whose firewall rejects automated requests (ES) end `failed` with that reason. On NRW, deadline and reference number stay empty rather than guessed.
 - The pulse sees only the list page. A change in pagination, or a date that only appears on detail pages, is caught by the 12-hour read instead.
 - Logins and captchas are never bypassed. Such portals end `failed` with the reason. Atexo (FR) serves only directly linked documents.
 - e-Vergabe (federal DE) serves only the 10 newest tenders and no documents: its paging state is lost behind the site's load balancer.
