@@ -153,3 +153,89 @@ async def test_delayed_followup_waits_and_respects_cancel(repo, settings):
     await asyncio.sleep(0.2)
     assert len(pipe.starts) == n
     await s.stop()
+
+
+class PulsePipeline:
+    """Records reads and pulses; `ok` scripts what the pulse reports."""
+
+    def __init__(self, ok=True, run_delay=0.0):
+        self.ok, self.run_delay = ok, run_delay
+        self.pulses, self.runs, self.running, self.pulsed_while_running = 0, [], False, False
+        self.pulsed: list[str] = []
+
+    async def run(self, pid, run_id, kind):
+        self.runs.append(kind)
+        self.running = True
+        try:
+            await asyncio.sleep(self.run_delay)
+        finally:
+            self.running = False
+        return RunResult.ok
+
+    async def pulse(self, pid):
+        self.pulses += 1
+        self.pulsed.append(pid)
+        self.pulsed_while_running |= self.running
+        return self.ok
+
+
+async def _pulse_env(repo, settings, pipe, interval=1, state=PortalState.serving):
+    s = Scheduler(repo, pipe, settings.model_copy(update={"pulse_interval_seconds": interval}), tick=0.1)
+    pid = await repo.create_portal(f"https://p{id(pipe)}.de")
+    await repo.set_state(pid, state, None)
+    s.start()
+    return s, pid
+
+
+async def test_pulse_only_for_serving(repo, settings):
+    pipe = PulsePipeline()
+    s, live = await _pulse_env(repo, settings, pipe)
+    idle = await repo.create_portal("https://idle.de")  # stays integrating
+    await asyncio.sleep(2.5)
+    await s.stop()
+    assert live in pipe.pulsed and idle not in pipe.pulsed
+
+
+async def test_pulse_skipped_while_run_in_flight(repo, settings):
+    pipe = PulsePipeline(run_delay=3.0)
+    s, pid = await _pulse_env(repo, settings, pipe)
+    await s.enqueue(pid, RunKind.read)
+    await asyncio.sleep(2.5)
+    await s.stop()
+    assert pipe.pulses == 0
+
+
+async def test_unhealthy_pulse_enqueues_one_read(repo, settings):
+    pipe = PulsePipeline(ok=False, run_delay=1.0)
+    s, pid = await _pulse_env(repo, settings, pipe)
+    for _ in range(40):
+        if pipe.pulses:
+            break
+        await asyncio.sleep(0.05)
+    await asyncio.sleep(0.5)
+    assert pipe.runs == [RunKind.read] and pipe.pulses == 1
+    await asyncio.sleep(0.4)
+    assert not pipe.pulsed_while_running
+    await s.stop()
+
+
+async def test_no_pulse_after_cancel(repo, settings):
+    pipe = PulsePipeline()
+    s, pid = await _pulse_env(repo, settings, pipe)
+    for _ in range(40):
+        if pipe.pulses:
+            break
+        await asyncio.sleep(0.05)
+    await s.cancel(pid)
+    n = pipe.pulses
+    await asyncio.sleep(2.0)
+    await s.stop()
+    assert n >= 1 and pipe.pulses == n
+
+
+async def test_pulse_off_when_interval_zero(repo, settings):
+    pipe = PulsePipeline()
+    s, _ = await _pulse_env(repo, settings, pipe, interval=0)
+    await asyncio.sleep(1.5)
+    await s.stop()
+    assert pipe.pulses == 0

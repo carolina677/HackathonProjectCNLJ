@@ -46,8 +46,11 @@ class Runner(Protocol):
 
 
 class Scheduler:
-    def __init__(self, repo: Repo, pipeline: Runner, settings: Settings, max_parallel: int = 8):
+    def __init__(self, repo: Repo, pipeline: Runner, settings: Settings, max_parallel: int = 8,
+                 tick: float | None = None):
         self.repo, self.pipeline, self.settings = repo, pipeline, settings
+        self.tick = tick if tick is not None else getattr(settings, "scheduler_tick_seconds", 5.0)
+        self._last_pulse: dict[str, float] = {}
         self._tasks: dict[str, asyncio.Task] = {}
         self._cancelled: set[str] = set()
         self._last_enqueued: dict[str, float] = {}
@@ -135,7 +138,7 @@ class Scheduler:
 
     async def _periodic(self) -> None:
         while True:
-            await asyncio.sleep(5)
+            await asyncio.sleep(self.tick)
             now = time.monotonic()
             for p in await self.repo.list_portals():
                 if p.id in self._tasks and not self._tasks[p.id].done():
@@ -148,6 +151,31 @@ class Scheduler:
                     due = now - last >= every
                 if due:
                     await self.enqueue(p.id, RunKind.read)
+                elif self._pulse_due(p, now):
+                    self._last_pulse[p.id] = now
+                    self._tasks[p.id] = asyncio.create_task(self._pulse(p.id))
+
+    def _pulse_due(self, p, now: float) -> bool:
+        """A cheap list-only check between full reads, only for portals that claim to deliver."""
+        every = getattr(self.settings, "pulse_interval_seconds", 0)
+        if every <= 0 or p.state != PortalState.serving or self.is_cancelled(p.id):
+            return False
+        if getattr(self.pipeline, "pulse", None) is None:
+            return False
+        last = max(self._last_enqueued.get(p.id, self._started), self._last_pulse.get(p.id, 0.0))
+        return now - last >= every
+
+    async def _pulse(self, pid: str) -> None:
+        """Not a run: it does not show in /runs. A failed pulse starts a full read, which decides the state."""
+        try:
+            ok = await self.pipeline.pulse(pid)
+        except Exception:
+            log.exception("pulse for %s crashed", pid)
+            return
+        if not ok and not self.is_cancelled(pid):
+            if self._tasks.get(pid) is asyncio.current_task():
+                self._tasks.pop(pid, None)
+            await self.enqueue(pid, RunKind.read)
 
     async def _clock(self) -> None:
         while True:

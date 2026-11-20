@@ -11,7 +11,7 @@ from . import events
 from .brain.explore import explore
 from .brain.fingerprint import fingerprint
 from .brain.heal import heal
-from .brain.health import fill_rates, health_check, pick_probe, spot_check
+from .brain.health import fill_rates, health_check, pick_probe, pulse_health, spot_check
 from .brain.induce import induce_recipe
 from .brain.verify import VerifyReport, verify_sample
 from .db import Repo
@@ -361,6 +361,30 @@ class Pipeline:
         events.emit(pid, "log", {"msg": f"Read {len(tenders)} tenders ({changed} changed, {closed} closed, "
                                         f"{fetcher.requests} requests, no LLM)"})
         return RunResult.ok
+
+    async def pulse(self, pid: str) -> bool:
+        """List-only check between full reads: no details, no documents, no Jev, no LLM.
+
+        True means healthy (or nothing to check). False means "read now": the full read decides the state."""
+        p = await self.repo.get_portal(pid)
+        if p is None or p.state != PortalState.serving or not p.recipe:
+            return True
+        errors: list[str] = []
+        seen: list[dict] = []
+
+        async def on_list(items, errs):
+            seen.extend(items)
+            return False
+
+        try:
+            await run_recipe(Recipe.model_validate(p.recipe), self.fetcher(pid), limit=10, errors=errors,
+                             mask=set(p.field_mask or []), on_list=on_list)
+        except PortalCancelled:
+            return True  # deleted while pulsing
+        h = pulse_health(seen, errors, p.prev_fill or None)
+        if not h.ok:
+            events.emit(pid, "log", {"msg": f"Pulse: {h.reason} Reading now."})
+        return h.ok
 
     # --- repair ------------------------------------------------------------
     async def repair(self, pid: str, run_id: str) -> RunResult:

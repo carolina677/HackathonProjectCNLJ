@@ -77,6 +77,22 @@ def health_check(prev_count: int, tenders: list[dict], errors: list[str],
     return Health(True)
 
 
+def pulse_health(items: list[dict], errors: list[str], prev_fill: dict[str, float] | None) -> Health:
+    """Between full reads: does the first list page still look like the learned layout? No model call.
+
+    The pulse sees only the first items, so a smaller count than before is not a sign of breakage."""
+    h = health_check(0, items, errors)
+    if not h.ok:
+        return h
+    before = (prev_fill or {}).get("title", 0.0)
+    if items and before >= 0.7:
+        now = sum(t.get("title") is not None for t in items) / len(items)
+        if now < before - 0.3:
+            return Health(False, f"Field title is suddenly empty in most tenders ({now:.0%} filled, "
+                                 f"{before:.0%} before; pulse).")
+    return Health(True)
+
+
 def pick_probe(raw: list[dict], pages: dict[str, str], turn: int) -> dict | None:
     cands = [t for t in raw if t.get("id") in pages]
     return cands[turn % len(cands)] if cands else None
