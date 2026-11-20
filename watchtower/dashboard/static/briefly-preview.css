@@ -144,3 +144,31 @@ dd { margin: 0; }
 @media (max-width: 25rem) {
   .top kbd { display: none; }
 }
+
+/* Live data + before vs after */
+.demo-dot.live { background: #2f9e6b; box-shadow: 0 0 0 3px #2f9e6b33; }
+.source-note { margin: 0; color: var(--muted); font-size: .85rem; }
+.portal-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; justify-content: flex-end; }
+.compare-link { display: inline-flex; align-items: center; min-height: 44px; padding: .45rem .8rem; border-radius: .65rem; background: #2a1c47; color: #fff; font-weight: 700; font-size: .85rem; }
+.compare-link:hover { background: #472a75; }
+.tag[data-status="Healing"] { color: #71420c; background: #f8eed1; }
+.tag[data-status="Connecting"] { color: #4a298a; background: #eae2fb; }
+.tag[data-status="Needs review"] { color: #8b1f1f; background: #fbe3e1; }
+.back-link { display: inline-flex; gap: .4rem; align-items: center; min-height: 44px; color: var(--purple); font-weight: 700; margin-bottom: .6rem; }
+.repair-portal { margin: .35rem 0 0; color: var(--muted); font-weight: 650; }
+.repair-summary { max-width: 70ch; font-size: 1.05rem; line-height: 1.6; background: #fff; border: 1px solid var(--line); border-left: 4px solid #7749c4; border-radius: .85rem; padding: 1rem 1.2rem; margin: .4rem 0 1rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 1.2rem; list-style: none; padding: 0; margin: 0 0 1rem; color: var(--muted); font-size: .9rem; }
+.legend li { display: flex; align-items: center; gap: .45rem; }
+.swatch { display: inline-block; width: 1rem; height: 1rem; border-radius: .25rem; }
+.swatch-item { background: rgba(63,185,80,.3); box-shadow: inset 4px 0 0 #3fb950; }
+.swatch-gone { border: 2px dashed #f85149; }
+.swatch-new { border: 2px solid #d29922; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.compare figure { margin: 0; min-width: 0; }
+.compare figcaption { margin-bottom: .45rem; color: var(--muted); font-size: .9rem; }
+.compare figcaption strong { color: #242039; font-size: 1rem; margin-right: .2rem; }
+.compare iframe { width: 100%; height: 30rem; border: 1px solid var(--line); border-radius: .85rem; background: #fff; box-shadow: 0 10px 30px #50318114; }
+.diff-title { font-size: 1.15rem; letter-spacing: -.02em; margin: 1.6rem 0 .6rem; }
+.repair-diff { list-style: none; padding: 0; margin: 0; display: grid; gap: .4rem; }
+.repair-diff li { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .82rem; background: #fff; border: 1px solid var(--line); border-left: 4px solid #d29922; border-radius: .55rem; padding: .5rem .75rem; word-break: break-word; }
+@media (max-width: 65rem) { .compare { grid-template-columns: 1fr; } .compare iframe { height: 24rem; } }
