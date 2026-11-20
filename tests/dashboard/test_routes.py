@@ -19,6 +19,7 @@ async def test_index_lists_portals_with_state_and_story(client, repo):
     assert "state-failed" in html and "state-integrating" in html
     assert "Repaired" in html  # last runs told in words
     assert 'action="/portals"' in html or "hx-post=\"/portals\"" in html
+    assert "data-tenders" in html and 'id="tenders-dialog"' in html and "/briefly" in html
 
 
 async def test_portal_card_fragment(client, repo):

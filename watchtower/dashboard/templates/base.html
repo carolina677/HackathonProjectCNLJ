@@ -9,9 +9,17 @@
 <body>
   <header class="top">
     <a class="brand" href="/"><span class="eye"></span>Watchtower</a>
-    <nav>{% block nav %}{% endblock %}</nav>
+    <nav>{% block nav %}{% endblock %}<a class="nav-link" href="/briefly">Briefly UI</a></nav>
   </header>
   <main>{% block main %}{% endblock %}</main>
+  <dialog id="tenders-dialog" class="modal" aria-labelledby="td-title">
+    <div class="modal-head">
+      <div><h3 id="td-title">Tenders</h3><small id="td-sub" class="muted"></small></div>
+      <input id="td-search" type="search" placeholder="Filter by title, buyer, CPV…">
+      <button type="button" class="ghost" id="td-close">Close ×</button>
+    </div>
+    <div id="td-list" class="td-list"></div>
+  </dialog>
   <script src="/static/app.js?v={{ static_v }}"></script>
   {% block scripts %}{% endblock %}
 </body>

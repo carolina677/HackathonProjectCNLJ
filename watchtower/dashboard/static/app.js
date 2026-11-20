@@ -87,10 +87,73 @@ const Watchtower = (() => {
   function connect(onEvent) {
     const es = new EventSource("/events");
     es.onmessage = (m) => onEvent(JSON.parse(m.data));
-    for (const k of ["state", "run", "log", "judgment", "recipe", "verify", "page", "explore", "cost", "llm"])
+    for (const k of ["state", "run", "log", "judgment", "recipe", "verify", "page", "explore", "cost", "llm", "compare"])
       es.addEventListener(k, (m) => onEvent(JSON.parse(m.data)));
     return es;
   }
+
+  let modalTenders = [];
+  function renderModalTenders() {
+    const box = $("#td-list"), q = ($("#td-search")?.value || "").trim().toLowerCase();
+    if (!box) return;
+    const rows = modalTenders.filter((t) =>
+      `${t.title || ""} ${t.buyerName || ""} ${(t.cpvCodes || []).join(" ")}`.toLowerCase().includes(q));
+    box.textContent = "";
+    if (!rows.length) {
+      const p = document.createElement("p"); p.className = "muted"; p.textContent = "No tenders match."; box.append(p); return;
+    }
+    for (const t of rows.slice(0, 80)) {
+      const card = document.createElement("div"); card.className = "td-row";
+      const top = document.createElement("div"); top.className = "td-top";
+      const st = document.createElement("span"); st.className = `pill-sm ${t.status || "open"}`; st.textContent = t.status || "open";
+      const link = document.createElement("a"); link.href = t.url; link.target = "_blank"; link.rel = "noopener"; link.textContent = t.title || t.id;
+      top.append(st, link);
+      const meta = document.createElement("div"); meta.className = "td-meta";
+      const dl = t.submissionDeadline ? new Date(t.submissionDeadline).toLocaleString() : "—";
+      meta.textContent = `${t.buyerName || "—"} · Deadline: ${dl}${t.cpvCodes?.length ? " · CPV " + t.cpvCodes.join(", ") : ""}`;
+      card.append(top, meta);
+      if (t.documents?.length) {
+        const docs = document.createElement("div"); docs.className = "td-docs";
+        for (const d of t.documents) {
+          const a = document.createElement("a"); a.className = "doc-chip"; a.href = d.path; a.target = "_blank"; a.rel = "noopener";
+          a.textContent = `📄 ${d.fileName} (${Math.max(1, Math.round((d.sizeBytes || 0) / 1024))} KB)`;
+          docs.append(a);
+        }
+        card.append(docs);
+      }
+      box.append(card);
+    }
+  }
+
+  async function openTenders(pid, host) {
+    const dlg = $("#tenders-dialog"); if (!dlg) return;
+    $("#td-title").textContent = host ? `Tenders · ${host}` : "Tenders";
+    $("#td-sub").textContent = "Loading…";
+    $("#td-list").textContent = "";
+    if ($("#td-search")) $("#td-search").value = "";
+    dlg.showModal();
+    try {
+      modalTenders = await api("GET", `/portals/${pid}/tenders`) || [];
+      const docTotal = modalTenders.reduce((a, t) => a + (t.documents?.length || 0), 0);
+      $("#td-sub").textContent = `${modalTenders.length} tenders · ${docTotal} verified documents`;
+      renderModalTenders();
+    } catch (err) {
+      $("#td-sub").textContent = err.message;
+    }
+  }
+
+  function wireTenderModal() {
+    $("#td-close")?.addEventListener("click", () => $("#tenders-dialog")?.close());
+    $("#td-search")?.addEventListener("input", renderModalTenders);
+    $("#tenders-dialog")?.addEventListener("click", (e) => {
+      if (e.target.id === "tenders-dialog") e.target.close();
+    });
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-tenders]");
+      if (btn) openTenders(btn.dataset.tenders, btn.dataset.host);
+    });
+  }
+  wireTenderModal();
 
   function morning() {
     $("#add-form")?.addEventListener("submit", async (e) => {
@@ -123,6 +186,20 @@ const Watchtower = (() => {
         if (r.ok) { audio.src = URL.createObjectURL(await r.blob()); audio.hidden = false; audio.controls = true; await audio.play(); }
       } catch (err) { toast(err.message, "error"); }
       finally { btn.disabled = false; btn.textContent = "▶ Morning briefing"; }
+    });
+    $("#timelapse-btn")?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true; btn.textContent = "Running timelapse…";
+      try {
+        const res = await api("POST", "/demo/timelapse");
+        const liveIds = new Set((res?.portals || []).map((p) => p.id));
+        document.querySelectorAll(".card").forEach((c) => {
+          if (!liveIds.has(c.dataset.id) && c.textContent.includes("/lab/")) c.remove();
+        });
+        if (res?.portals) await Promise.all(res.portals.map((p) => refreshCard(p.id)));
+        toast("Offline timelapse started: watch /lab/ssr/ break (amber) and self-heal back to green.");
+      } catch (err) { toast(err.message, "error"); }
+      finally { setTimeout(() => { btn.disabled = false; btn.textContent = "⚡ Run offline self-healing timelapse"; }, 7500); }
     });
     connect((ev) => {
       if (ev.portal_id && ["state", "run"].includes(ev.kind)) scheduleCard(ev.portal_id);

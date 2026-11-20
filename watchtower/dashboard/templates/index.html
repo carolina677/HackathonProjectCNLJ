@@ -16,6 +16,7 @@
 </section>
 <section class="briefing">
   <button class="violet" id="brief-btn">▶ Morning briefing</button>
+  {% if lab %}<button type="button" class="demo-btn" id="timelapse-btn">⚡ Run offline self-healing timelapse</button>{% endif %}
   <p id="brief-text" class="muted" hidden></p>
   <audio id="brief-audio" hidden></audio>
 </section>

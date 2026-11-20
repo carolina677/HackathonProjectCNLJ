@@ -71,3 +71,21 @@
   kind: blocked
   holdout: false
   notes: candidate for "login required"; confirm that documents are not reachable without an account
+- url: https://contrataciondelestado.es/wps/portal/licitaciones
+  country: ES
+  software: Plataforma de Contratación del Sector Público
+  kind: ssr
+  holdout: true
+  notes: Spanish national portal
+- url: https://ezamowienia.gov.pl/mp-client/search/list
+  country: PL
+  software: e-Zamówienia
+  kind: spa
+  holdout: true
+  notes: Polish national e-procurement SPA
+- url: https://www.marches-publics.gouv.fr/?page=Entreprise.EntrepriseAdvancedSearch&AllCons
+  country: FR
+  software: Atexo LocalTrust (PLACE)
+  kind: ssr
+  holdout: true
+  notes: French central portal (matches atexo adapter)

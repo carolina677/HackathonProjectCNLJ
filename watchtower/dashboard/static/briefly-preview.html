@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f5f1">
+  <title>Briefly · Procurement workspace</title>
+  <link rel="stylesheet" href="./briefly-preview.css">
+  <script type="module" src="./briefly-preview.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <aside class="rail">
+    <a class="brand" href="#overview"><span class="mark" aria-hidden="true">b.</span> Briefly</a>
+    <nav aria-label="Workspace">
+      <a href="#overview"><span aria-hidden="true">◫</span> Overview</a>
+      <a href="#tenders"><span aria-hidden="true">≡</span> Tenders</a>
+      <a href="#saved"><span aria-hidden="true">☆</span> Saved</a>
+      <a href="#portals"><span aria-hidden="true">◎</span> Portals</a>
+      <a href="/"><span aria-hidden="true">↗</span> Ops Console</a>
+    </nav>
+    <div class="rail-foot"><span class="demo-dot" id="source-dot"></span> <span id="source-label">Demo workspace</span></div>
+  </aside>
+  <main id="main" tabindex="-1">
+    <header class="top"><span>Workspace <span aria-hidden="true">/</span> <strong id="location">Overview</strong><small class="mobile-demo">Demo</small></span><button id="search-shortcut" type="button" aria-keyshortcuts="Alt+/">Find a tender <kbd aria-hidden="true">Alt /</kbd></button></header>
+    <div class="content">
+      <section id="overview">
+        <div class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow"><span aria-hidden="true">✳</span> PROCUREMENT INTELLIGENCE</p>
+            <h1>Your morning<br>briefing<span>.</span></h1>
+            <p>See what changed across your portals and find the opportunities worth a closer look.</p>
+            <a class="primary" href="#tenders">Explore tenders <span aria-hidden="true" class="arrow"></span></a>
+          </div>
+          <div class="activity">
+            <div class="activity-head"><span>Portal activity</span><span>LAST 7 DAYS</span></div>
+            <p><strong>18</strong> tender updates</p>
+            <div class="chart" role="img" aria-label="Monday 1, Tuesday 3, Wednesday 2, Thursday 3, Friday 2, Saturday 2, Sunday 5 updates">
+              <div><i style="--size:20%"></i><span>M</span></div>
+              <div><i style="--size:60%"></i><span>T</span></div>
+              <div><i style="--size:40%"></i><span>W</span></div>
+              <div><i style="--size:60%"></i><span>T</span></div>
+              <div><i style="--size:40%"></i><span>F</span></div>
+              <div><i style="--size:40%"></i><span>S</span></div>
+              <div><i style="--size:100%"></i><span>S</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="metrics">
+          <a href="#tenders"><span>Latest opportunities</span><strong id="count-tenders"></strong><span aria-hidden="true" class="arrow"></span></a>
+          <a href="#portals"><span>Monitored portals</span><strong id="count-portals"></strong><span aria-hidden="true" class="arrow"></span></a>
+          <a href="#saved"><span>Saved tenders</span><strong id="count-saved"></strong><span aria-hidden="true" class="arrow"></span></a>
+        </div>
+      </section>
+      <section id="tender-section" aria-labelledby="tender-heading">
+        <div class="section-head">
+          <h2 id="tender-heading">Latest tenders</h2>
+          <h1 id="tender-page-heading" hidden>Tenders</h1>
+          <div class="filters">
+            <label for="search" class="sr-only">Search tenders</label>
+            <input id="search" type="search" placeholder="Search tenders">
+            <label for="country" class="sr-only">Filter by country</label>
+            <select id="country"><option value="">All countries</option></select>
+          </div>
+        </div>
+        <p id="results" class="sr-only" role="status"></p>
+        <ul id="tender-list" class="tender-list"></ul>
+      </section>
+      <section id="portals" hidden aria-labelledby="portal-heading">
+        <div class="section-head"><h1 id="portal-heading">Portal health</h1><p id="portal-source" class="source-note"></p></div>
+        <ul id="portal-list" class="tender-list"></ul>
+      </section>
+      <section id="repair-view" hidden aria-labelledby="repair-heading">
+        <a class="back-link" href="#portals"><span aria-hidden="true">←</span> All portals</a>
+        <div class="section-head">
+          <div>
+            <p class="eyebrow"><span aria-hidden="true">✳</span> SELF-REPAIR</p>
+            <h1 id="repair-heading">Before vs after</h1>
+            <p id="repair-portal" class="repair-portal"></p>
+          </div>
+          <div class="filters">
+            <label for="repair-pick" class="sr-only">Choose a repair</label>
+            <select id="repair-pick"></select>
+          </div>
+        </div>
+        <p id="repair-summary" class="repair-summary" role="status"></p>
+        <ul class="legend" aria-label="What the colours mean">
+          <li><span class="swatch swatch-item" aria-hidden="true"></span> What Watchtower reads</li>
+          <li><span class="swatch swatch-gone" aria-hidden="true"></span> Gone from the page</li>
+          <li><span class="swatch swatch-new" aria-hidden="true"></span> New on the page</li>
+        </ul>
+        <div class="compare">
+          <figure>
+            <figcaption><strong>Before</strong> <span id="cap-before"></span></figcaption>
+            <iframe id="frame-before" sandbox title="The portal page when the old recipe worked" loading="lazy"></iframe>
+          </figure>
+          <figure>
+            <figcaption><strong>After</strong> <span id="cap-after"></span></figcaption>
+            <iframe id="frame-after" sandbox title="The portal page now, read by the repaired recipe" loading="lazy"></iframe>
+          </figure>
+        </div>
+        <h2 class="diff-title">What Watchtower changed in its recipe</h2>
+        <ul id="repair-diff" class="repair-diff"></ul>
+      </section>
+    </div>
+  </main>
+  <dialog id="detail" aria-labelledby="detail-title">
+    <div class="dialog-top"><span class="eyebrow">TENDER DETAILS</span><button id="close-detail" aria-label="Close tender details" autofocus>×</button></div>
+    <h2 id="detail-title"></h2>
+    <p id="detail-description"></p>
+    <dl><dt>Buyer</dt><dd id="detail-buyer"></dd><dt>Country</dt><dd id="detail-country"></dd><dt>Deadline</dt><dd id="detail-deadline"></dd></dl>
+    <div id="detail-docs" class="detail-docs" hidden></div>
+    <button id="detail-save" class="primary" type="button" aria-pressed="false">Save tender</button>
+  </dialog>
+  <template id="tender-template">
+    <li class="tender">
+      <div class="tender-icon" aria-hidden="true">▤</div>
+      <div class="tender-name"><button class="open-tender" type="button"></button><p class="buyer"></p></div>
+      <span class="country"></span>
+      <span class="deadline"></span>
+      <span class="tag"></span>
+      <button class="save" type="button" aria-pressed="false"><span aria-hidden="true">☆</span></button>
+    </li>
+  </template>
+</body>
+</html>

@@ -19,7 +19,8 @@
   </ol>
   <div class="actions">
     <a href="/portals/{{ p.id }}/theater">Theater</a>
-    <a href="/portals/{{ p.id }}/tenders" target="_blank">Tenders JSON</a>
+    <button type="button" class="ghost" data-tenders="{{ p.id }}" data-host="{{ c.host }}">Tenders</button>
+    <a href="/portals/{{ p.id }}/tenders" target="_blank">JSON</a>
     <button data-refresh="{{ p.id }}">Refresh</button>
     {% if c.lab %}<button class="danger" data-break="{{ p.id }}">Break it</button>{% endif %}
     <button class="ghost" data-delete="{{ p.id }}">Remove</button>

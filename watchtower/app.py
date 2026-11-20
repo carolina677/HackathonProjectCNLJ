@@ -60,6 +60,7 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
         app.state.repo = repo
         app.state.settings = settings
         app.state.scheduler = _NullScheduler(repo)
+        app.state.demo_tasks = set()
         if start_scheduler:
             from .pipeline import build_pipeline
             from .scheduler import HostLimiter, Scheduler
@@ -81,6 +82,10 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
             yield
         finally:
             cost.clear_persister()
+            for t in list(getattr(app.state, "demo_tasks", ())):
+                t.cancel()
+            if getattr(app.state, "demo_tasks", None):
+                await asyncio.gather(*list(app.state.demo_tasks), return_exceptions=True)
             for h in getattr(app.state, "shutdown_hooks", []):
                 await h(app)
             if cost_tasks:
