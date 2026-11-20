@@ -824,3 +824,48 @@ dialog.modal { width: min(56rem, 94vw); max-height: 85vh; }
 @media (prefers-reduced-motion: reduce) {
   .state-healing { animation: none; box-shadow: 0 0 0 2px var(--amber-accent); }
 }
+
+/* --- Demo stage: the whole story on one screen ---------------------------------------- */
+.stage { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; padding: 20px 22px;
+  margin: 0 0 22px; box-shadow: 0 10px 30px rgba(42, 28, 71, .08); }
+.stage[hidden] { display: none; }
+.stage-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.stage-head h2 { margin: 2px 0 0; font-size: 1.5rem; color: var(--ink); }
+.stage-actions { display: flex; align-items: center; gap: 10px; }
+.stage-clock { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
+.stage-portals { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 16px 0; }
+.sp { border: 1px solid var(--line); border-left: 6px solid var(--blue-accent); border-radius: 14px; padding: 10px 12px;
+  background: var(--canvas); cursor: pointer; transition: background .4s, border-color .4s, transform .3s; text-align: left;
+  font: inherit; color: inherit; }
+.sp:hover { transform: translateY(-1px); }
+.sp b { display: block; font-size: .95rem; }
+.sp .sp-state { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.sp .sp-note { display: block; font-size: .78rem; color: var(--muted); margin-top: 4px; min-height: 2.3em; }
+.sp.serving { border-left-color: var(--green-accent); background: var(--green-bg); }
+.sp.serving .sp-state { color: var(--green); }
+.sp.healing { border-left-color: var(--amber-accent); background: var(--amber-bg); animation: sp-pulse 1.2s ease-in-out infinite; }
+.sp.healing .sp-state { color: var(--amber); }
+.sp.failed { border-left-color: var(--red-accent); background: var(--red-bg); }
+.sp.failed .sp-state { color: var(--red); }
+@keyframes sp-pulse { 50% { box-shadow: 0 0 0 4px rgba(210, 153, 34, .25); } }
+.stage-body { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+.stage-story { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;
+  max-height: 310px; overflow: auto; }
+.stage-story li { background: var(--canvas); border-radius: 12px; padding: 9px 12px; font-size: .9rem; line-height: 1.35;
+  border-left: 4px solid var(--line); animation: st-in .35s ease-out; }
+.stage-story li time { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 6px; font-weight: 600; }
+.stage-story li.notice, .stage-story li.break, .stage-story li.chaos { border-left-color: var(--amber-accent); }
+.stage-story li.repaired { border-left-color: var(--green-accent); }
+.stage-story li.honest { border-left-color: var(--red-accent); }
+.stage-story li.done { border-left-color: var(--purple); background: var(--purple-soft); font-weight: 600; }
+@keyframes st-in { from { opacity: 0; transform: translateY(-4px); } }
+.stage-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: start; }
+.sv { border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.sv span { display: block; font-size: .78rem; color: var(--muted); }
+.sv small { display: block; font-size: .7rem; }
+.sv strong { font-size: 1.6rem; font-variant-numeric: tabular-nums; color: var(--ink); transition: color .3s; }
+.sv.green strong { color: var(--green); } .sv.amber strong { color: var(--amber); }
+.sv.red strong { color: var(--red); } .sv.purple strong { color: var(--purple); }
+.sv.bump strong { animation: sv-bump .5s ease-out; }
+@keyframes sv-bump { 40% { transform: scale(1.18); } }
+@media (max-width: 860px) { .stage-body { grid-template-columns: 1fr; } }

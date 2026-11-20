@@ -118,6 +118,14 @@ def register(app: FastAPI) -> None:
 
         return await run_timelapse(request.app, str(request.base_url).rstrip("/"))
 
+    @app.post("/demo/chaos", status_code=202)
+    async def demo_chaos(request: Request):
+        if not request.app.state.settings.lab:
+            raise HTTPException(404, "Chaos Lab is disabled")
+        from ..demo import run_chaos
+
+        return {"broken": await run_chaos(request.app)}
+
     @app.get("/traces")
     async def traces():
         """Recent LLM and Jev calls recorded in MLflow (empty when tracing is off)."""

@@ -8,6 +8,34 @@
 {% endblock %}
 
 {% block main %}
+{% if lab %}
+<section id="stage" class="stage" hidden aria-live="polite" aria-labelledby="stage-title">
+  <div class="stage-head">
+    <div>
+      <p class="eyebrow"><span aria-hidden="true">✳</span> DEMO STAGE · <span id="stage-mode">REPLAY</span></p>
+      <h2 id="stage-title">One night at the watchtower</h2>
+    </div>
+    <div class="stage-actions">
+      <span id="stage-clock" class="stage-clock">0:00</span>
+      <button type="button" class="btn-soft" id="stage-close">Close ×</button>
+    </div>
+  </div>
+  <div id="stage-portals" class="stage-portals"></div>
+  <div class="stage-body">
+    <ol id="stage-story" class="stage-story"></ol>
+    <div class="stage-values">
+      <div class="sv"><span>Tenders served</span><strong id="sv-tenders">0</strong></div>
+      <div class="sv amber"><span>Kept served while broken</span><strong id="sv-kept">0</strong></div>
+      <div class="sv"><span>Breaks noticed, no refresh</span><strong id="sv-noticed">0</strong></div>
+      <div class="sv green"><span>Self-repairs</span><strong id="sv-repairs">0</strong></div>
+      <div class="sv"><span>Broken → repaired (avg.)</span><strong id="sv-ttr">–</strong></div>
+      <div class="sv red"><span>Need a person (with reason)</span><strong id="sv-human">0</strong></div>
+      <div class="sv"><span id="sv-usd-label">Model cost, this demo</span><strong id="sv-usd">$0.00</strong></div>
+      <div class="sv purple"><span>Manual work avoided <small>est. 2 h per fix</small></span><strong id="sv-hours">0 h</strong></div>
+    </div>
+  </div>
+</section>
+{% endif %}
 <section id="overview">
   <div class="hero">
     <div class="hero-copy">
@@ -16,7 +44,8 @@
       <p class="hero-sub">Autonomous European tender monitoring that attaches, detects breakage, and repairs itself.</p>
       <div class="hero-actions">
         <button type="button" class="primary" id="brief-btn">▶ Morning briefing</button>
-        {% if lab %}<button type="button" class="btn-amber" id="timelapse-btn">⚡ Run offline self-healing timelapse</button>{% endif %}
+        {% if lab %}<button type="button" class="btn-amber" id="timelapse-btn">⚡ Run demo: one night (replay)</button>
+        <button type="button" class="btn-amber" id="chaos-btn">💥 Break 3 portals live</button>{% endif %}
         <a class="ghost-link" href="#tenders">Explore tenders <span aria-hidden="true" class="arrow"></span></a>
       </div>
       <div id="brief-box" class="brief-box" hidden>
