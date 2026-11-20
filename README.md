@@ -27,7 +27,7 @@ Serve ──every READ_INTERVAL_SECONDS──► Read: deterministic engine, no 
 
 **Why it scales:** the LLM runs only to learn a recipe and to repair it. Every read after that is plain code. Typed yes/no judgments go to Jev (TypeSafe), which costs far less than an LLM call. All portals share one scheduler. Each host gets at most 1 request per second, with no logins and no captcha solving.
 
-**States:** `integrating → serving ⇄ healing`, or `failed` with a reason. While a portal is `healing`, its last correct tenders stay served. A tender is `closed` once its deadline has passed or the portal stops listing it, and `withdrawn` when the portal marks it cancelled. ZIP files are unpacked, and files over 250 MB are skipped. When a value can't be verified, it is left empty instead of guessed.
+**States:** `integrating → serving ⇄ healing`, or `failed` with a reason. While a portal is `healing`, its last correct tenders stay served. A tender is `closed` once its deadline has passed or the portal stops listing it, and `withdrawn` when the portal marks it cancelled. ZIP files are unpacked (Word, Excel and other office files stay whole), and files over 250 MB are skipped. A tender is only marked `closed` for missing from the list when every list page was read. When a value can't be verified, it is left empty instead of guessed.
 
 **Dashboard (`/`):** one card per portal with its state and story, a live event feed, and a Theater view per portal that shows the agent's steps and recipe diffs. It also has a cost meter, a race panel comparing a Jev answer with an LLM answer, and a spoken morning briefing (ElevenLabs). With `WATCHTOWER_LAB=1`, the built-in Chaos Lab (`/lab`) provides portals you can break on purpose.
 
