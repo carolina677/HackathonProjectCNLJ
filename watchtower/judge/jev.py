@@ -72,8 +72,8 @@ class Jev:
             usd = r.usage.input_tokens / 1e6 * cost.JEV_USD_PER_MTOK
             cost.record(portal_id, "jev", r.usage.input_tokens, r.usage.output_tokens, usd)
             if sp is not None:
-                sp.set_outputs({"answers": {k: getattr(v, "choice", None) or getattr(v, "probability", None)
-                                            for k, v in r.answers.items()},
+                sp.set_outputs({"answers": {k: v.choice if getattr(v, "choice", None) is not None
+                                            else getattr(v, "noul", None) for k, v in r.answers.items()},
                                 "tokens_in": r.usage.input_tokens, "usd": round(usd, 8)})
             return r.answers, int((time.monotonic() - t0) * 1000), usd
 

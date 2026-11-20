@@ -161,3 +161,16 @@ async def test_traces_endpoint_and_dashboard_panel(monkeypatch, fake_mlflow, cli
     assert r["enabled"] and r["ui"].endswith("/#/experiments/7/traces") and r["traces"][0]["usd"] == 0.5
     html = (await client.get("/")).text
     assert 'id="traces"' in html and "http://127.0.0.1:5050/#/experiments/7/traces" in html
+
+
+async def test_jev_yes_no_answers_are_recorded(monkeypatch, fake_mlflow, settings):
+    from typesafe_sdk import NoulAnswer
+    from tests.judge.test_jev import FakeJevClient
+    from watchtower.judge.jev import Jev
+
+    monkeypatch.setenv("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
+    tracing.setup()
+    client = FakeJevClient({"a": NoulAnswer(type="noul", noul=0.93)}, tokens=100)
+    await Jev(settings, client=client).nouls({"page": "x"}, {"a": "Is this a tender?"}, portal_id="p3")
+    [s] = fake_mlflow["spans"]
+    assert s.outputs["answers"] == {"a": 0.93}
