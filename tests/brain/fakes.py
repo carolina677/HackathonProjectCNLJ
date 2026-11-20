@@ -74,11 +74,12 @@ class FakeJev:
 
     @staticmethod
     def _field(state, field):
-        value = str(state.get("value", ""))
+        value = str(state.get("tender", {}).get(field, ""))
         page = state.get("page", "")
-        if field == "submissionDeadline" and state.get("expected_text") is not None:
-            return 0.9 if state["expected_text"] in page else 0.05
-        return 0.9 if value and value[:10] in page else 0.4
+        if field == "cpvCodes":
+            return 0.9 if all(c in page for c in value.split(", ")) else 0.1
+        probe = value.split(" (")[0]
+        return 0.9 if probe and probe in page else 0.1
 
 
 class NoJudge:
