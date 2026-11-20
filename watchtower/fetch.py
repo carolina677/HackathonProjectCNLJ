@@ -108,7 +108,7 @@ def http() -> httpx.AsyncClient:
     global _http, _http_loop
     loop = asyncio.get_running_loop()
     if _http is None or _http.is_closed or _http_loop is not loop:
-        _http = httpx.AsyncClient(headers=HEADERS, follow_redirects=True, timeout=httpx.Timeout(30, read=120))
+        _http = httpx.AsyncClient(headers=HEADERS, follow_redirects=False, timeout=httpx.Timeout(30, read=120))
         _http_loop = loop
     return _http
 
@@ -142,6 +142,15 @@ async def close_browser() -> None:
         _http = None
 
 
+MAX_REDIRECTS = 10
+BROWSER_SKIPPED = {"image", "font", "media", "stylesheet"}
+
+
+def route_policy(resource_type: str) -> str:
+    """Inside the browser: skip what a tender list never needs; everything else waits for the limiter."""
+    return "abort" if resource_type in BROWSER_SKIPPED else "throttle"
+
+
 class Fetcher:
     def __init__(self, portal_id: str, limiter, cancelled: Callable[[], bool] = lambda: False,
                  snapshot_dir: Path | None = None):
@@ -158,10 +167,24 @@ class Fetcher:
             raise PortalCancelled(self.portal_id)
         self.requests += 1
 
+    async def _send(self, req: httpx.Request, stream: bool = False) -> httpx.Response:
+        """Follow redirects by hand so every hop waits for the per-host limiter."""
+        for _ in range(MAX_REDIRECTS + 1):
+            await self._polite(str(req.url))
+            r = await http().send(req, stream=True)
+            nxt = r.next_request if r.is_redirect else None
+            if nxt is None:
+                if not stream:
+                    await r.aread()
+                    await r.aclose()
+                return r
+            await r.aclose()
+            req = nxt
+        raise httpx.TooManyRedirects(f"more than {MAX_REDIRECTS} redirects", request=req)
+
     async def get(self, url: str) -> Page:
-        await self._polite(url)
         t0 = time.monotonic()
-        r = await http().get(url)
+        r = await self._send(http().build_request("GET", url))
         page = Page(url=url, final_url=str(r.url), status=r.status_code, html=r.text, headers=dict(r.headers))
         events.emit(self.portal_id, "page", {"url": url, "status": r.status_code, "via": "http",
                                              "ms": int((time.monotonic() - t0) * 1000)})
@@ -169,26 +192,26 @@ class Fetcher:
 
     async def post(self, url: str, data: dict) -> Page:
         """Form post-back for pagination only (never logins): same politeness as a GET."""
-        await self._polite(url)
         t0 = time.monotonic()
-        r = await http().post(url, data=data)
+        r = await self._send(http().build_request("POST", url, data=data))
         page = Page(url=url, final_url=str(r.url), status=r.status_code, html=r.text, headers=dict(r.headers))
         events.emit(self.portal_id, "page", {"url": url, "status": r.status_code, "via": "post",
                                              "ms": int((time.monotonic() - t0) * 1000)})
         return page
 
     async def get_json(self, url: str, params: dict | None = None) -> Any:
-        await self._polite(url)
-        r = await http().get(url, params=params, headers={"Accept": "application/json"})
+        r = await self._send(http().build_request("GET", url, params=params, headers={"Accept": "application/json"}))
         events.emit(self.portal_id, "page", {"url": str(r.url), "status": r.status_code, "via": "json"})
         r.raise_for_status()
         return r.json()
 
     @asynccontextmanager
     async def stream(self, url: str):
-        await self._polite(url)
-        async with http().stream("GET", url) as r:
+        r = await self._send(http().build_request("GET", url), stream=True)
+        try:
             yield r
+        finally:
+            await r.aclose()
 
     async def render(self, url: str, wait_ms: int = 1500) -> RenderedPage:
         await self._polite(url)
@@ -199,10 +222,9 @@ class Fetcher:
         pending: list[asyncio.Task] = []
 
         async def route(r):
-            rt = r.request.resource_type
-            if rt in ("image", "font", "media", "stylesheet"):
+            if route_policy(r.request.resource_type) == "abort":
                 return await r.abort()
-            if rt in ("xhr", "fetch", "document") and r.request.url != url:
+            if r.request.url != url:
                 try:
                     await self._polite(r.request.url)
                 except PortalCancelled:

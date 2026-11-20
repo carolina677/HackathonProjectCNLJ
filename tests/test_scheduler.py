@@ -91,7 +91,8 @@ async def test_clock_closes_expired(repo):
 
 def test_illegal_transition_raises():
     with pytest.raises(ValueError):
-        Pipeline.check_transition(PortalState.failed, PortalState.healing)
+        Pipeline.check_transition(PortalState.integrating, PortalState.healing)
+    Pipeline.check_transition(PortalState.failed, PortalState.healing)  # backoff retry of a failed repair
     Pipeline.check_transition(PortalState.serving, PortalState.healing)
     Pipeline.check_transition(PortalState.healing, PortalState.serving)
     Pipeline.check_transition(PortalState.failed, PortalState.integrating)

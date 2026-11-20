@@ -33,9 +33,23 @@ def filename_from(url: str, headers: dict) -> str:
     return name or "document"
 
 
+OFFICE_EXT = (".docx", ".docm", ".xlsx", ".xlsm", ".pptx", ".odt", ".ods", ".odp", ".odg", ".jar", ".epub")
+
+
 def _is_zip(path: Path, name: str) -> bool:
+    """A real archive to unpack. Office/ODF files are ZIP containers too and must stay whole."""
+    if name.lower().endswith(OFFICE_EXT):
+        return False
     with open(path, "rb") as f:
-        return f.read(4) == b"PK\x03\x04" or name.lower().endswith(".zip") and zipfile.is_zipfile(path)
+        magic = f.read(4) == b"PK\x03\x04"
+    if not (magic or name.lower().endswith(".zip")) or not zipfile.is_zipfile(path):
+        return False
+    try:
+        with zipfile.ZipFile(path) as z:
+            names = set(z.namelist())
+    except zipfile.BadZipFile:
+        return False
+    return not ({"[Content_Types].xml", "mimetype", "META-INF/MANIFEST.MF"} & names)
 
 
 class _Store:

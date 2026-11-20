@@ -104,3 +104,27 @@ async def test_duplicates_collapsed(repo, settings):
 async def test_failed_download_does_not_raise(repo, settings):
     docs = await _fetch(repo, settings, {}, ["https://x/missing.pdf"])
     assert docs == []
+
+
+def _docx() -> bytes:
+    return _zip({"[Content_Types].xml": b"<Types/>", "word/document.xml": b"<w/>"})
+
+
+async def test_office_file_kept_whole(repo, settings):
+    files = {"https://x/Leistungsverzeichnis.docx": (_docx(), {}),
+             "https://x/download?id=7": (_zip({"mimetype": b"application/vnd.oasis.opendocument.text"}), {})}
+    docs = await _fetch(repo, settings, files, list(files))
+    assert sorted(d.fileName for d in docs) == ["Leistungsverzeichnis.docx", "download"]
+
+
+async def test_office_file_inside_zip_kept_whole(repo, settings):
+    z = _zip({"a.pdf": b"A", "LV.xlsx": _docx()})
+    docs = await _fetch(repo, settings, {"https://x/u.zip": (z, {})}, ["https://x/u.zip"])
+    assert sorted(d.fileName for d in docs) == ["LV.xlsx", "a.pdf"]
+
+
+async def test_zip_without_extension_still_unpacked(repo, settings):
+    z = _zip({"a.pdf": b"A"})
+    docs = await _fetch(repo, settings, {"https://x/DownloadTenderDocuments?oid=1": (z, {})},
+                        ["https://x/DownloadTenderDocuments?oid=1"])
+    assert [d.fileName for d in docs] == ["a.pdf"]

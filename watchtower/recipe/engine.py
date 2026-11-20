@@ -275,6 +275,8 @@ async def _list_pages(recipe: Recipe, fetcher: FetcherLike, errors: list[str]):
                         return
                     pages_seen += 1
                     yield page.final_url or action, page.html
+                if postback_request(page.html, page.final_url or page_url, pg.next_selector, pg.param):
+                    errors.append(f"{LIST_INCOMPLETE}: stopped after max_pages={pg.max_pages}")
                 return
             if pg.kind == "next_link" and pg.next_selector:
                 n = LexborHTMLParser(page.html).css_first(pg.next_selector)
@@ -286,6 +288,17 @@ async def _list_pages(recipe: Recipe, fetcher: FetcherLike, errors: list[str]):
             next_url = next_href
         else:
             next_url = url
+    if next_url and seen_pages >= pg.max_pages:
+        errors.append(f"{LIST_INCOMPLETE}: stopped after max_pages={pg.max_pages}")
+
+
+LIST_INCOMPLETE = "list incomplete"
+_LIST_ERRORS = ("HTTP ", "list request failed", "post-back failed", LIST_INCOMPLETE)
+
+
+def list_complete(errors: list[str]) -> bool:
+    """False when the list pages were not all read, so missing tenders must not be taken as gone."""
+    return not any(e.startswith(_LIST_ERRORS) for e in errors)
 
 
 async def run_recipe(recipe: Recipe, fetcher: FetcherLike, *, limit: int | None = None,

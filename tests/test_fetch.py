@@ -68,3 +68,19 @@ async def test_page_event(lab, fetcher):
     await f.get(lab.url("ssr"))
     ev = events.history("p1", {"page"})[-1]["data"]
     assert ev["status"] == 200 and ev["url"].endswith("/lab/ssr/")
+
+
+async def test_each_redirect_hop_is_throttled(lab, fetcher):
+    f, lim = fetcher
+    page = await f.get(lab.url("ssr").rstrip("/"))  # the lab answers /lab/ssr with a redirect to /lab/ssr/
+    assert page.status == 200 and page.final_url.endswith("/lab/ssr/")
+    assert len(lim.calls) == 2
+
+
+def test_browser_throttles_every_request_it_lets_through():
+    from watchtower.fetch import route_policy
+
+    for rt in ("document", "xhr", "fetch", "script", "other", "websocket", "eventsource", "manifest", "ping"):
+        assert route_policy(rt) == "throttle", rt
+    for rt in ("image", "font", "media", "stylesheet"):
+        assert route_policy(rt) == "abort", rt

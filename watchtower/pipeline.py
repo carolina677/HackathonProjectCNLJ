@@ -21,7 +21,7 @@ from .judge.jev import Jev
 from .judge.llm import LLM, LLMUnavailable
 from .models import OPTIONAL_FIELDS, REQUIRED_FIELDS, Document, PortalState, RunKind, RunResult, Tender
 from .recipe.dsl import Recipe
-from .recipe.engine import run_recipe
+from .recipe.engine import list_complete, run_recipe
 
 log = logging.getLogger("watchtower.pipeline")
 
@@ -34,7 +34,7 @@ ALLOWED = {
     PortalState.integrating: {PortalState.serving, PortalState.failed, PortalState.integrating},
     PortalState.serving: {PortalState.healing, PortalState.serving, PortalState.failed},
     PortalState.healing: {PortalState.serving, PortalState.failed, PortalState.healing},
-    PortalState.failed: {PortalState.integrating, PortalState.failed, PortalState.serving},
+    PortalState.failed: {PortalState.integrating, PortalState.failed, PortalState.serving, PortalState.healing},
 }
 
 
@@ -263,7 +263,8 @@ class Pipeline:
             self.schedule_followup(pid, RunKind.repair)
             return RunResult.failed
         changed = await self.repo.upsert_tenders(pid, list(tenders.values()), now)
-        closed = await self.repo.mark_missing_closed(pid, set(tenders), now)
+        # Only a fully read list says a tender is gone; a cut-off or failed page proves nothing.
+        closed = await self.repo.mark_missing_closed(pid, set(tenders), now) if list_complete(errors) else 0
         await self.repo.mark_success(pid, len(tenders), now)
         self._prev_fill[pid] = fill_rates(raw)
         if p.state != PortalState.serving:
