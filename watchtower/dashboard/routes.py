@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -198,6 +198,41 @@ def register(app: FastAPI) -> None:
         a, b = await asyncio.gather(safe(run_jev()), safe(run_llm()))
         events.emit(pid, "race", {"jev": a, "llm": b})
         return {"jev": a, "llm": b}
+
+    _brief_cache: dict = {}
+
+    async def _briefing(request: Request) -> str:
+        from datetime import timedelta
+
+        from ..briefing import briefing_text
+
+        repo = request.app.state.repo
+        since = datetime.now(timezone.utc) - timedelta(hours=24)
+        return briefing_text(await repo.list_portals(), await repo.runs_since(since))
+
+    @app.get("/briefing.txt", response_class=PlainTextResponse)
+    async def briefing_txt(request: Request):
+        return await _briefing(request)
+
+    @app.get("/briefing.mp3")
+    async def briefing_mp3(request: Request):
+        """Spoken briefing, cached for 5 minutes per text. 404 when ElevenLabs is not configured."""
+        import time
+
+        from ..briefing import synthesize
+
+        st = request.app.state.settings
+        if not (st.elevenlabs_api_key and st.elevenlabs_voice_id):
+            raise HTTPException(404, "ElevenLabs is not configured; see /briefing.txt")
+        text = await _briefing(request)
+        hit = _brief_cache.get("mp3")
+        if not hit or hit[0] != text or time.monotonic() - hit[1] > 300:
+            try:
+                hit = (text, time.monotonic(), await synthesize(text, st))
+            except Exception as e:
+                raise HTTPException(502, f"ElevenLabs failed: {str(e)[:120]}")
+            _brief_cache["mp3"] = hit
+        return Response(hit[2], media_type="audio/mpeg", headers={"Cache-Control": "max-age=300"})
 
     @app.get("/events")
     async def stream(request: Request, limit: int | None = None, portal: str | None = None):

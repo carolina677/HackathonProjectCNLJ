@@ -14,6 +14,11 @@
   <div class="stat"><b>{{ tenders }}</b><small>tenders delivered</small></div>
   <div class="stat"><b>${{ "%.3f" | format(avg_usd) }}</b><small>avg. cost per portal · ${{ "%.0f" | format(projected) }} for 4,500</small></div>
 </section>
+<section class="briefing">
+  <button class="violet" id="brief-btn">▶ Morning briefing</button>
+  <p id="brief-text" class="muted" hidden></p>
+  <audio id="brief-audio" hidden></audio>
+</section>
 <section class="grid" id="grid">
   {% for c in cards %}{% include "_card.html" %}{% endfor %}
   {% if not cards %}<p class="empty" id="empty">No portals yet. Paste a URL above{% if lab %} — or try <code>/lab/ssr/</code>{% endif %}.</p>{% endif %}

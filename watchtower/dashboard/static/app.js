@@ -88,6 +88,16 @@ const Watchtower = (() => {
         await api("DELETE", `/portals/${t.dataset.delete}`).then(() => toast("Portal removed")).catch((e) => toast(e.message, "error")); document.getElementById(`card-${t.dataset.delete}`)?.remove(); recount();
       }
     });
+    $("#brief-btn")?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget, out = $("#brief-text"), audio = $("#brief-audio");
+      btn.disabled = true; btn.textContent = "Preparing…";
+      try {
+        out.textContent = await (await fetch("/briefing.txt")).text(); out.hidden = false;
+        const r = await fetch("/briefing.mp3");
+        if (r.ok) { audio.src = URL.createObjectURL(await r.blob()); audio.hidden = false; audio.controls = true; await audio.play(); }
+      } catch (err) { toast(err.message, "error"); }
+      finally { btn.disabled = false; btn.textContent = "▶ Morning briefing"; }
+    });
     connect((ev) => {
       if (ev.portal_id && ["state", "run"].includes(ev.kind)) scheduleCard(ev.portal_id);
       feed(ev);
