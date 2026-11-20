@@ -4,7 +4,7 @@ import hashlib
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -211,6 +211,30 @@ class Repo:
             changed += 1
         await self.db.commit()
         return changed
+
+    async def activity_7d(self) -> dict[str, Any]:
+        """Return 7-day tender update counts ending today (UTC) for the overview chart."""
+        today = now_utc().date()
+        days = [today - timedelta(days=offset) for offset in range(6, -1, -1)]
+        cutoff = f"{days[0].isoformat()}T00:00:00"
+        cur = await self.db.execute(
+            "SELECT substr(t.last_changed_at, 1, 10) AS day, COUNT(*) AS cnt "
+            "FROM tenders t JOIN portals p ON p.id = t.portal_id "
+            "WHERE p.deleted = 0 AND t.last_changed_at >= ? "
+            "GROUP BY day",
+            (cutoff,),
+        )
+        counts = {r["day"]: int(r["cnt"] or 0) for r in await cur.fetchall()}
+        series = [
+            {
+                "date": d.isoformat(),
+                "label": d.strftime("%a")[0],
+                "weekday": d.strftime("%a"),
+                "count": counts.get(d.isoformat(), 0),
+            }
+            for d in days
+        ]
+        return {"total": sum(item["count"] for item in series), "days": series}
 
     async def list_tenders(self, pid: str, changed_since: datetime | None = None) -> list[Tender]:
         if changed_since is not None and changed_since.tzinfo is None:

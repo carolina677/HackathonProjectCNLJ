@@ -3,23 +3,73 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Watchtower{% endblock %}</title>
+  <meta name="theme-color" content="#f6f5f1">
+  <title>{% block title %}Briefly · Watchtower{% endblock %}</title>
   <link rel="stylesheet" href="/static/app.css?v={{ static_v }}">
 </head>
-<body>
-  <header class="top">
-    <a class="brand" href="/"><span class="eye"></span>Watchtower</a>
-    <nav>{% block nav %}{% endblock %}<a class="nav-link" href="/briefly">Briefly UI</a></nav>
-  </header>
-  <main>{% block main %}{% endblock %}</main>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip" href="#main">Skip to content</a>
+  <aside class="rail">
+    <a class="brand" href="/#overview">
+      <span class="mark" aria-hidden="true">b.</span>
+      <span class="brand-copy"><strong>Briefly</strong><small>by Watchtower</small></span>
+    </a>
+    <nav aria-label="Workspace">
+      <a href="/#overview" data-nav="overview"><span aria-hidden="true">◫</span> Overview</a>
+      <a href="/#portals" data-nav="portals"><span aria-hidden="true">◎</span> Portals</a>
+      <a href="/#tenders" data-nav="tenders"><span aria-hidden="true">≡</span> Tenders</a>
+      <a href="/#saved" data-nav="saved"><span aria-hidden="true">☆</span> Saved <em id="nav-saved-badge" class="nav-badge" hidden>0</em></a>
+    </nav>
+    <div class="rail-foot">
+      <span class="live-dot" id="source-dot"></span>
+      <span id="source-label">Watchtower · Live</span>
+    </div>
+  </aside>
+
+  <main id="main" tabindex="-1">
+    <header class="top">
+      <div class="crumb">Workspace <span aria-hidden="true">/</span> <strong id="location">{% block crumb %}Overview{% endblock %}</strong></div>
+      <div class="top-right">{% block top_actions %}{% endblock %}</div>
+    </header>
+    <div class="content">{% block main %}{% endblock %}</div>
+  </main>
+
   <dialog id="tenders-dialog" class="modal" aria-labelledby="td-title">
     <div class="modal-head">
       <div><h3 id="td-title">Tenders</h3><small id="td-sub" class="muted"></small></div>
       <input id="td-search" type="search" placeholder="Filter by title, buyer, CPV…">
-      <button type="button" class="ghost" id="td-close">Close ×</button>
+      <button type="button" class="btn-soft" id="td-close">Close ×</button>
     </div>
     <div id="td-list" class="td-list"></div>
   </dialog>
+
+  <dialog id="detail" class="detail-dialog" aria-labelledby="detail-title">
+    <div class="dialog-top">
+      <div class="dialog-badges">
+        <span class="eyebrow">TENDER DETAILS</span>
+        <span id="detail-status" class="tag"></span>
+      </div>
+      <button id="close-detail" type="button" aria-label="Close tender details" autofocus>×</button>
+    </div>
+    <h2 id="detail-title"></h2>
+    <p id="detail-description"></p>
+    <dl class="detail-meta">
+      <dt>Buyer</dt><dd id="detail-buyer"></dd>
+      <dt>Portal</dt><dd id="detail-portal"></dd>
+      <dt>Country</dt><dd id="detail-country"></dd>
+      <dt>Published</dt><dd id="detail-published"></dd>
+      <dt>Deadline</dt><dd id="detail-deadline"></dd>
+      <dt data-opt="ref">Reference</dt><dd id="detail-ref" data-opt="ref"></dd>
+      <dt data-opt="proc">Procedure</dt><dd id="detail-procedure" data-opt="proc"></dd>
+      <dt data-opt="nature">Contract</dt><dd id="detail-nature" data-opt="nature"></dd>
+      <dt data-opt="cpv">CPV codes</dt><dd id="detail-cpv" data-opt="cpv"></dd>
+    </dl>
+    <div id="detail-docs" class="detail-docs" hidden></div>
+    <div class="dialog-foot">
+      <button id="detail-save" class="primary" type="button" aria-pressed="false">Save tender</button>
+    </div>
+  </dialog>
+
   <script src="/static/app.js?v={{ static_v }}"></script>
   {% block scripts %}{% endblock %}
 </body>

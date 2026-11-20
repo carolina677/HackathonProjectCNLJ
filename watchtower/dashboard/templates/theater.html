@@ -1,27 +1,34 @@
 {% extends "base.html" %}
 {% set p = c.p %}
-{% block title %}Theater · {{ c.host }}{% endblock %}
-{% block nav %}<a class="back" href="/">← All portals</a>{% endblock %}
+{% block title %}Theater · {{ c.host }} · Watchtower{% endblock %}
+{% block crumb %}Agent Theater · {{ c.host }}{% endblock %}
+{% block top_actions %}
+  <a class="top-btn" href="/#portals">← All portals</a>
+{% endblock %}
 {% block main %}
 <section class="banner state-{{ p.state.value }}" id="banner" data-id="{{ p.id }}">
   <div>
-    <span class="pill" id="state">{{ p.state.value }}</span>
+    <div class="card-head">
+      <span class="pill pill-{{ p.state.value }}" id="state">{{ p.state.value }}</span>
+      {% if c.platform %}<span class="meta-chip">{{ c.platform }}</span>{% endif %}
+      {% if c.country %}<span class="meta-chip">{{ c.country }}</span>{% endif %}
+    </div>
     <h1>{{ c.host }}</h1>
     <a class="url" href="{{ p.url }}" target="_blank" rel="noopener">{{ p.url }}</a>
     <p class="reason" id="reason" {% if not p.reason %}hidden{% endif %}>{{ p.reason or "" }}</p>
   </div>
   <div class="banner-side">
-    <div class="numbers"><div><b id="count">{{ p.tenderCount }}</b><small>tenders</small></div></div>
+    <div class="banner-count"><b id="count">{{ p.tenderCount }}</b><small>tenders</small></div>
     <div class="actions">
-      <button type="button" class="ghost" data-tenders="{{ p.id }}" data-host="{{ c.host }}">View tenders</button>
-      <button data-refresh="{{ p.id }}">Read now</button>
-      <button class="violet" id="race-btn">Race Jev vs LLM</button>
-      {% if c.lab %}<button class="danger" data-break="{{ p.id }}">Break it</button>{% endif %}
+      <button type="button" class="btn-soft" data-tenders="{{ p.id }}" data-host="{{ c.host }}">View tenders</button>
+      <button type="button" class="btn-soft" data-refresh="{{ p.id }}">Read now</button>
+      <button type="button" class="primary" id="race-btn">Race Jev vs LLM</button>
+      {% if c.lab %}<button type="button" class="btn-danger" data-break="{{ p.id }}">Break it</button>{% endif %}
     </div>
   </div>
 </section>
 
-<section class="panel compare" id="compare" hidden>
+<section class="panel compare-panel" id="compare" hidden>
   <h3>Before vs after <small id="cmp-title">what the portal changed, and how the recipe followed</small></h3>
   <div class="cmp-bar">
     <div class="legend">

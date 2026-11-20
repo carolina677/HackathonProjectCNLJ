@@ -1,44 +1,141 @@
-/* Watchtower dashboard: one EventSource, cards re-rendered from server fragments. No build step. */
+/* Watchtower + Briefly unified UI: one EventSource, live portal cards, searchable tenders, PDF downloads & before/after diffs. */
 const Watchtower = (() => {
   const $ = (s, el = document) => el.querySelector(s);
-  const pending = new Map();
+  const byId = (id) => document.getElementById(id);
+  const pendingCards = new Map();
+
+  const COUNTRY_LABEL = {
+    DE: "Germany", FR: "France", NL: "Netherlands", IE: "Ireland", AT: "Austria",
+    ES: "Spain", PL: "Poland", LU: "Luxembourg", IT: "Italy", BE: "Belgium",
+    PT: "Portugal", SE: "Sweden", DK: "Denmark", FI: "Finland", CZ: "Czechia",
+  };
+  const STORAGE_KEY = "briefly-saved-tenders";
+  const dateFmt = new Intl.DateTimeFormat(document.documentElement.lang || "en", { dateStyle: "medium", timeZone: "UTC" });
+  const whenFmt = new Intl.DateTimeFormat(document.documentElement.lang || "en", { dateStyle: "medium", timeStyle: "short" });
+
+  let saved = new Set();
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (Array.isArray(raw)) saved = new Set(raw.filter((x) => typeof x === "string"));
+  } catch {}
+
+  function syncSavedBadge() {
+    const badge = byId("nav-saved-badge");
+    if (!badge) return;
+    badge.textContent = saved.size;
+    badge.hidden = saved.size === 0;
+  }
 
   async function api(method, url, body) {
-    const r = await fetch(url, { method, headers: body ? { "Content-Type": "application/json" } : {},
-                                 body: body ? JSON.stringify(body) : undefined });
-    if (!r.ok && r.status !== 204) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+    const r = await fetch(url, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : {},
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!r.ok && r.status !== 204) {
+      const payload = await r.json().catch(() => ({}));
+      const detail = typeof payload.detail === "string" ? payload.detail : "";
+      throw new Error(payload.error || detail || r.statusText);
+    }
     return r.status === 204 ? null : r.json().catch(() => null);
   }
 
-  /* Inline feedback (status / completion / error) instead of blocking alert() dialogs. */
   function toast(msg, kind = "ok") {
     document.querySelector(".toast")?.remove();
-    const t = document.createElement("div"); t.className = `toast ${kind}`; t.setAttribute("role", kind === "error" ? "alert" : "status");
-    t.textContent = msg; document.body.append(t); setTimeout(() => t.remove(), kind === "error" ? 6000 : 3000);
+    const t = document.createElement("div");
+    t.className = `toast ${kind}`;
+    t.setAttribute("role", kind === "error" ? "alert" : "status");
+    t.textContent = msg;
+    document.body.append(t);
+    setTimeout(() => t.remove(), kind === "error" ? 6000 : 3500);
+  }
+
+  function hostLabel(url) {
+    try {
+      const u = new URL(url);
+      return (u.host + u.pathname).replace(/\/$/, "") || url;
+    } catch {
+      return url || "";
+    }
+  }
+
+  function plural(n, word) {
+    return `${n} ${word}${n === 1 ? "" : "s"}`;
+  }
+
+  function fmtDate(val) {
+    if (!val) return "—";
+    const d = new Date(val);
+    return Number.isNaN(d.getTime()) ? String(val) : dateFmt.format(d);
+  }
+
+  function formatCountry(t) {
+    const cc = t.placeOfPerformance?.countryCode || t.portalCountry || "";
+    return COUNTRY_LABEL[cc] || cc || "EU";
+  }
+
+  // --- Portal Cards + Live Summary -----------------------------------------------------------
+  let activeStateFilter = "";
+
+  function applyStateFilter() {
+    document.querySelectorAll("#state-filters .chip-btn").forEach((btn) => {
+      btn.classList.toggle("active", (btn.dataset.stateFilter || "") === activeStateFilter);
+    });
+    document.querySelectorAll("#grid .card").forEach((card) => {
+      const match = !activeStateFilter || card.dataset.state === activeStateFilter;
+      card.hidden = !match;
+    });
   }
 
   async function refreshCard(id) {
-    const r = await fetch(`/ui/portals/${id}/card`);
-    const old = document.getElementById(`card-${id}`);
-    if (r.status === 404) { old?.remove(); return; }
+    const r = await fetch(`/ui/portals/${encodeURIComponent(id)}/card`);
+    const old = byId(`card-${id}`);
+    if (r.status === 404) {
+      old?.remove();
+      scheduleSummary();
+      scheduleTenders();
+      return;
+    }
     const tpl = document.createElement("template");
     tpl.innerHTML = (await r.text()).trim();
     const card = tpl.content.firstElementChild;
-    if (old) old.replaceWith(card); else { $("#empty")?.remove(); $("#grid").prepend(card); }
-    card.classList.add("flash"); setTimeout(() => card.classList.remove("flash"), 500);
+    if (old) old.replaceWith(card);
+    else {
+      byId("empty")?.remove();
+      byId("grid")?.prepend(card);
+    }
+    applyStateFilter();
+    card.classList.add("flash");
+    setTimeout(() => card.classList.remove("flash"), 500);
     recount();
   }
 
   function scheduleCard(id) {
-    clearTimeout(pending.get(id));
-    pending.set(id, setTimeout(() => refreshCard(id), 250));
+    clearTimeout(pendingCards.get(id));
+    pendingCards.set(id, setTimeout(() => refreshCard(id), 250));
   }
 
-  function recount() {
-    for (const s of ["serving", "healing", "integrating", "failed"]) {
-      const el = $(`#n-${s}`); if (el) el.textContent = document.querySelectorAll(`.card.state-${s}`).length;
-    }
-    scheduleSummary();
+  function renderActivityChart(activity) {
+    if (!activity) return;
+    const totalEl = byId("activity-total");
+    const chartEl = byId("activity-chart");
+    if (totalEl) totalEl.textContent = activity.total ?? 0;
+    if (!chartEl || !Array.isArray(activity.days)) return;
+    const maxCount = Math.max(1, ...activity.days.map((d) => d.count || 0));
+    const cols = activity.days.map((d) => {
+      const col = document.createElement("div");
+      if (!d.count) col.className = "zero";
+      col.title = `${d.weekday} (${d.date}): ${d.count} updates`;
+      const bar = document.createElement("i");
+      const pct = d.count > 0 ? Math.max(8, Math.round((d.count * 100) / maxCount)) : 8;
+      bar.style.setProperty("--size", `${pct}%`);
+      const lbl = document.createElement("span");
+      lbl.textContent = d.label;
+      col.append(bar, lbl);
+      return col;
+    });
+    chartEl.setAttribute("aria-label", activity.days.map((d) => `${d.weekday} ${d.count}`).join(", ") + " updates");
+    chartEl.replaceChildren(...cols);
   }
 
   let summaryTimer = null;
@@ -47,11 +144,13 @@ const Watchtower = (() => {
       const s = await api("GET", "/ui/summary");
       if (!s) return;
       for (const k of ["serving", "healing", "integrating", "failed"]) {
-        const el = $(`#n-${k}`); if (el) el.textContent = s[k];
+        const el = byId(`n-${k}`);
+        if (el) el.textContent = s[k];
       }
-      if ($("#n-tenders")) $("#n-tenders").textContent = s.tenders;
-      if ($("#n-avg-usd")) $("#n-avg-usd").textContent = `$${Number(s.avg_usd || 0).toFixed(3)}`;
-      if ($("#n-projected")) $("#n-projected").textContent = `$${Math.round(s.projected || 0)}`;
+      if (byId("n-tenders")) byId("n-tenders").textContent = s.tenders;
+      if (byId("n-avg-usd")) byId("n-avg-usd").textContent = `$${Number(s.avg_usd || 0).toFixed(3)}`;
+      if (byId("n-projected")) byId("n-projected").textContent = `$${Math.round(s.projected || 0)}`;
+      if (s.activity) renderActivityChart(s.activity);
     } catch {}
   }
 
@@ -60,62 +159,97 @@ const Watchtower = (() => {
     summaryTimer = setTimeout(refreshSummary, 250);
   }
 
+  function recount() {
+    for (const s of ["serving", "healing", "integrating", "failed"]) {
+      const el = byId(`n-${s}`);
+      if (el) el.textContent = document.querySelectorAll(`.card.state-${s}`).length;
+    }
+    scheduleSummary();
+  }
+
+  // --- SSE Events & Live Stream --------------------------------------------------------------
   function describe(ev) {
     const d = ev.data || {};
     switch (ev.kind) {
       case "state": return `→ ${d.to}${d.reason ? " · " + d.reason : ""}`;
       case "log": return d.msg;
-      case "judgment": return `Jev: ${d.question?.slice(0, 60) || ""} → ${d.answer}`;
+      case "judgment": return `Jev: ${(d.question || "").slice(0, 60)} → ${d.answer}`;
       case "recipe": return d.reason === "repaired" ? "Recipe patched" : "Recipe written";
       case "verify": return `Verified sample: ${d.ok ? "ok" : "rejected"}`;
-      case "page": return `${d.via || "http"} ${d.status} ${String(d.url || "").slice(0, 60)}`;
+      case "compare": return d.ok ? `Repair #${d.n} ready: Before vs after available` : `Repair #${d.n} failed`;
       default: return null;
     }
   }
 
   function feed(ev) {
-    const text = describe(ev); const list = $("#feed");
-    if (!text || !list || ev.kind === "page") return;
+    const text = describe(ev);
+    const list = byId("feed");
+    if (!text || !list) return;
     const li = document.createElement("li");
-    const host = document.querySelector(`#card-${ev.portal_id} .host`)?.textContent || "system";
-    li.innerHTML = `<b></b><span></span>`;
-    li.querySelector("b").textContent = host; li.querySelector("span").textContent = text;
+    const host = document.querySelector(`#card-${ev.portal_id} .host`)?.textContent || ev.portal_id || "system";
+    const b = document.createElement("b");
+    b.textContent = host;
+    const span = document.createElement("span");
+    span.textContent = text;
+    li.append(b, span);
     list.prepend(li);
-    while (list.children.length > 12) list.lastChild.remove();
+    while (list.children.length > 14) list.lastChild.remove();
   }
 
   function connect(onEvent) {
     const es = new EventSource("/events");
     es.onmessage = (m) => onEvent(JSON.parse(m.data));
-    for (const k of ["state", "run", "log", "judgment", "recipe", "verify", "page", "explore", "cost", "llm", "compare"])
+    for (const k of ["state", "run", "log", "judgment", "recipe", "verify", "page", "explore", "cost", "llm", "compare"]) {
       es.addEventListener(k, (m) => onEvent(JSON.parse(m.data)));
+    }
     return es;
   }
 
+  // --- Portal-Scoped Tenders Modal (#tenders-dialog) -----------------------------------------
   let modalTenders = [];
   function renderModalTenders() {
-    const box = $("#td-list"), q = ($("#td-search")?.value || "").trim().toLowerCase();
+    const box = byId("td-list");
+    const q = (byId("td-search")?.value || "").trim().toLowerCase();
     if (!box) return;
     const rows = modalTenders.filter((t) =>
-      `${t.title || ""} ${t.buyerName || ""} ${(t.cpvCodes || []).join(" ")}`.toLowerCase().includes(q));
+      `${t.title || ""} ${t.buyerName || ""} ${t.referenceNumber || ""} ${(t.cpvCodes || []).join(" ")}`.toLowerCase().includes(q)
+    );
     box.textContent = "";
     if (!rows.length) {
-      const p = document.createElement("p"); p.className = "muted"; p.textContent = "No tenders match."; box.append(p); return;
+      const p = document.createElement("p");
+      p.className = "muted";
+      p.textContent = "No tenders match.";
+      box.append(p);
+      return;
     }
     for (const t of rows.slice(0, 80)) {
-      const card = document.createElement("div"); card.className = "td-row";
-      const top = document.createElement("div"); top.className = "td-top";
-      const st = document.createElement("span"); st.className = `pill-sm ${t.status || "open"}`; st.textContent = t.status || "open";
-      const link = document.createElement("a"); link.href = t.url; link.target = "_blank"; link.rel = "noopener"; link.textContent = t.title || t.id;
+      const card = document.createElement("div");
+      card.className = "td-row";
+      const top = document.createElement("div");
+      top.className = "td-top";
+      const st = document.createElement("span");
+      st.className = `pill-sm ${t.status || "open"}`;
+      st.textContent = t.status || "open";
+      const link = document.createElement("a");
+      link.href = t.url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = t.title || t.id;
       top.append(st, link);
-      const meta = document.createElement("div"); meta.className = "td-meta";
-      const dl = t.submissionDeadline ? new Date(t.submissionDeadline).toLocaleString() : "—";
+      const meta = document.createElement("div");
+      meta.className = "td-meta";
+      const dl = t.submissionDeadline ? fmtDate(t.submissionDeadline) : "—";
       meta.textContent = `${t.buyerName || "—"} · Deadline: ${dl}${t.cpvCodes?.length ? " · CPV " + t.cpvCodes.join(", ") : ""}`;
       card.append(top, meta);
       if (t.documents?.length) {
-        const docs = document.createElement("div"); docs.className = "td-docs";
+        const docs = document.createElement("div");
+        docs.className = "td-docs";
         for (const d of t.documents) {
-          const a = document.createElement("a"); a.className = "doc-chip"; a.href = d.path; a.target = "_blank"; a.rel = "noopener";
+          const a = document.createElement("a");
+          a.className = "doc-chip";
+          a.href = d.path;
+          a.target = "_blank";
+          a.rel = "noopener";
           a.textContent = `📄 ${d.fileName} (${Math.max(1, Math.round((d.sizeBytes || 0) / 1024))} KB)`;
           docs.append(a);
         }
@@ -126,70 +260,474 @@ const Watchtower = (() => {
   }
 
   async function openTenders(pid, host) {
-    const dlg = $("#tenders-dialog"); if (!dlg) return;
-    $("#td-title").textContent = host ? `Tenders · ${host}` : "Tenders";
-    $("#td-sub").textContent = "Loading…";
-    $("#td-list").textContent = "";
-    if ($("#td-search")) $("#td-search").value = "";
+    const dlg = byId("tenders-dialog");
+    if (!dlg) return;
+    byId("td-title").textContent = host ? `Tenders · ${host}` : "Tenders";
+    byId("td-sub").textContent = "Loading…";
+    byId("td-list").textContent = "";
+    if (byId("td-search")) byId("td-search").value = "";
     dlg.showModal();
     try {
-      modalTenders = await api("GET", `/portals/${pid}/tenders`) || [];
+      modalTenders = (await api("GET", `/portals/${encodeURIComponent(pid)}/tenders`)) || [];
       const docTotal = modalTenders.reduce((a, t) => a + (t.documents?.length || 0), 0);
-      $("#td-sub").textContent = `${modalTenders.length} tenders · ${docTotal} verified documents`;
+      byId("td-sub").textContent = `${modalTenders.length} tenders · ${docTotal} verified documents`;
       renderModalTenders();
     } catch (err) {
-      $("#td-sub").textContent = err.message;
+      byId("td-sub").textContent = err.message;
     }
   }
 
-  function wireTenderModal() {
-    $("#td-close")?.addEventListener("click", () => $("#tenders-dialog")?.close());
-    $("#td-search")?.addEventListener("input", renderModalTenders);
-    $("#tenders-dialog")?.addEventListener("click", (e) => {
+  function wireSharedModals() {
+    byId("td-close")?.addEventListener("click", () => byId("tenders-dialog")?.close());
+    byId("td-search")?.addEventListener("input", renderModalTenders);
+    byId("tenders-dialog")?.addEventListener("click", (e) => {
       if (e.target.id === "tenders-dialog") e.target.close();
     });
     document.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-tenders]");
       if (btn) openTenders(btn.dataset.tenders, btn.dataset.host);
     });
-  }
-  wireTenderModal();
-
-  function morning() {
-    $("#add-form")?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const input = e.target.url, btn = e.target.querySelector("button");
-      btn.disabled = true;
-      try { const { id } = await api("POST", "/portals", { url: input.value.trim() }); input.value = ""; refreshCard(id); }
-      catch (err) { toast(err.message, "error"); } finally { btn.disabled = false; }
+    byId("close-detail")?.addEventListener("click", () => byId("detail")?.close());
+    byId("detail")?.addEventListener("click", (e) => {
+      if (e.target.id === "detail") e.target.close();
     });
+    syncSavedBadge();
+  }
+  wireSharedModals();
+
+  // --- Unified Briefly SPA Views + Live Tender Search/Saved/Repair ---------------------------
+  let liveTenders = [];
+  let totalTenders = 0;
+  let currentView;
+  let activeTender = null;
+  let tendersTimer = null;
+
+  function setOptRow(key, value) {
+    const els = document.querySelectorAll(`[data-opt="${key}"]`);
+    const show = Boolean(value);
+    els.forEach((el) => { el.hidden = !show; });
+    if (show && els[1]) els[1].textContent = value;
+  }
+
+  function updateSaveButton(button, tender, iconOnly = false) {
+    const isSaved = saved.has(tender._key);
+    button.setAttribute("aria-pressed", String(isSaved));
+    if (iconOnly) {
+      button.setAttribute("aria-label", `${isSaved ? "Unsave" : "Save"} ${tender.title || tender.id}`);
+      button.firstElementChild.textContent = isSaved ? "★" : "☆";
+    } else {
+      button.textContent = isSaved ? "Saved tender ★" : "Save tender";
+    }
+  }
+
+  function toggleSaved(tender) {
+    if (!tender) return;
+    if (saved.has(tender._key)) saved.delete(tender._key);
+    else saved.add(tender._key);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...saved])); } catch {}
+    syncSavedBadge();
+    const detail = byId("detail");
+    const detailSave = byId("detail-save");
+    if (detail?.open && detailSave) updateSaveButton(detailSave, tender);
+    const list = byId("tender-list");
+    const row = [...(list?.children || [])].find((item) => item.dataset.key === tender._key);
+    if (row) updateSaveButton(row.querySelector(".save"), tender, true);
+    if (currentView === "saved" && !saved.has(tender._key) && !detail?.open) {
+      renderTenders();
+    }
+  }
+
+  function openTenderDetail(tender) {
+    const detail = byId("detail");
+    if (!detail) return;
+    activeTender = tender;
+    byId("detail-title").textContent = tender.title || tender.id;
+    const statusTag = byId("detail-status");
+    const status = tender.status || "open";
+    statusTag.textContent = status;
+    statusTag.dataset.status = status;
+    byId("detail-description").textContent = tender.description || `Published on ${tender.portalHost}. Open the source page or documents below for full specifications.`;
+    byId("detail-buyer").textContent = tender.buyerName || tender.portalHost || "—";
+    byId("detail-portal").textContent = tender.portalHost || "—";
+    byId("detail-country").textContent = formatCountry(tender);
+    byId("detail-published").textContent = fmtDate(tender.publicationDate);
+    byId("detail-deadline").textContent = fmtDate(tender.submissionDeadline);
+    setOptRow("ref", tender.referenceNumber || "");
+    setOptRow("proc", tender.procedureType || "");
+    setOptRow("nature", tender.contractNature || "");
+    setOptRow("cpv", tender.cpvCodes?.length ? tender.cpvCodes.join(", ") : "");
+
+    const docsEl = byId("detail-docs");
+    const links = [];
+    for (const d of tender.documents || []) {
+      const a = document.createElement("a");
+      a.className = "detail-doc-link";
+      a.href = d.path;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = `📄 ${d.fileName} (${Math.max(1, Math.round((d.sizeBytes || 0) / 1024))} KB)`;
+      links.push(a);
+    }
+    if (tender.url) {
+      const src = document.createElement("a");
+      src.className = "detail-doc-link";
+      src.href = tender.url;
+      src.target = "_blank";
+      src.rel = "noopener";
+      src.textContent = "Source page ↗";
+      links.push(src);
+    }
+    docsEl.replaceChildren(...links);
+    docsEl.hidden = links.length === 0;
+    updateSaveButton(byId("detail-save"), tender);
+    detail.showModal();
+  }
+
+  function rebuildTenderFilters() {
+    const countrySel = byId("country");
+    const portalSel = byId("portal-filter");
+    if (countrySel) {
+      const prev = countrySel.value;
+      countrySel.replaceChildren(new Option("All countries", ""));
+      for (const name of [...new Set(liveTenders.map(formatCountry))].sort()) {
+        countrySel.add(new Option(name, name));
+      }
+      if ([...countrySel.options].some((o) => o.value === prev)) countrySel.value = prev;
+    }
+    if (portalSel) {
+      const prev = portalSel.value;
+      portalSel.replaceChildren(new Option("All portals", ""));
+      const seenPortals = new Map();
+      for (const t of liveTenders) {
+        if (!seenPortals.has(t.portalId)) seenPortals.set(t.portalId, t.portalHost || t.portalId);
+      }
+      for (const [pid, label] of [...seenPortals.entries()].sort((a, b) => a[1].localeCompare(b[1]))) {
+        portalSel.add(new Option(label, pid));
+      }
+      if ([...portalSel.options].some((o) => o.value === prev)) portalSel.value = prev;
+    }
+  }
+
+  function renderTenders() {
+    const list = byId("tender-list");
+    const tpl = byId("tender-template");
+    if (!list || !tpl) return;
+    const query = (byId("search")?.value || "").trim().toLocaleLowerCase();
+    const wantPortal = byId("portal-filter")?.value || "";
+    const wantCountry = byId("country")?.value || "";
+    const wantStatus = byId("status-filter")?.value || "";
+
+    const visible = liveTenders.filter((t) => {
+      if (currentView === "saved" && !saved.has(t._key)) return false;
+      if (wantPortal && t.portalId !== wantPortal) return false;
+      if (wantCountry && formatCountry(t) !== wantCountry) return false;
+      if (wantStatus && (t.status || "open") !== wantStatus) return false;
+      if (!query) return true;
+      const hay = `${t.title || ""} ${t.buyerName || ""} ${t.portalHost || ""} ${t.referenceNumber || ""} ${formatCountry(t)} ${(t.cpvCodes || []).join(" ")}`.toLocaleLowerCase();
+      return hay.includes(query);
+    });
+
+    const limit = currentView === "overview" ? 8 : 150;
+    const shown = visible.slice(0, limit);
+    const rows = shown.map((t) => {
+      const row = tpl.content.firstElementChild.cloneNode(true);
+      row.dataset.key = t._key;
+      const titleBtn = row.querySelector(".open-tender");
+      titleBtn.textContent = t.title || t.id;
+      titleBtn.addEventListener("click", () => openTenderDetail(t));
+      const docCount = (t.documents || []).length;
+      row.querySelector(".buyer").textContent = `${t.buyerName || t.portalHost || "—"}${docCount ? ` · ${plural(docCount, "file")}` : ""}`;
+      row.querySelector(".portal-pill").textContent = t.portalHost || "";
+      row.querySelector(".country").textContent = formatCountry(t);
+      row.querySelector(".deadline").textContent = t.submissionDeadline
+        ? `Due ${fmtDate(t.submissionDeadline)}`
+        : (t.publicationDate ? `Pub ${fmtDate(t.publicationDate)}` : "—");
+      const tag = row.querySelector(".tag");
+      const status = t.status || "open";
+      tag.dataset.status = status;
+      tag.textContent = status;
+      const saveBtn = row.querySelector(".save");
+      updateSaveButton(saveBtn, t, true);
+      saveBtn.addEventListener("click", () => toggleSaved(t));
+      return row;
+    });
+
+    if (!rows.length) {
+      const empty = document.createElement("li");
+      empty.className = "empty";
+      if (currentView === "saved" && !saved.size) {
+        empty.textContent = "No saved tenders yet. Star an opportunity in the tender list to keep it here.";
+      } else if (!liveTenders.length) {
+        empty.textContent = "No tenders delivered yet. Add a portal or wait for attached portals to finish delivering.";
+      } else {
+        empty.textContent = "No tenders match these filters.";
+      }
+      rows.push(empty);
+    }
+
+    list.replaceChildren(...rows);
+    const resEl = byId("results");
+    if (resEl) {
+      resEl.textContent = visible.length > shown.length
+        ? `Showing ${shown.length} of ${plural(visible.length, "matching tender")}.`
+        : `${plural(visible.length, "tender")}${totalTenders > liveTenders.length ? ` (of ${totalTenders} delivered)` : ""}.`;
+    }
+    const moreWrap = byId("tender-more");
+    if (moreWrap) {
+      moreWrap.hidden = !(currentView === "overview" && visible.length > limit);
+      const moreLink = byId("tender-more-link");
+      if (moreLink) moreLink.textContent = `View all ${visible.length} tenders →`;
+    }
+  }
+
+  async function loadTenders() {
+    try {
+      const data = await api("GET", "/ui/tenders");
+      if (!data) return;
+      totalTenders = data.total ?? (data.tenders || []).length;
+      liveTenders = (data.tenders || []).map((t) => ({ ...t, _key: `${t.portalId}:${t.id}` }));
+      rebuildTenderFilters();
+      renderTenders();
+    } catch {}
+  }
+
+  function scheduleTenders() {
+    clearTimeout(tendersTimer);
+    tendersTimer = setTimeout(loadTenders, 400);
+  }
+
+  // --- Before vs After Repair View (#repair/{pid}/{n}) ---------------------------------------
+  function setRepairLayout() {
+    const changed = currentView !== undefined && currentView !== "repair";
+    currentView = "repair";
+    byId("overview").hidden = true;
+    byId("portals-section").hidden = true;
+    byId("tender-section").hidden = true;
+    byId("repair-view").hidden = false;
+    if (byId("traces")) byId("traces").hidden = true;
+    if (byId("live-feed-panel")) byId("live-feed-panel").hidden = true;
+    byId("location").textContent = "Before vs after";
+    document.querySelectorAll("nav a[data-nav]").forEach((link) => {
+      if (link.dataset.nav === "portals") link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+    if (changed) {
+      window.scrollTo(0, 0);
+      byId("main").focus({ preventScroll: true });
+    }
+  }
+
+  function readsSummary(side) {
+    if (!side) return "reads the page";
+    if (side.source === "json_api") return "reads a JSON feed (not drawn on the page)";
+    return `reads ${plural(side.items, "tender row")}`;
+  }
+
+  async function showRepairView(rest) {
+    setRepairLayout();
+    const [pidRaw, nRaw] = rest.split("/");
+    const pid = decodeURIComponent(pidRaw || "");
+    const theaterLink = byId("repair-theater-link");
+    if (theaterLink) theaterLink.href = `/portals/${encodeURIComponent(pid)}/theater`;
+    let portal, repairs;
+    try {
+      [portal, repairs] = await Promise.all([
+        api("GET", `/portals/${encodeURIComponent(pid)}`),
+        api("GET", `/portals/${encodeURIComponent(pid)}/repairs`),
+      ]);
+    } catch {
+      byId("repair-portal").textContent = "";
+      byId("repair-summary").textContent = "Portal not found or could not load repair history.";
+      return;
+    }
+    byId("repair-portal").textContent = hostLabel(portal.url);
+    if (!repairs?.length) {
+      byId("repair-summary").textContent = "This portal has not needed a repair yet.";
+      byId("frame-before").removeAttribute("src");
+      byId("frame-after").removeAttribute("src");
+      byId("repair-diff").replaceChildren();
+      byId("repair-pick").closest(".filters").hidden = true;
+      return;
+    }
+    const pick = byId("repair-pick");
+    pick.replaceChildren(...repairs.map((r) => new Option(`Repair #${r.n} · ${whenFmt.format(new Date(r.at))} · ${r.ok ? "healed" : "failed"}`, r.n)));
+    const r = repairs.find((x) => x.n === Number(nRaw)) || repairs[0];
+    pick.value = String(r.n);
+    pick.closest(".filters").hidden = repairs.length < 2;
+    pick.onchange = () => { location.hash = `repair/${encodeURIComponent(pid)}/${pick.value}`; };
+
+    const when = whenFmt.format(new Date(r.at));
+    byId("repair-summary").textContent = r.ok
+      ? `On ${when}, this portal changed how its page is built. Watchtower noticed, kept serving the last correct tenders, and repaired itself in ${plural(r.attempts, "attempt")}.`
+      : `On ${when}, this portal changed and Watchtower could not repair it automatically. A person should take a look.`;
+    byId("cap-before").textContent = `· old recipe ${readsSummary(r.before)} · ${plural(r.before.changed, "part")} changed or gone`;
+    byId("cap-after").textContent = r.ok
+      ? `· new recipe ${readsSummary(r.after)} · ${plural(r.after.changed, "part")} new or changed`
+      : "· no working recipe yet";
+    const base = `/portals/${encodeURIComponent(pid)}/repairs/${r.n}`;
+    byId("frame-before").src = `${base}/before.html`;
+    byId("frame-after").src = `${base}/after.html`;
+    const items = (r.diff || []).slice(0, 12).map((d) => {
+      const li = document.createElement("li");
+      li.textContent = d;
+      return li;
+    });
+    if (!r.ok && r.reason) {
+      const li = document.createElement("li");
+      li.textContent = r.reason;
+      items.push(li);
+    }
+    byId("repair-diff").replaceChildren(...items);
+  }
+
+  const VIEWS = { overview: "Overview", portals: "Portals", tenders: "Tenders", saved: "Saved" };
+
+  function renderView() {
+    if (!byId("overview")) return;
+    const requested = location.hash.slice(1);
+    if (requested === "main" && currentView) return;
+    if (requested.startsWith("repair/")) {
+      showRepairView(requested.slice("repair/".length));
+      return;
+    }
+    byId("repair-view").hidden = true;
+    const view = Object.hasOwn(VIEWS, requested) ? requested : "overview";
+    const changed = currentView !== undefined && currentView !== view;
+    currentView = view;
+
+    byId("location").textContent = VIEWS[view];
+    byId("overview").hidden = view !== "overview";
+    byId("portals-section").hidden = !(view === "overview" || view === "portals");
+    byId("portals-heading").hidden = view !== "overview";
+    byId("portals-page-heading").hidden = view !== "portals";
+
+    byId("tender-section").hidden = !(view === "overview" || view === "tenders" || view === "saved");
+    byId("tender-heading").hidden = view !== "overview";
+    const pageHeading = byId("tender-page-heading");
+    pageHeading.hidden = view === "overview";
+    pageHeading.textContent = view === "saved" ? "Saved tenders" : "Tenders";
+    byId("tender-section").setAttribute("aria-labelledby", view === "overview" ? "tender-heading" : "tender-page-heading");
+
+    if (byId("traces")) byId("traces").hidden = !(view === "overview" || view === "portals");
+    if (byId("live-feed-panel")) byId("live-feed-panel").hidden = !(view === "overview" || view === "portals");
+
+    document.querySelectorAll("nav a[data-nav]").forEach((link) => {
+      if (link.dataset.nav === view) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+
+    applyStateFilter();
+    renderTenders();
+    if (changed) {
+      window.scrollTo(0, 0);
+      byId("main").focus({ preventScroll: true });
+    }
+  }
+
+  function findTender() {
+    if (!byId("search")) return;
+    if (currentView === "tenders") {
+      byId("search").focus();
+      return;
+    }
+    window.addEventListener("hashchange", () => byId("search")?.focus(), { once: true });
+    location.hash = "tenders";
+  }
+
+  // --- Morning Dashboard Entry Point ---------------------------------------------------------
+  function morning() {
+    byId("add-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const input = e.target.url;
+      const btn = e.target.querySelector("button");
+      btn.disabled = true;
+      try {
+        const { id } = await api("POST", "/portals", { url: input.value.trim() });
+        input.value = "";
+        await refreshCard(id);
+        toast("Portal added — attaching in the background.");
+      } catch (err) {
+        toast(err.message, "error");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
     document.addEventListener("click", async (e) => {
-      const t = e.target;
+      const chip = e.target.closest("[data-state-filter]");
+      if (chip) {
+        activeStateFilter = chip.dataset.stateFilter || "";
+        applyStateFilter();
+      }
+      const tile = e.target.closest(".metric-tile[data-filter-state]");
+      if (tile) {
+        activeStateFilter = tile.dataset.filterState || "";
+        applyStateFilter();
+      }
+      const t = e.target.closest("button");
+      if (!t) return;
       if (t.dataset.refresh) {
         t.disabled = true;
-        try { await api("POST", `/portals/${t.dataset.refresh}/refresh`); toast("Reading the portal now"); }
-        catch (err) { toast(err.message, "error"); }
-        finally { t.disabled = false; }
+        try {
+          await api("POST", `/portals/${encodeURIComponent(t.dataset.refresh)}/refresh`);
+          toast("Reading the portal now");
+        } catch (err) {
+          toast(err.message, "error");
+        } finally {
+          t.disabled = false;
+        }
         scheduleCard(t.dataset.refresh);
       }
-      if (t.dataset.break) { t.disabled = true; const r = await api("POST", `/portals/${t.dataset.break}/break`).catch((e) => toast(e.message, "error")); if (r) toast(`Chaos Lab broke the portal: ${r.mutation}. Watch it heal.`); if (r) t.textContent = `Broke: ${r.mutation}`; setTimeout(() => { t.disabled = false; t.textContent = "Break it"; }, 4000); }
+      if (t.dataset.break) {
+        t.disabled = true;
+        const r = await api("POST", `/portals/${encodeURIComponent(t.dataset.break)}/break`).catch((err) => toast(err.message, "error"));
+        if (r) {
+          toast(`Chaos Lab broke the portal: ${r.mutation}. Watch it heal.`);
+          t.textContent = `Broke: ${r.mutation}`;
+        }
+        setTimeout(() => { t.disabled = false; t.textContent = "Break it"; }, 4000);
+      }
       if (t.dataset.delete && confirm("Remove this portal and its tenders?")) {
-        await api("DELETE", `/portals/${t.dataset.delete}`).then(() => toast("Portal removed")).catch((e) => toast(e.message, "error")); document.getElementById(`card-${t.dataset.delete}`)?.remove(); recount();
+        await api("DELETE", `/portals/${encodeURIComponent(t.dataset.delete)}`)
+          .then(() => {
+            byId(`card-${t.dataset.delete}`)?.remove();
+            recount();
+            scheduleTenders();
+            toast("Portal removed");
+          })
+          .catch((err) => toast(err.message, "error"));
       }
     });
-    $("#brief-btn")?.addEventListener("click", async (e) => {
-      const btn = e.currentTarget, out = $("#brief-text"), audio = $("#brief-audio");
-      btn.disabled = true; btn.textContent = "Preparing…";
-      try {
-        out.textContent = await (await fetch("/briefing.txt")).text(); out.hidden = false;
-        const r = await fetch("/briefing.mp3");
-        if (r.ok) { audio.src = URL.createObjectURL(await r.blob()); audio.hidden = false; audio.controls = true; await audio.play(); }
-      } catch (err) { toast(err.message, "error"); }
-      finally { btn.disabled = false; btn.textContent = "▶ Morning briefing"; }
-    });
-    $("#timelapse-btn")?.addEventListener("click", async (e) => {
+
+    byId("brief-btn")?.addEventListener("click", async (e) => {
       const btn = e.currentTarget;
-      btn.disabled = true; btn.textContent = "Running timelapse…";
+      const box = byId("brief-box");
+      const out = byId("brief-text");
+      const audio = byId("brief-audio");
+      btn.disabled = true;
+      btn.textContent = "Preparing…";
+      try {
+        out.textContent = await (await fetch("/briefing.txt")).text();
+        box.hidden = false;
+        const r = await fetch("/briefing.mp3");
+        if (r.ok) {
+          audio.src = URL.createObjectURL(await r.blob());
+          audio.hidden = false;
+          audio.controls = true;
+          await audio.play();
+        }
+      } catch (err) {
+        toast(err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "▶ Morning briefing";
+      }
+    });
+
+    byId("timelapse-btn")?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = "Running timelapse…";
       try {
         const res = await api("POST", "/demo/timelapse");
         const liveIds = new Set((res?.portals || []).map((p) => p.id));
@@ -197,60 +735,128 @@ const Watchtower = (() => {
           if (!liveIds.has(c.dataset.id) && c.textContent.includes("/lab/")) c.remove();
         });
         if (res?.portals) await Promise.all(res.portals.map((p) => refreshCard(p.id)));
+        await refreshSummary();
+        await loadTenders();
         toast("Offline timelapse started: watch /lab/ssr/ break (amber) and self-heal back to green.");
-      } catch (err) { toast(err.message, "error"); }
-      finally { setTimeout(() => { btn.disabled = false; btn.textContent = "⚡ Run offline self-healing timelapse"; }, 7500); }
+      } catch (err) {
+        toast(err.message, "error");
+      } finally {
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = "⚡ Run offline self-healing timelapse";
+        }, 7500);
+      }
     });
+
+    byId("search")?.addEventListener("input", renderTenders);
+    byId("portal-filter")?.addEventListener("change", renderTenders);
+    byId("country")?.addEventListener("change", renderTenders);
+    byId("status-filter")?.addEventListener("change", renderTenders);
+    byId("search-shortcut")?.addEventListener("click", findTender);
+    byId("detail-save")?.addEventListener("click", () => toggleSaved(activeTender));
+    byId("detail")?.addEventListener("close", () => {
+      if (currentView === "saved" && activeTender && !saved.has(activeTender._key)) {
+        renderTenders();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.altKey && !event.ctrlKey && !event.metaKey && event.code === "Slash" && !byId("detail")?.open && !byId("tenders-dialog")?.open) {
+        event.preventDefault();
+        findTender();
+      }
+    });
+
+    window.addEventListener("hashchange", renderView);
+    renderView();
+    loadTenders();
+
     connect((ev) => {
-      if (ev.portal_id && ["state", "run"].includes(ev.kind)) scheduleCard(ev.portal_id);
+      if (ev.portal_id && ["state", "run", "compare"].includes(ev.kind)) {
+        scheduleCard(ev.portal_id);
+        scheduleTenders();
+      }
+      if (ev.kind === "compare" && currentView === "repair") {
+        showRepairView(location.hash.slice("#repair/".length));
+      }
       if (ev.kind === "cost") scheduleSummary();
       feed(ev);
     });
-    setInterval(() => document.querySelectorAll(".card").forEach((c) => scheduleCard(c.dataset.id)), 60000);
+    setInterval(() => {
+      document.querySelectorAll(".card").forEach((c) => scheduleCard(c.dataset.id));
+    }, 60000);
   }
 
   /* Model calls panel: recent LLM and Jev calls as MLflow recorded them. */
   function traces() {
-    const box = $("#traces"); if (!box) return;
-    const seen = new Set(); let timer = null;
-    const money = (v) => v == null ? "–" : v >= 0.01 ? "$" + v.toFixed(3) : "$" + v.toFixed(6);
-    const ago = (ms) => { const s = Math.max(0, (Date.now() - ms) / 1000);
-      return s < 60 ? Math.round(s) + " s ago" : s < 3600 ? Math.round(s / 60) + " min ago" : Math.round(s / 3600) + " h ago"; };
+    const box = byId("traces");
+    if (!box) return;
+    const seen = new Set();
+    let timer = null;
+    const money = (v) => (v == null ? "–" : v >= 0.01 ? "$" + v.toFixed(3) : "$" + v.toFixed(6));
+    const ago = (ms) => {
+      const s = Math.max(0, (Date.now() - ms) / 1000);
+      return s < 60 ? Math.round(s) + " s ago" : s < 3600 ? Math.round(s / 60) + " min ago" : Math.round(s / 3600) + " h ago";
+    };
     function message(body, text) {
-      body.textContent = ""; const tr = document.createElement("tr"), td = document.createElement("td");
-      td.colSpan = 7; td.className = "muted"; td.textContent = text; tr.append(td); body.append(tr);
+      body.textContent = "";
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 7;
+      td.className = "muted";
+      td.textContent = text;
+      tr.append(td);
+      body.append(tr);
     }
     async function load() {
-      const body = $("#t-rows"); let data;
+      const body = byId("t-rows");
+      let data;
       try { data = await (await fetch("/traces")).json(); } catch { message(body, "Could not reach the trace store."); return; }
       const rows = data.traces || [];
       for (const k of ["llm", "jev"]) {
         const rs = rows.filter((r) => r.kind === k);
-        $("#t-" + k + "-n").textContent = rs.length;
-        $("#t-" + k + "-usd").textContent = money(rs.reduce((a, r) => a + (r.usd || 0), 0));
+        byId(`t-${k}-n`).textContent = rs.length;
+        byId(`t-${k}-usd`).textContent = money(rs.reduce((a, r) => a + (r.usd || 0), 0));
       }
-      if (!rows.length) { message(body, "No model calls yet. Add a portal or press Break it."); return; }
+      if (!rows.length) {
+        message(body, "No model calls yet. Add a portal or press Break it.");
+        return;
+      }
       body.textContent = "";
       for (const r of rows) {
-        const tr = document.createElement("tr"); if (seen.size && !seen.has(r.id)) tr.className = "new";
-        const host = document.querySelector("#card-" + r.portal_id + " .host")?.textContent || r.portal_id || "–";
-        const what = r.kind === "llm" ? (r.purpose || "") + " · " + (r.model || "") : (r.purpose || "");
-        const cells = [ago(r.at), "", host, what, (r.tokens_in ?? "–") + " / " + (r.tokens_out ?? "–"),
-                       r.ms != null ? (r.ms / 1000).toFixed(1) + " s" : "–", money(r.usd)];
+        const tr = document.createElement("tr");
+        if (seen.size && !seen.has(r.id)) tr.className = "new";
+        const host = document.querySelector(`#card-${r.portal_id} .host`)?.textContent || r.portal_id || "–";
+        const what = r.kind === "llm" ? `${r.purpose || ""} · ${r.model || ""}` : (r.purpose || "");
+        const cells = [
+          ago(r.at), "", host, what,
+          `${r.tokens_in ?? "–"} / ${r.tokens_out ?? "–"}`,
+          r.ms != null ? `${(r.ms / 1000).toFixed(1)} s` : "–", money(r.usd),
+        ];
         cells.forEach((c, i) => {
           const td = document.createElement("td");
-          if (i === 1) { const k = document.createElement("span"); k.className = "k k-" + r.kind; k.textContent = r.kind === "llm" ? "LLM" : "Jev"; td.append(k); }
-          else if (i === 3) { const w = document.createElement("span"); w.textContent = c; td.title = c; td.append(w); }
-          else td.textContent = c;
-          if (i === 3) td.className = "what"; if (i >= 4) td.className = "r";
+          if (i === 1) {
+            const k = document.createElement("span");
+            k.className = `k k-${r.kind}`;
+            k.textContent = r.kind === "llm" ? "LLM" : "Jev";
+            td.append(k);
+          } else if (i === 3) {
+            const w = document.createElement("span");
+            w.textContent = c;
+            td.title = c;
+            td.append(w);
+          } else td.textContent = c;
+          if (i === 3) td.className = "what";
+          if (i >= 4) td.className = "r";
           tr.append(td);
         });
         body.append(tr);
       }
       rows.forEach((r) => seen.add(r.id));
     }
-    const soon = () => { clearTimeout(timer); timer = setTimeout(load, 2500); };  // MLflow writes traces in the background
-    load(); setInterval(load, 30000);
+    const soon = () => { clearTimeout(timer); timer = setTimeout(load, 2500); };
+    load();
+    setInterval(load, 30000);
     connect((ev) => { if (["llm", "judgment"].includes(ev.kind)) soon(); });
   }
 
