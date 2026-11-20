@@ -76,9 +76,11 @@ class Scheduler:
                 pass
 
     async def wait_idle(self, pid: str, timeout: float = 60) -> None:
-        t = self._tasks.get(pid)
-        if t:
-            await asyncio.wait_for(asyncio.shield(t), timeout)
+        """Wait until the portal has no run in flight, follow-up runs included."""
+        loop = asyncio.get_running_loop()
+        end = loop.time() + timeout
+        while (t := self._tasks.get(pid)) is not None and not t.done():
+            await asyncio.wait_for(asyncio.shield(t), max(0.01, end - loop.time()))
 
     def start(self) -> None:
         self._loops = [asyncio.create_task(self._periodic()), asyncio.create_task(self._clock())]

@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     lab: bool = False
     data_dir: Path = Path("/data")
     read_interval_seconds: int = 600
+    min_request_interval: float = 1.0
 
     def __init__(self, **kw):
         import os

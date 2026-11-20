@@ -48,7 +48,7 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
             from .pipeline import build_pipeline
             from .scheduler import HostLimiter, Scheduler
 
-            limiter = HostLimiter()
+            limiter = HostLimiter(settings.min_request_interval)
             app.state.limiter = limiter
             ref: list = []
             pipeline = build_pipeline(repo, settings, limiter, is_cancelled=lambda pid: ref[0].is_cancelled(pid))

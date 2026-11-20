@@ -221,6 +221,8 @@ async def run_recipe(recipe: Recipe, fetcher: FetcherLike, *, limit: int | None 
                 continue
             seen.add(tid)
             t["id"] = str(tid)
+            if "status" not in recipe.fields and recipe.source == "html" and _withdrawn_marker(item, t):
+                t["status"] = TenderStatus.withdrawn
             t["_item"] = item if recipe.source == "json_api" else None
             t["_base"] = page_url
             out.append(t)
@@ -257,6 +259,10 @@ async def _detail_and_docs(recipe: Recipe, fetcher: FetcherLike, t: RawTender, e
                     else:
                         root = LexborHTMLParser(page.html).root
                         _extract(d.fields, lambda r: select_html(root, r), country, page.final_url or url, t)
+                        if t.get("status") is None and "status" not in d.fields:
+                            label = find_by_label(root, "Status")
+                            if label and N.map_status(label):
+                                t["status"] = TenderStatus.withdrawn
                         doc_ctx = ("html", (root, page.final_url or url))
                         if pages is not None:
                             pages[t["id"]] = page.html
@@ -297,6 +303,19 @@ async def _documents(steps: list[DocStep], fetcher: FetcherLike, ctx, t: RawTend
                 errors.append(f"document step failed for {t['id']}: {e}")
         current = nxt
     return []
+
+
+WITHDRAWN_RX = re.compile(r"\b(aufgehoben|zurückgezogen|withdrawn|cancell?ed|annul[ée]e?|ingetrokken|geannuleerd)\b",
+                          re.I)
+
+
+def _withdrawn_marker(item, t: RawTender) -> bool:
+    """No status rule in the recipe: a withdrawal marker next to the title still counts (e.g. "(aufgehoben)")."""
+    text = item.text(separator=" ")
+    title = t.get("title") or ""
+    if title:
+        text = text.replace(title, " ")
+    return bool(WITHDRAWN_RX.search(text))
 
 
 def _finalise(t: RawTender, mask: set[str]) -> None:

@@ -60,6 +60,10 @@ class Jev:
         self.client = make_client(settings) if client == "auto" else client
         self.llm = llm
 
+    def without_llm(self) -> "Jev":
+        """Same Jev, no LLM fallback: regular reads must never spend LLM tokens."""
+        return Jev(self.settings, client=self.client, llm=None)
+
     async def _ask(self, state, questions: dict, portal_id, headers=None):
         t0 = time.monotonic()
         r = await self.client.system_one(state, questions, extra_headers=headers)

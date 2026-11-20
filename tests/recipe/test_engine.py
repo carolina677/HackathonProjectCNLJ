@@ -104,3 +104,11 @@ async def test_engine_mask_nulls_fields(lab):
     r = ssr_recipe(lab)
     t = (await run_recipe(r, SimpleFetcher(), limit=1, mask={"buyerName", "description"}))[0]
     assert t["buyerName"] is None and "description" not in t
+
+
+async def test_withdrawn_detected_without_status_rule(lab):
+    lab.mutate("ssr", "withdraw_one")
+    ts = await run_recipe(ssr_recipe(lab), SimpleFetcher())
+    truth = {t.id: t.status for t in lab.truth("ssr")}
+    assert [t["id"] for t in ts if t["status"] == "withdrawn"] == [i for i, s in truth.items() if s == "withdrawn"]
+    assert sum(t["status"] == "withdrawn" for t in ts) == 1
