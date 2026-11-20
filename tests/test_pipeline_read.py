@@ -220,3 +220,53 @@ async def test_documents_turning_into_login_page_is_noticed(lab, repo, settings)
     assert p.state == PortalState.healing and "login page" in p.reason
     after = await repo.list_tenders(pid)
     assert all(d.fileName.endswith(".pdf") for t in after for d in t.documents)
+
+
+def _useless_heal(recipe):
+    """A repair that 'succeeds' with a recipe whose own verification read then fails."""
+    from watchtower.brain.heal import HealReport
+    from watchtower.recipe.dsl import Recipe
+
+    async def heal(*a, **kw):
+        return Recipe.model_validate(recipe), HealReport(ok=True, attempts=1)
+    return heal
+
+
+async def test_repeated_useless_repairs_end_in_failed(lab, repo, settings, monkeypatch):
+    from watchtower import pipeline as pipeline_mod
+
+    recipe = json.loads(ssr_recipe(lab).model_dump_json())
+    pid, pl = await _served_ssr(lab, repo, settings, recipe)
+    lab.mutate("ssr", "rename_classes")
+    monkeypatch.setattr(pipeline_mod, "heal", _useless_heal(recipe))
+    assert str(await pl.read(pid, "r")) == "failed"
+    for cycle in (1, 2, 3):
+        assert pl.pop_followup(pid) == (RunKind.repair, 0.0)
+        assert str(await pl.repair(pid, f"rep{cycle}")) == "failed"
+        p = await repo.get_portal(pid)
+        if cycle < 3:
+            assert p.state == PortalState.healing and pl.pop_followup(pid) == (RunKind.read, 60.0)
+            assert str(await pl.read(pid, f"read{cycle}")) == "failed"
+    assert p.state == PortalState.failed and "3 repairs" in p.reason
+    assert pl.pop_followup(pid) is None
+
+
+async def test_healthy_read_resets_repair_cycles(lab, repo, settings, monkeypatch):
+    from watchtower import pipeline as pipeline_mod
+
+    recipe = json.loads(ssr_recipe(lab).model_dump_json())
+    pid, pl = await _served_ssr(lab, repo, settings, recipe)
+    monkeypatch.setattr(pipeline_mod, "heal", _useless_heal(recipe))
+    for _ in range(2):  # two useless repairs, then the portal recovers on its own
+        lab.mutate("ssr", "rename_classes")
+        await pl.read(pid, "r")
+        pl.pop_followup(pid)
+        await pl.repair(pid, "rep")
+        pl.pop_followup(pid)
+        lab.reset("ssr")
+        assert str(await pl.read(pid, "ok")) == "ok"
+    lab.mutate("ssr", "rename_classes")
+    await pl.read(pid, "r")
+    pl.pop_followup(pid)
+    await pl.repair(pid, "rep")
+    assert (await repo.get_portal(pid)).state == PortalState.healing  # a fresh count, not the 3rd strike
