@@ -44,6 +44,20 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
         app.state.repo = repo
         app.state.settings = settings
         app.state.scheduler = _NullScheduler(repo)
+        if start_scheduler:
+            from .pipeline import build_pipeline
+            from .scheduler import HostLimiter, Scheduler
+
+            limiter = HostLimiter()
+            app.state.limiter = limiter
+            ref: list = []
+            pipeline = build_pipeline(repo, settings, limiter, is_cancelled=lambda pid: ref[0].is_cancelled(pid))
+            sched = Scheduler(repo, pipeline, settings)
+            ref.append(sched)
+            app.state.pipeline = pipeline
+            app.state.scheduler = sched
+            sched.start()
+            app.state.shutdown_hooks.append(lambda a: sched.stop())
         hooks = getattr(app.state, "startup_hooks", [])
         for h in hooks:
             await h(app, start_scheduler)
