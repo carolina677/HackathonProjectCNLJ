@@ -85,3 +85,21 @@ async def test_heal_tags_llm_calls_as_repair(lab, fetcher, settings):
     llm.complete_json = spy
     await heal("p", lab.url("ssr"), old, None, fetcher, FakeJev(), llm, reason="selectors broke")
     assert purposes and set(purposes) == {"repair"}
+
+
+async def test_heal_does_not_apply_old_mask(lab, fetcher, settings):
+    old = ssr_recipe(lab)
+    lab.mutate("ssr", "rename_classes")
+    backend = RecordingBackend(renamed(lab))
+    new, rep = await heal("p", lab.url("ssr"), old, None, fetcher, FakeJev(),
+                          LLM(settings, backend=backend), reason="buyerName empty", mask={"buyerName"})
+    assert new is not None and rep.ok and "buyerName" not in (rep.verify.mask if rep.verify else [])
+
+
+async def test_heal_propagates_portal_cancelled(lab, settings, tmp_path):
+    from watchtower.fetch import PortalCancelled
+
+    f = Fetcher("p", HostLimiter(min_interval=0.0), cancelled=lambda: True, snapshot_dir=tmp_path)
+    with pytest.raises(PortalCancelled):
+        await heal("p", lab.url("ssr"), ssr_recipe(lab), None, f, FakeJev(),
+                   LLM(settings, backend=RecordingBackend(renamed(lab))), reason="x")

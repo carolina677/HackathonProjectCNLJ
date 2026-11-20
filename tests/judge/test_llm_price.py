@@ -31,3 +31,10 @@ def test_price_from_env_file_settings(monkeypatch, tmp_path):
     (tmp_path / ".env").write_text("LLM_PRICE_IN=1.25\nLLM_PRICE_OUT=10\n")
     s = Settings(_env_file=tmp_path / ".env", data_dir=tmp_path)
     assert _price("gpt-5.5", s) == (1.25, 10.0)
+
+
+def test_known_openai_models_use_published_rates(monkeypatch):
+    monkeypatch.delenv("LLM_PRICE_IN", raising=False)
+    monkeypatch.delenv("LLM_PRICE_OUT", raising=False)
+    assert _price("gpt-5.5") == (2.50, 10.0)
+    assert _price("gpt-4o-mini") == (0.15, 0.60)

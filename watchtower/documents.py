@@ -10,6 +10,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
+from .fetch import PortalCancelled
 from .models import Document
 
 log = logging.getLogger("watchtower.documents")
@@ -129,7 +130,7 @@ async def _unpack(store: _Store, zpath: Path, depth: int) -> None:
 
 
 async def fetch_documents(portal_id: str, tender_id: str, urls: list[str], fetcher, *, repo,
-                          data_dir: Path) -> list[Document]:
+                          data_dir: Path, errors: list[str] | None = None) -> list[Document]:
     store = _Store(repo, data_dir, portal_id, tender_id)
     for url in urls:
         tmp = store.tmpfile()
@@ -157,10 +158,15 @@ async def fetch_documents(portal_id: str, tender_id: str, urls: list[str], fetch
                     tmp.unlink(missing_ok=True)
             else:
                 await store.keep(tmp, name, h.hexdigest(), n)
+        except PortalCancelled:
+            tmp.unlink(missing_ok=True)
+            raise
         except TooLarge:
             log.info("skipped %s: larger than 250 MB", url)
             tmp.unlink(missing_ok=True)
         except Exception as e:
             log.warning("document %s failed: %s", url, e)
+            if errors is not None:
+                errors.append(f"document {url}: {e}")
             tmp.unlink(missing_ok=True)
     return store.out

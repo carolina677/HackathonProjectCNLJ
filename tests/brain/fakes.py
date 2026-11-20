@@ -22,6 +22,8 @@ class FakeJev:
             pick = "captcha"
         elif "Bekanntmachung" in text and "Auftragsunterlagen" in text:
             pick = "notice_summary"
+        elif forms and "Suchformular" in text:
+            pick = "search_form"
         elif "Vergabenummer" in text or "Interne Nr." in text:
             pick = "tender_detail"
         elif "Treffer" in text or "Ausschreibungen" in text:
@@ -79,7 +81,14 @@ class FakeJev:
         if field == "cpvCodes":
             return 0.9 if all(c in page for c in value.split(", ")) else 0.1
         probe = value.split(" (")[0]
-        return 0.9 if probe and probe in page else 0.1
+        if probe and probe in page:
+            return 0.9
+        if " (" in value and value.endswith(")"):
+            iso = value.split(" (", 1)[1][:-1]
+            iso_naive = re.sub(r"(?:Z|[+-]\d{2}:\d{2})$", "", iso)
+            if iso in page or iso_naive in page:
+                return 0.9
+        return 0.1
 
 
 class NoJudge:

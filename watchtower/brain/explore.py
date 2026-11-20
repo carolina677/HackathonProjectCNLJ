@@ -4,14 +4,14 @@ import logging
 import re
 from dataclasses import dataclass, field
 from typing import Any, Literal
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 from selectolax.lexbor import LexborHTMLParser
 
 from .. import events
-from ..fetch import CapturedJson, Fetcher, Link, Page, RenderedPage, extract_links
+from ..fetch import CapturedJson, Fetcher, Link, Page, PortalCancelled, RenderedPage, extract_links
 from ..judge.jev import JudgeUnavailable
-from ..recipe.engine import visible_text
+from ..recipe.engine import _form_data, visible_text
 
 log = logging.getLogger("watchtower.explore")
 
@@ -128,51 +128,91 @@ def json_tender_candidates(page: Page) -> list[CapturedJson]:
     return [c for c, _ in hits]
 
 
-async def _probe_download(fetcher: Fetcher, url: str) -> bool:
+async def _probe_download(fetcher: Fetcher, url: str) -> Literal["ok", "auth", "html", "other"]:
     try:
         async with fetcher.stream(url) as r:
+            if r.status_code in (401, 403):
+                return "auth"
             if r.status_code >= 400:
-                return False
+                return "other"
             ct = r.headers.get("content-type", "").lower()
             async for chunk in r.aiter_bytes():
-                head = chunk[:8]
+                head = chunk[:16]
                 break
             else:
                 head = b""
-        return (head.startswith(b"%PDF") or head.startswith(b"PK") or "pdf" in ct or "zip" in ct
-                or "octet-stream" in ct or "msword" in ct or "officedocument" in ct)
+        if (head.startswith(b"%PDF") or head.startswith(b"PK") or "pdf" in ct or "zip" in ct
+                or "octet-stream" in ct or "msword" in ct or "officedocument" in ct):
+            return "ok"
+        if "html" in ct or head.lstrip().startswith(b"<"):
+            return "html"
+        return "other"
+    except PortalCancelled:
+        raise
     except Exception as e:
         log.info("probe %s failed: %s", url, e)
-        return False
+        return "other"
 
 
-async def _docs_reachable(detail: Page, fetcher: Fetcher, jev, portal_id, ex: Exploration) -> bool:
+async def _docs_reachable(detail: Page, fetcher: Fetcher, jev, portal_id,
+                          ex: Exploration) -> tuple[bool, Literal["login", "captcha"] | None]:
+    doc_block: Literal["login", "captcha"] | None = None
     for link, _ in await rank_links(detail, "documents", jev, k=3, portal_id=portal_id):
-        if FILE_EXT.search(link.href) or "download" in link.href.lower():
-            if await _probe_download(fetcher, link.href):
-                ex.doc_hops = [link.href]
-                return True
-            continue
-        if await _probe_download(fetcher, link.href):
+        res = await _probe_download(fetcher, link.href)
+        if res == "ok":
             ex.doc_hops = [link.href]
-            return True
+            return True, None
+        if res == "auth":
+            doc_block = doc_block or "login"
+            continue
+        if res == "other" and (FILE_EXT.search(link.href) or "download" in link.href.lower()):
+            continue
         tab = await fetcher.open(link.href)
         ex.path.append(link.href)
-        for inner, _ in await rank_links(tab, "documents", jev, k=3, portal_id=portal_id):
-            if await _probe_download(fetcher, inner.href):
-                ex.doc_hops = [link.href, inner.href]
-                return True
-    return False
+        if tab.status in (401, 403):
+            doc_block = doc_block or "login"
+            continue
+        if tab.status < 400:
+            tkind = (await classify_page(tab, jev, portal_id)).choice
+            if tkind == "captcha":
+                doc_block = "captcha"
+            elif tkind == "login_wall":
+                doc_block = doc_block or "login"
+            for inner, _ in await rank_links(tab, "documents", jev, k=3, portal_id=portal_id):
+                ires = await _probe_download(fetcher, inner.href)
+                if ires == "ok":
+                    ex.doc_hops = [link.href, inner.href]
+                    return True, None
+                if ires == "auth":
+                    doc_block = doc_block or "login"
+    return False, doc_block
+
+
+def _find_search_form(html: str, base: str) -> tuple[str, str, dict[str, str]] | None:
+    tree = LexborHTMLParser(html)
+    for form in tree.css("form"):
+        inputs = form.css("input")
+        if any((i.attributes.get("type") or "").lower() == "password" for i in inputs):
+            continue
+        action = urljoin(base, form.attributes.get("action") or base)
+        method = (form.attributes.get("method") or "get").lower()
+        return method, action, _form_data(form)
+    return None
 
 
 async def explore(start_url: str, fetcher: Fetcher, jev, *, portal_id: str | None = None,
                   max_hops: int = 4, max_details: int = 3) -> Exploration:
     ex = Exploration()
-    cur, hops, block_seen = start_url, 0, None
+    cur, hops, block_seen, form_tried = start_url, 0, None, False
+    next_page: Page | None = None
     try:
         while hops <= max_hops:
-            page = await fetcher.open(cur)
+            page = next_page if next_page is not None else await fetcher.open(cur)
+            next_page = None
             ex.path.append(cur)
+            if page.status in (401, 403):
+                ex.blocked = "login"
+                return ex
             if page.status >= 400:
                 ex.error = f"HTTP {page.status} on {cur}"
                 return ex
@@ -191,6 +231,19 @@ async def explore(start_url: str, fetcher: Fetcher, jev, *, portal_id: str | Non
             if kind == "tender_detail" and not nxt:
                 ex.list_page = page
                 break
+            if not nxt and kind == "search_form" and not form_tried:
+                form = _find_search_form(page.html, page.final_url or cur)
+                if form:
+                    form_tried = True
+                    method, action, data = form
+                    if method == "post":
+                        resp = await fetcher.post(action, data)
+                    else:
+                        u = urlsplit(action)
+                        merged = parse_qsl(u.query, keep_blank_values=True) + list(data.items())
+                        resp = await fetcher.open(urlunsplit((u.scheme, u.netloc, u.path, urlencode(merged), "")))
+                    next_page, cur, hops = resp, resp.final_url or action, hops + 1
+                    continue
             if not nxt:
                 ex.error = f"no way to a tender list from {cur} ({kind})"
                 return ex
@@ -200,15 +253,34 @@ async def explore(start_url: str, fetcher: Fetcher, jev, *, portal_id: str | Non
             return ex
 
         ex.json_candidates = json_tender_candidates(ex.list_page)
+        detail_block: Literal["login", "captcha"] | None = None
+        blocked_details: list[Page] = []
         for link, _ in await rank_links(ex.list_page, "detail", jev, k=max_details, portal_id=portal_id):
             d = await fetcher.open(link.href)
+            if d.status in (401, 403):
+                detail_block = detail_block or "login"
+                continue
             if d.status < 400:
-                ex.detail_pages.append(d)
-                ex.path.append(link.href)
-        for d in ex.detail_pages[:1]:
-            ex.docs_reachable = await _docs_reachable(d, fetcher, jev, portal_id, ex)
-        if block_seen and not ex.docs_reachable:
-            ex.blocked = "captcha" if block_seen == "captcha" else "login"
+                dkind = (await classify_page(d, jev, portal_id)).choice
+                if dkind == "captcha":
+                    detail_block = "captcha"
+                    blocked_details.append(d)
+                elif dkind == "login_wall":
+                    detail_block = detail_block or "login"
+                    blocked_details.append(d)
+                else:
+                    ex.detail_pages.append(d)
+                    ex.path.append(link.href)
+        doc_block: Literal["login", "captcha"] | None = None
+        for d in (ex.detail_pages or blocked_details)[:1]:
+            ex.docs_reachable, doc_block = await _docs_reachable(d, fetcher, jev, portal_id, ex)
+        if not ex.docs_reachable:
+            if block_seen:
+                ex.blocked = "captcha" if block_seen == "captcha" else "login"
+            elif doc_block:
+                ex.blocked = doc_block
+            elif detail_block and not ex.detail_pages:
+                ex.blocked = detail_block
     except JudgeUnavailable as e:
         ex.error = f"no judge available: {e}"
     events.emit(portal_id, "explore", {"path": ex.path, "blocked": ex.blocked, "docs_reachable": ex.docs_reachable,

@@ -51,3 +51,22 @@ async def test_static_urls_carry_a_version_so_updates_are_not_cached(client):
 
     html = (await client.get("/")).text
     assert re.search(r'/static/app\.css\?v=\w+', html) and re.search(r'/static/app\.js\?v=\w+', html)
+
+
+async def test_ui_summary_endpoint(client, repo):
+    from datetime import date, datetime, timezone
+    from watchtower.models import Tender, TenderStatus
+
+    pid = await repo.create_portal("https://sum.example/")
+    await repo.set_state(pid, PortalState.serving, None)
+    now = datetime.now(timezone.utc)
+    await repo.upsert_tenders(pid, [Tender(
+        id="1", url="https://sum.example/1", title="T", buyerName="B",
+        publicationDate=date(2026, 11, 20), submissionDeadline=None,
+        status=TenderStatus.open, documents=[], lastChangedAt=now,
+    )], now=now)
+    r = await client.get("/ui/summary")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["serving"] == 1 and data["tenders"] == 1
+    assert {"healing", "integrating", "failed", "avg_usd", "projected"} <= set(data)

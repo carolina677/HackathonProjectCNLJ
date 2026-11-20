@@ -1,3 +1,4 @@
+import asyncio
 import mimetypes
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -8,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel
 
-from . import tracing
+from . import cost, tracing
 from .config import Settings, get_settings
 from .db import Repo
 from .models import RunKind, tender_json
@@ -43,6 +44,19 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
         tracing.setup(settings)
         repo = Repo(settings.data_dir)
         await repo.init()
+        if start_scheduler:
+            await repo.fail_orphaned_runs()
+        cost.reset()
+        cost.load(await repo.load_costs())
+        cost_tasks: set[asyncio.Task] = set()
+
+        def _persist_cost(pid: str, row: dict[str, float]) -> None:
+            loop = asyncio.get_running_loop()
+            t = loop.create_task(repo.save_cost(pid, row))
+            cost_tasks.add(t)
+            t.add_done_callback(cost_tasks.discard)
+
+        cost.set_persister(_persist_cost)
         app.state.repo = repo
         app.state.settings = settings
         app.state.scheduler = _NullScheduler(repo)
@@ -66,8 +80,11 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
         try:
             yield
         finally:
+            cost.clear_persister()
             for h in getattr(app.state, "shutdown_hooks", []):
                 await h(app)
+            if cost_tasks:
+                await asyncio.gather(*list(cost_tasks), return_exceptions=True)
             await repo.close()
 
     app = FastAPI(title="Watchtower", lifespan=lifespan)
@@ -87,7 +104,10 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
 
     @app.post("/portals", status_code=201)
     async def add_portal(body: PortalIn, request: Request):
-        pid = await repo(request).create_portal(body.url)
+        try:
+            pid = await repo(request).create_portal(body.url)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="url must be a web address such as https://portal.example/tenders")
         p = await repo(request).get_portal(pid)
         if p and p.state.value == "integrating" and not await repo(request).running_run(pid):
             await request.app.state.scheduler.enqueue(pid, RunKind.read)
@@ -110,6 +130,10 @@ def create_app(settings: Settings | None = None, start_scheduler: bool = True) -
             raise _404("portal")
         await request.app.state.scheduler.cancel(pid)
         await repo(request).delete_portal(pid)
+        cost.forget(pid)
+        forget = getattr(getattr(request.app.state, "pipeline", None), "forget", None)
+        if forget:
+            forget(pid)
         return Response(status_code=204)
 
     @app.post("/portals/{pid}/refresh", status_code=202)

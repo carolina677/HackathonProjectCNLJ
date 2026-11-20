@@ -17,7 +17,7 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS portals (
   id TEXT PRIMARY KEY, url TEXT UNIQUE NOT NULL, state TEXT NOT NULL, reason TEXT,
   last_success_at TEXT, recipe TEXT, field_mask TEXT, snapshot_ref TEXT, country TEXT,
-  prev_count INTEGER DEFAULT 0, deleted INTEGER DEFAULT 0, created_at TEXT NOT NULL
+  prev_count INTEGER DEFAULT 0, prev_fill TEXT, deleted INTEGER DEFAULT 0, created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS tenders (
   portal_id TEXT NOT NULL, id TEXT NOT NULL, data TEXT NOT NULL, content_hash TEXT NOT NULL,
@@ -30,6 +30,14 @@ CREATE TABLE IF NOT EXISTS runs (
 CREATE TABLE IF NOT EXISTS documents (
   id TEXT PRIMARY KEY, portal_id TEXT, tender_id TEXT, file_name TEXT, size_bytes INTEGER,
   sha256 TEXT, stored_path TEXT
+);
+CREATE TABLE IF NOT EXISTS costs (
+  portal_id TEXT PRIMARY KEY,
+  jev_usd REAL DEFAULT 0.0,
+  llm_usd REAL DEFAULT 0.0,
+  jev_calls INTEGER DEFAULT 0,
+  llm_calls INTEGER DEFAULT 0,
+  tokens INTEGER DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS runs_portal ON runs(portal_id, started_at);
 """
@@ -60,6 +68,7 @@ class PortalRow:
     snapshot_ref: str | None = None
     country: str | None = None
     prev_count: int = 0
+    prev_fill: dict[str, float] = field(default_factory=dict)
     deleted: bool = False
 
     def out(self) -> PortalOut:
@@ -93,6 +102,10 @@ class Repo:
         self.db.row_factory = aiosqlite.Row
         await self.db.execute("PRAGMA journal_mode=WAL")
         await self.db.executescript(SCHEMA)
+        cur = await self.db.execute("PRAGMA table_info(portals)")
+        cols = {r["name"] for r in await cur.fetchall()}
+        if "prev_fill" not in cols:
+            await self.db.execute("ALTER TABLE portals ADD COLUMN prev_fill TEXT")
         await self.db.commit()
 
     async def close(self) -> None:
@@ -107,8 +120,12 @@ class Repo:
         if row:
             if row["deleted"]:
                 await self.db.execute(
-                    "UPDATE portals SET deleted=0, state=?, reason=NULL, recipe=NULL WHERE id=?",
+                    "UPDATE portals SET deleted=0, state=?, reason=NULL, recipe=NULL, "
+                    "last_success_at=NULL, prev_count=0, prev_fill=NULL WHERE id=?",
                     (PortalState.integrating, row["id"]))
+                await self.db.execute("DELETE FROM runs WHERE portal_id=?", (row["id"],))
+                await self.db.execute("DELETE FROM documents WHERE portal_id=?", (row["id"],))
+                await self.db.execute("DELETE FROM costs WHERE portal_id=?", (row["id"],))
                 await self.db.commit()
             return row["id"]
         pid = _new_id()
@@ -127,6 +144,7 @@ class Repo:
             recipe=json.loads(r["recipe"]) if r["recipe"] else None,
             field_mask=json.loads(r["field_mask"]) if r["field_mask"] else [],
             snapshot_ref=r["snapshot_ref"], country=r["country"], prev_count=r["prev_count"] or 0,
+            prev_fill=json.loads(r["prev_fill"]) if r["prev_fill"] else {},
             deleted=bool(r["deleted"]))
 
     async def get_portal(self, pid: str) -> PortalRow | None:
@@ -146,6 +164,8 @@ class Repo:
     async def delete_portal(self, pid: str) -> None:
         await self.db.execute("UPDATE portals SET deleted=1 WHERE id=?", (pid,))
         await self.db.execute("DELETE FROM tenders WHERE portal_id=?", (pid,))
+        await self.db.execute("DELETE FROM documents WHERE portal_id=?", (pid,))
+        await self.db.execute("DELETE FROM costs WHERE portal_id=?", (pid,))
         await self.db.commit()
 
     async def set_state(self, pid: str, state: PortalState, reason: str | None) -> None:
@@ -156,14 +176,19 @@ class Repo:
                          field_mask: list[str] | None = None, country: str | None = None) -> None:
         await self.db.execute(
             "UPDATE portals SET recipe=?, snapshot_ref=COALESCE(?, snapshot_ref), "
-            "field_mask=COALESCE(?, field_mask), country=COALESCE(?, country) WHERE id=?",
+            "field_mask=COALESCE(?, field_mask), country=COALESCE(?, country), prev_fill=NULL WHERE id=?",
             (json.dumps(recipe) if recipe is not None else None, snapshot_ref,
              json.dumps(field_mask) if field_mask is not None else None, country, pid))
         await self.db.commit()
 
-    async def mark_success(self, pid: str, count: int, when: datetime | None = None) -> None:
-        await self.db.execute("UPDATE portals SET last_success_at=?, prev_count=? WHERE id=?",
-                              ((when or now_utc()).isoformat(), count, pid))
+    async def mark_success(self, pid: str, count: int, when: datetime | None = None,
+                           fill: dict[str, float] | None = None) -> None:
+        if fill is None:
+            await self.db.execute("UPDATE portals SET last_success_at=?, prev_count=? WHERE id=?",
+                                  ((when or now_utc()).isoformat(), count, pid))
+        else:
+            await self.db.execute("UPDATE portals SET last_success_at=?, prev_count=?, prev_fill=? WHERE id=?",
+                                  ((when or now_utc()).isoformat(), count, json.dumps(fill), pid))
         await self.db.commit()
 
     # --- tenders -------------------------------------------------------
@@ -188,6 +213,8 @@ class Repo:
         return changed
 
     async def list_tenders(self, pid: str, changed_since: datetime | None = None) -> list[Tender]:
+        if changed_since is not None and changed_since.tzinfo is None:
+            changed_since = changed_since.replace(tzinfo=timezone.utc)
         cur = await self.db.execute(
             "SELECT data, last_changed_at FROM tenders WHERE portal_id=? ORDER BY id", (pid,))
         out = []
@@ -257,6 +284,39 @@ class Repo:
     async def runs_since(self, since: datetime) -> list[dict]:
         cur = await self.db.execute("SELECT * FROM runs WHERE started_at >= ?", (since.isoformat(),))
         return [dict(r) for r in await cur.fetchall()]
+
+    async def fail_orphaned_runs(self) -> int:
+        cur = await self.db.execute(
+            "UPDATE runs SET finished_at=?, result=?, detail=? WHERE finished_at IS NULL",
+            (now_utc().isoformat(), str(RunResult.failed), "interrupted by restart"))
+        await self.db.commit()
+        return cur.rowcount or 0
+
+    # --- costs ---------------------------------------------------------
+    async def load_costs(self) -> dict[str, dict[str, float]]:
+        cur = await self.db.execute(
+            "SELECT portal_id, jev_usd, llm_usd, jev_calls, llm_calls, tokens FROM costs")
+        return {
+            r["portal_id"]: {
+                "jev_usd": float(r["jev_usd"] or 0.0),
+                "llm_usd": float(r["llm_usd"] or 0.0),
+                "jev_calls": int(r["jev_calls"] or 0),
+                "llm_calls": int(r["llm_calls"] or 0),
+                "tokens": int(r["tokens"] or 0),
+            }
+            for r in await cur.fetchall()
+        }
+
+    async def save_cost(self, portal_id: str, row: dict[str, float]) -> None:
+        if self.db is None:
+            return
+        await self.db.execute(
+            "INSERT INTO costs (portal_id, jev_usd, llm_usd, jev_calls, llm_calls, tokens) VALUES (?,?,?,?,?,?) "
+            "ON CONFLICT(portal_id) DO UPDATE SET jev_usd=excluded.jev_usd, llm_usd=excluded.llm_usd, "
+            "jev_calls=excluded.jev_calls, llm_calls=excluded.llm_calls, tokens=excluded.tokens",
+            (portal_id, float(row.get("jev_usd", 0.0)), float(row.get("llm_usd", 0.0)),
+             int(row.get("jev_calls", 0)), int(row.get("llm_calls", 0)), int(row.get("tokens", 0))))
+        await self.db.commit()
 
     # --- documents -----------------------------------------------------
     async def save_document(self, *, portal_id: str, tender_id: str, file_name: str, size_bytes: int,

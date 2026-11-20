@@ -73,12 +73,11 @@ async def test_attach_ssr_reaches_serving(e2e):
     c, lab, _, app = e2e
     pid = await _attach(c, lab.url("ssr"))
     await until(c, pid, lambda p: p["state"] == "serving")
-    await until(c, pid, lambda p: p["tenderCount"] == 23)
-    await idle(app, pid)
     ts = (await c.get(f"/portals/{pid}/tenders")).json()
     s = score(ts, lab.truth("ssr"))
     assert s.attach == 1.0 and s.quality >= 0.95, s.wrong_examples
     assert s.field_accuracy["documents"] == 1.0
+    await idle(app, pid)
     runs = (await c.get(f"/portals/{pid}/runs")).json()
     assert runs[-1]["kind"] == "read" and all(r["result"] == "ok" for r in runs)
     assert (await c.get(f"/portals/{pid}")).json()["lastSuccessAt"] is not None
@@ -87,19 +86,19 @@ async def test_attach_ssr_reaches_serving(e2e):
 async def test_spa_attaches_via_json_api(e2e):
     c, lab, _, app = e2e
     pid = await _attach(c, lab.url("spa"))
-    await until(c, pid, lambda p: p["state"] == "serving" and p["tenderCount"] == 23, 90)
-    await idle(app, pid)
+    await until(c, pid, lambda p: p["state"] == "serving", 90)
     s = score((await c.get(f"/portals/{pid}/tenders")).json(), lab.truth("spa"))
-    assert s.attach == 1.0 and s.wrong_values == 0, s.wrong_examples
+    assert s.attach == 1.0 and s.wrong_values == 0 and s.field_accuracy["documents"] == 1.0, s.wrong_examples
+    await idle(app, pid)
 
 
 async def test_multistep_zip_documents(e2e):
     c, lab, _, app = e2e
     pid = await _attach(c, lab.url("multistep"))
-    await until(c, pid, lambda p: p["state"] == "serving" and p["tenderCount"] == 23, 90)
-    await idle(app, pid)
+    await until(c, pid, lambda p: p["state"] == "serving", 90)
     s = score((await c.get(f"/portals/{pid}/tenders")).json(), lab.truth("multistep"))
-    assert s.field_accuracy["documents"] == 1.0
+    assert s.attach == 1.0 and s.field_accuracy["documents"] == 1.0
+    await idle(app, pid)
 
 
 async def test_login_portal_failed_with_reason(e2e):

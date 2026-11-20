@@ -6,8 +6,8 @@ open tender from one portal. No model will be called when the recipe runs, so th
 
 - `source`: `"html"` (parse the HTML list page) or `"json_api"` (call the JSON endpoint the page itself uses).
   **Prefer `json_api` whenever a captured JSON response lists the tenders.** It is far more stable than HTML.
-- `list_url`: absolute URL of the list (HTML page or JSON endpoint). `extra_params`: fixed query params (e.g. page size).
-- `pagination.kind`: `none` | `page_param` (`param`, `start`, `step`) | `offset` (`param`, `start`, `step` = page size)
+- `list_url`: absolute URL of the list (HTML page or JSON endpoint). `method`: `"GET"` (default) or `"POST"` with `request_body` (dict) for JSON POST APIs. `extra_params`: fixed query params (e.g. page size). `needs_js`: `true` only if an HTML list requires browser JS rendering.
+- `pagination.kind`: `none` | `page_param` (`param`, `body_field` for POST JSON body pagination, `start`, `step`) | `offset` (`param`, `body_field`, `start`, `step` = page size)
   | `next_link` (`next_selector` = CSS of the "next" link)
   | `postback` (`next_selector` = CSS of the "next" control when paging is a form post-back, e.g. `javascript:__doPostBack(...)`
   links on ASP.NET or `javascript:;` pager links on PRADO/Atexo pages with a `PRADO_PAGESTATE` field).
@@ -21,11 +21,10 @@ open tender from one portal. No model will be called when the recipe runs, so th
   - `template`: optional, builds a value like `"https://host/tender/{value}"`
   - `normalizer`: `text` | `date` | `datetime` | `cpv_list` | `country` | `procedure` | `nature` | `status` | `url` | `int`
   - Use dotted keys for the place: `placeOfPerformance.postalCode`, `placeOfPerformance.city`, `placeOfPerformance.countryCode`.
-- `detail`: optional. `source` html|json, `url_field` (usually `url`) or `url_template` (e.g. `"https://host/api/t/{id}"`),
-  and `fields` read on the detail page. Put fields that are only on the detail page here.
+- `detail`: optional. `source` html|json, `url_field` (usually `url`) or `url_template` (e.g. `"https://host/api/t/{id}"`), `needs_js` (true if detail HTML requires JS), and `fields` read on the detail page. Put fields that are only on the detail page here.
 - `documents`: list of steps run on the detail page (or on the json item if there is no detail page).
   Each step: `selector` (CSS for html, JSONPath for json), `attr` (`href`; use `value` for JSONPath), `follow`
-  (true = open each match and run the next step there, for "documents tab → download" flows). The last step yields file URLs.
+  (true = open each match and run the next step there, for "documents tab → download" flows), `needs_js` (true if followed page needs JS). The last step yields file URLs.
 - `id_field`: which field holds the portal's own stable tender identifier (default `id`).
 - `country`: ISO 3166 alpha-2 of the portal (drives the time zone of deadlines).
 

@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 from selectolax.lexbor import LexborHTMLParser
 
 from .. import events
+from ..fetch import RenderedPage
 from ..judge.llm import LLM
 from ..recipe.dsl import Recipe
 from .explore import Exploration
@@ -54,11 +55,16 @@ def build_prompt(ex: Exploration, feedback: list[str] | None = None, extra: str 
     parts = []
     lp = ex.list_page
     if lp is not None:
-        parts.append(f"## List page\nURL: {lp.final_url}\n```html\n{trim_html(lp.html)}\n```")
+        js_note = ("\nNote: this page required a browser (JavaScript) to render. Prefer a captured json_api "
+                   "(using `method: 'POST'` and `request_body` if it was a POST), or set `needs_js: true`.") \
+            if isinstance(lp, RenderedPage) else ""
+        parts.append(f"## List page\nURL: {lp.final_url}{js_note}\n```html\n{trim_html(lp.html)}\n```")
     for d in ex.detail_pages[:2]:
-        parts.append(f"## Detail page\nURL: {d.final_url}\n```html\n{trim_html(d.html, 15000)}\n```")
+        d_note = " (needed JS)" if isinstance(d, RenderedPage) else ""
+        parts.append(f"## Detail page{d_note}\nURL: {d.final_url}\n```html\n{trim_html(d.html, 15000)}\n```")
     for c in ex.json_candidates[:3]:
-        parts.append(f"## Captured JSON response ({c.method} {c.url})\n```json\n{json.dumps(c.body, ensure_ascii=False)[:8000]}\n```")
+        req_line = f"\nRequest body: ```json\n{c.post_data[:2000]}\n```" if getattr(c, "post_data", None) else ""
+        parts.append(f"## Captured JSON response ({c.method} {c.url}){req_line}\n```json\n{json.dumps(c.body, ensure_ascii=False)[:8000]}\n```")
     if ex.doc_hops:
         parts.append("## Document download path found by the explorer\n" + "\n".join(f"- {h}" for h in ex.doc_hops))
     guess = country_from_url(lp.final_url if lp else (ex.path[0] if ex.path else ""))

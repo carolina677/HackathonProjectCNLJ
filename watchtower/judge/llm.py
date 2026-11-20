@@ -22,11 +22,19 @@ class LLMUnavailable(Exception):
     pass
 
 
-# USD per 1M input/output tokens, Anthropic first-party list prices (checked 2026-11-20).
+# USD per 1M input/output tokens, first-party list prices (checked 2026-11-20).
 PRICES = {
     "claude-sonnet-5-5": (2.0, 10.0),
     "claude-haiku-5-5": (0.10, 0.50),
     "claude-opus-5-5": (4.0, 20.0),
+    "gpt-5.5": (2.50, 10.0),
+    "gpt-5.5-mini": (0.25, 2.0),
+    "gpt-5": (1.25, 10.0),
+    "gpt-5-mini": (0.25, 2.0),
+    "gpt-4.1": (2.0, 8.0),
+    "gpt-4.1-mini": (0.40, 1.60),
+    "gpt-4o": (2.50, 10.0),
+    "gpt-4o-mini": (0.15, 0.60),
 }
 UNKNOWN_PRICE = (8.0, 40.0)  # unknown model: assume a top-tier price so the cost meter never under-reports
 
@@ -87,6 +95,14 @@ def make_backend(settings: Settings) -> Backend | None:
         return OpenAIBackend(settings)
     if settings.llm_provider == "anthropic" and settings.anthropic_api_key:
         return AnthropicBackend(settings)
+    if settings.openai_api_key:
+        model = "gpt-5.5" if settings.llm_model.startswith("claude") else settings.llm_model
+        log.warning("LLM_PROVIDER=%s has no key; falling back to OpenAI (%s)", settings.llm_provider, model)
+        return OpenAIBackend(settings.model_copy(update={"llm_provider": "openai", "llm_model": model}))
+    if settings.anthropic_api_key:
+        model = "claude-sonnet-5-5" if settings.llm_model.startswith(("gpt", "o1", "o3", "o4")) else settings.llm_model
+        log.warning("LLM_PROVIDER=%s has no key; falling back to Anthropic (%s)", settings.llm_provider, model)
+        return AnthropicBackend(settings.model_copy(update={"llm_provider": "anthropic", "llm_model": model}))
     return None
 
 
@@ -99,13 +115,24 @@ class LLM:
     def available(self) -> bool:
         return self.backend is not None
 
+    def _active_model(self) -> str:
+        return getattr(self.backend, "model", self.settings.llm_model)
+
+    def _active_provider(self) -> str:
+        if isinstance(self.backend, OpenAIBackend):
+            return "openai"
+        if isinstance(self.backend, AnthropicBackend):
+            return "anthropic"
+        return self.settings.llm_provider
+
     async def complete_json(self, system: str, user: str, schema: type[T], *, portal_id: str | None = None,
                             purpose: str = "llm", attempts: int = 3) -> T:
         if not self.backend:
             raise LLMUnavailable("no LLM provider configured")
+        model = self._active_model()
         with tracing.span(f"llm.{purpose}", {"portal_id": portal_id, "purpose": purpose,
-                                             "provider": self.settings.llm_provider,
-                                             "model": self.settings.llm_model}) as sp:
+                                             "provider": self._active_provider(),
+                                             "model": model}) as sp:
             out, tin, tout, usd = await self._complete(system, user, schema, portal_id, purpose, attempts)
             if sp is not None:
                 sp.set_outputs({"tokens_in": tin, "tokens_out": tout, "usd": round(usd, 6)})
@@ -113,12 +140,13 @@ class LLM:
 
     async def _complete(self, system, user, schema, portal_id, purpose, attempts):
         js = schema.model_json_schema()
+        model = self._active_model()
         last: Exception | None = None
         for i in range(attempts):
             t0 = time.monotonic()
             try:
                 data, tin, tout = await self.backend(system, user, js)
-                pin, pout = _price(self.settings.llm_model, self.settings)
+                pin, pout = _price(model, self.settings)
                 usd = tin / 1e6 * pin + tout / 1e6 * pout
                 cost.record(portal_id, "llm", tin, tout, usd)
                 out = schema.model_validate(data)

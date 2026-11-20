@@ -119,3 +119,37 @@ def test_failed_portals_retry_at_most_daily(tmp_path):
     assert retry_every(s, PortalState.failed) == 24 * 3600
     s = Settings(_env_file=None, data_dir=tmp_path, read_interval_seconds=600)
     assert retry_every(s, PortalState.failed) == 3600
+
+
+async def test_delayed_followup_waits_and_respects_cancel(repo, settings):
+    class FollowupPipeline:
+        def __init__(self):
+            self.starts = []
+            self.pending = (RunKind.read, 0.25)
+
+        async def run(self, pid, run_id, kind):
+            self.starts.append(time.monotonic())
+            return RunResult.ok
+
+        def pop_followup(self, pid):
+            nxt = self.pending
+            self.pending = None
+            return nxt
+
+    pipe = FollowupPipeline()
+    s = Scheduler(repo, pipe, settings)
+    pid = await repo.create_portal("https://delay.example")
+    await s.enqueue(pid, RunKind.read)
+    await asyncio.sleep(0.1)
+    assert len(pipe.starts) == 1
+    await asyncio.sleep(0.35)
+    assert len(pipe.starts) == 2 and pipe.starts[1] - pipe.starts[0] >= 0.22
+
+    pipe.pending = (RunKind.read, 1.0)
+    await s.enqueue(pid, RunKind.read)
+    await asyncio.sleep(0.05)
+    await s.cancel(pid)
+    n = len(pipe.starts)
+    await asyncio.sleep(0.2)
+    assert len(pipe.starts) == n
+    await s.stop()

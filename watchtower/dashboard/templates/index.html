@@ -11,8 +11,8 @@
   <div class="stat healing"><b id="n-healing">{{ counts.healing }}</b><small>healing</small></div>
   <div class="stat integrating"><b id="n-integrating">{{ counts.integrating }}</b><small>integrating</small></div>
   <div class="stat failed"><b id="n-failed">{{ counts.failed }}</b><small>need a human</small></div>
-  <div class="stat"><b>{{ tenders }}</b><small>tenders delivered</small></div>
-  <div class="stat"><b>${{ "%.3f" | format(avg_usd) }}</b><small>avg. cost per portal · ${{ "%.0f" | format(projected) }} for 4,500</small></div>
+  <div class="stat"><b id="n-tenders">{{ tenders }}</b><small>tenders delivered</small></div>
+  <div class="stat"><b id="n-avg-usd">${{ "%.3f" | format(avg_usd) }}</b><small>avg. cost per portal · <span id="n-projected">${{ "%.0f" | format(projected) }}</span> for 4,500</small></div>
 </section>
 <section class="briefing">
   <button class="violet" id="brief-btn">▶ Morning briefing</button>

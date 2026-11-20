@@ -145,3 +145,90 @@ def test_label_does_not_match_a_longer_word():
     root = LexborHTMLParser("<nav><span>Vergabestellen</span></nav><dl><dt>Vergabestelle:</dt><dd>Stadt Köln</dd>"
                             "<dt>Frist (Ende)</dt><dd>x</dd></dl>").root
     assert find_by_label(root, "Vergabestelle") == "Stadt Köln"
+
+
+async def test_needs_js_calls_render_and_xpath_item_works():
+    from watchtower.fetch import Page
+
+    class JsFetcher:
+        def __init__(self):
+            self.rendered = []
+
+        async def get(self, url):
+            raise AssertionError("should have called render when needs_js=True")
+
+        async def render(self, url):
+            self.rendered.append(url)
+            html = ("<html><body><table>"
+                    "<tr class='row'><td>ID-1</td><td><a href='/d/1'>Bau</a></td></tr>"
+                    "</table></body></html>")
+            return Page(url=url, final_url=url, status=200, html=html, headers={})
+
+    r = Recipe.model_validate({
+        "source": "html",
+        "list_url": "https://js.example/list",
+        "needs_js": True,
+        "item": "//tr[@class='row']",
+        "fields": {
+            "id": {"selector": "td:first-child"},
+            "title": {"selector": "td a"},
+            "url": {"selector": "td a", "attr": "href", "normalizer": "url"},
+        },
+    })
+    f = JsFetcher()
+    pages = {}
+    ts = await run_recipe(r, f, pages=pages)
+    assert f.rendered == ["https://js.example/list"]
+    assert len(ts) == 1 and ts[0]["id"] == "ID-1" and ts[0]["title"] == "Bau"
+    assert "ID-1" in pages and "Bau" in pages["ID-1"]
+
+
+async def test_post_json_api_body_pagination():
+    class PostJsonFetcher:
+        def __init__(self):
+            self.calls = []
+
+        async def post_json(self, url, body=None, params=None):
+            self.calls.append((url, body))
+            off = (body or {}).get("offset", 0)
+            if off == 0:
+                return {"items": [{"id": "P1", "title": "One"}, {"id": "P2", "title": "Two"}]}
+            return {"items": []}
+
+    r = Recipe.model_validate({
+        "source": "json_api",
+        "list_url": "https://api.example/search",
+        "method": "POST",
+        "request_body": {"offset": 0, "limit": 2},
+        "pagination": {"kind": "offset", "body_field": "offset", "start": 0, "step": 2},
+        "item": "$.items[*]",
+        "fields": {
+            "id": {"selector": "$.id"},
+            "title": {"selector": "$.title"},
+            "url": {"selector": "$.id", "template": "https://api.example/t/{value}", "normalizer": "url"},
+        },
+    })
+    f = PostJsonFetcher()
+    pages = {}
+    ts = await run_recipe(r, f, pages=pages)
+    assert [t["id"] for t in ts] == ["P1", "P2"]
+    assert f.calls[0][1] == {"offset": 0, "limit": 2} and f.calls[1][1] == {"offset": 2, "limit": 2}
+    assert "P1" in pages and "One" in pages["P1"]
+
+
+async def test_html_network_error_records_error():
+    import httpx
+
+    class BrokenFetcher:
+        async def get(self, url):
+            raise httpx.ConnectError("connection refused")
+
+    errors = []
+    r = Recipe.model_validate({
+        "source": "html",
+        "list_url": "https://down.example/list",
+        "item": "tr",
+        "fields": {"id": {"selector": "td"}},
+    })
+    ts = await run_recipe(r, BrokenFetcher(), errors=errors)
+    assert ts == [] and any("ConnectError" in e for e in errors)

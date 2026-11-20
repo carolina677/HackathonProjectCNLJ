@@ -115,6 +115,17 @@ def register(app: FastAPI) -> None:
             raise HTTPException(404, "portal not found")
         return templates.TemplateResponse(request, "_card.html", {"c": await card_context(repo, p, request)})
 
+    @app.get("/ui/summary")
+    async def ui_summary(request: Request):
+        portals = await request.app.state.repo.list_portals()
+        counts = {s: sum(p.state.value == s for p in portals) for s in ("serving", "healing", "integrating", "failed")}
+        return {
+            **counts,
+            "tenders": sum(p.tenderCount for p in portals),
+            "avg_usd": cost.per_portal_average(),
+            "projected": cost.projected(4500),
+        }
+
     async def _portal(request: Request, pid: str):
         p = await request.app.state.repo.get_portal(pid)
         if not p:

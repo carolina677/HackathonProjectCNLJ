@@ -77,3 +77,28 @@ async def test_no_judge_falls_back_to_rules(lab):
     tenders, pages = await _sample(lab)
     rep = await verify_sample(tenders, pages, NoJudge())
     assert rep.ok and rep.judged is False
+
+
+async def test_empty_titles_rejected():
+    tenders = [{"id": "1", "url": "https://x/1", "title": None}]
+    rep = await verify_sample(tenders, {"1": "<p>x</p>"}, FakeJev())
+    assert not rep.ok and any("title" in p for p in rep.problems)
+
+
+async def test_expect_docs_rejects_missing_doc_urls():
+    tenders = [{"id": "1", "url": "https://x/1", "title": "Neubau Kita", "_doc_urls": []}]
+    rep = await verify_sample(tenders, {"1": "<html><body>Neubau Kita</body></html>"}, FakeJev(), expect_docs=True)
+    assert not rep.ok and any("document" in f.lower() for f in rep.feedback)
+
+
+async def test_json_page_evidence_cross_checked():
+    import json
+
+    tenders = [{
+        "id": "J1", "url": "https://x/t/J1", "title": "Neubau Kita", "buyerName": "Stadt Aachen",
+        "publicationDate": date(2026, 11, 20), "submissionDeadline": datetime(2026, 12, 5, 10, 0, tzinfo=tz_for("DE")),
+    }]
+    pages = {"J1": json.dumps({"id": "J1", "title": "Neubau Kita", "authority": "Stadt Aachen",
+                               "publishedAt": "2026-11-20", "deadline": "2026-12-05T10:00:00"})}
+    rep = await verify_sample(tenders, pages, FakeJev())
+    assert rep.ok and rep.field_scores["submissionDeadline"] > 0.8

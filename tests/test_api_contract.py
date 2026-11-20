@@ -106,3 +106,30 @@ async def test_documents_in_tender(client, repo):
     await repo.upsert_tenders(pid, [t], now=NOW)
     got = (await client.get(f"/portals/{pid}/tenders")).json()[0]
     assert got["documents"][0]["path"] == "/files/1"
+
+
+async def test_post_without_scheme_and_garbage(client):
+    a = await client.post("/portals", json={"url": "vergabe.example.de/x"})
+    b = await client.post("/portals", json={"url": "https://vergabe.example.de/x"})
+    assert a.status_code == 201 and a.json()["id"] == b.json()["id"]
+    bad = await client.post("/portals", json={"url": "just words"})
+    assert bad.status_code == 422 and "web address" in bad.json()["error"]
+
+
+async def test_changed_since_naive_timestamp(client, repo):
+    pid = await _portal(client)
+    await repo.upsert_tenders(pid, [_tender("a", NOW - timedelta(hours=2)), _tender("b", NOW)], now=None)
+    naive_since = (NOW - timedelta(hours=1)).replace(tzinfo=None).isoformat()
+    r = await client.get(f"/portals/{pid}/tenders", params={"changedSince": naive_since})
+    assert r.status_code == 200 and [t["id"] for t in r.json()] == ["b"]
+
+
+async def test_delete_and_readd_resets_portal_state(client, repo):
+    pid = await _portal(client, "https://readd.example/list")
+    await repo.upsert_tenders(pid, [_tender("a", NOW)], now=NOW)
+    await repo.mark_success(pid, 1, NOW)
+    assert (await client.delete(f"/portals/{pid}")).status_code == 204
+    r2 = await client.post("/portals", json={"url": "https://readd.example/list"})
+    assert r2.status_code == 201 and r2.json()["id"] == pid
+    p = (await client.get(f"/portals/{pid}")).json()
+    assert p["state"] == "integrating" and p["lastSuccessAt"] is None and p["tenderCount"] == 0

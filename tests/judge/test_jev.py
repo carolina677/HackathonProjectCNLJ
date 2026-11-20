@@ -104,6 +104,12 @@ async def test_llm_provider_switch(settings):
     assert isinstance(make_backend(settings.model_copy(update={"llm_provider": "anthropic",
                                                                "anthropic_api_key": "k"})), AnthropicBackend)
     assert make_backend(settings.model_copy(update={"anthropic_api_key": None, "openai_api_key": None})) is None
+    auto_oa = make_backend(settings.model_copy(update={"llm_provider": "anthropic", "llm_model": "claude-sonnet-5-5",
+                                                       "anthropic_api_key": None, "openai_api_key": "ok"}))
+    assert isinstance(auto_oa, OpenAIBackend) and auto_oa.model == "gpt-5.5"
+    auto_ant = make_backend(settings.model_copy(update={"llm_provider": "openai", "llm_model": "gpt-5.5",
+                                                        "openai_api_key": None, "anthropic_api_key": "ak"}))
+    assert isinstance(auto_ant, AnthropicBackend) and auto_ant.model == "claude-sonnet-5-5"
 
 
 def test_projection():

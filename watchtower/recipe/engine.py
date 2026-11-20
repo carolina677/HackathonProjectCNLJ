@@ -1,17 +1,21 @@
 """Deterministic recipe runner. Regular reads go through here and never call a model."""
 
+import copy
+import json
 import re
 from datetime import datetime, timezone
 from typing import Any, Protocol
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
+import httpx
 from jsonpath_ng.ext import parse as jp_parse
 from lxml import html as lxml_html
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
+from ..fetch import PortalCancelled
 from ..models import OPTIONAL_FIELDS, TenderStatus
 from . import normalize as N
-from .dsl import DocStep, FieldRule, Recipe
+from .dsl import DocStep, FieldRule, Pagination, Recipe
 
 RawTender = dict[str, Any]
 LABEL_TAGS = "dt, th, td, label, strong, b, span, div, p, li"
@@ -156,6 +160,66 @@ def resolve_param(v):
     return v
 
 
+async def _fetch_page(fetcher, url: str, needs_js: bool):
+    if needs_js and hasattr(fetcher, "render"):
+        return await fetcher.render(url)
+    return await fetcher.get(url)
+
+
+def _resolve_body(template: dict | None, pg: Pagination, seen_pages: int) -> dict:
+    body = copy.deepcopy(template or {})
+    val = (pg.start + seen_pages * pg.step) if pg.kind in ("page_param", "offset") else None
+    today = datetime.now(timezone.utc).date().isoformat()
+
+    def walk(node):
+        if isinstance(node, dict):
+            return {k: walk(v) for k, v in node.items()}
+        if isinstance(node, list):
+            return [walk(x) for x in node]
+        if isinstance(node, str):
+            s = node.replace("{today}", today)
+            if val is not None:
+                if s in ("{page}", "{offset}"):
+                    return val
+                s = s.replace("{page}", str(val)).replace("{offset}", str(val))
+            return s
+        return node
+
+    out = walk(body)
+    if val is not None:
+        field = pg.body_field or (pg.param if pg.param and pg.param in out else None)
+        if field:
+            parts = field.split(".")
+            cur = out
+            for part in parts[:-1]:
+                cur = cur.setdefault(part, {})
+            cur[parts[-1]] = val
+    return out
+
+
+def _xpath_items(html: str, xpath_expr: str) -> list[LexborNode]:
+    doc = lxml_html.fromstring(html)
+    out: list[LexborNode] = []
+    for el in doc.xpath(xpath_expr):
+        if isinstance(el, str):
+            continue
+        frag = lxml_html.tostring(el, encoding="unicode")
+        tag = str(getattr(el, "tag", "div")).lower()
+        if tag in ("tr", "thead", "tbody", "tfoot"):
+            wrapped = f"<table><tbody>{frag}</tbody></table>"
+            node = LexborHTMLParser(wrapped).css_first(tag)
+        elif tag in ("td", "th"):
+            wrapped = f"<table><tbody><tr>{frag}</tr></tbody></table>"
+            node = LexborHTMLParser(wrapped).css_first(tag)
+        else:
+            parsed = LexborHTMLParser(f"<div>{frag}</div>")
+            div = parsed.css_first("div")
+            node = div.child if div and div.child else parsed.body
+        if node is not None:
+            out.append(node)
+    return out
+
+
 # --- post-back pagination (PRADO, ASP.NET WebForms) --------------------------
 STATE_FIELDS = ("PRADO_PAGESTATE", "__VIEWSTATE")
 DOPOSTBACK = re.compile(r"__doPostBack\(\s*'([^']*)'\s*,\s*'([^']*)'")
@@ -237,23 +301,44 @@ async def _list_pages(recipe: Recipe, fetcher: FetcherLike, errors: list[str]):
     seen_pages = 0
     next_url: str | None = url
     while next_url and seen_pages < pg.max_pages:
-        if pg.kind == "page_param":
+        body_txt = json.dumps(recipe.request_body) if recipe.request_body else ""
+        use_body_pg = recipe.source == "json_api" and recipe.method == "POST" and (
+            pg.body_field
+            or (pg.param and pg.param in (recipe.request_body or {}))
+            or "{page}" in body_txt
+            or "{offset}" in body_txt
+        )
+        if pg.kind == "page_param" and not use_body_pg:
             page_url = with_param(next_url, pg.param or "page", pg.start + seen_pages * pg.step) \
                 if seen_pages or pg.start != 1 else next_url
-        elif pg.kind == "offset":
+        elif pg.kind == "offset" and not use_body_pg:
             page_url = with_param(next_url, pg.param or "offset", pg.start + seen_pages * pg.step)
         else:
             page_url = next_url
         if recipe.source == "json_api":
             try:
-                data = await fetcher.get_json(page_url)
+                if recipe.method == "POST" and hasattr(fetcher, "post_json"):
+                    data = await fetcher.post_json(page_url, body=_resolve_body(recipe.request_body, pg, seen_pages))
+                else:
+                    data = await fetcher.get_json(page_url)
+            except PortalCancelled:
+                raise
+            except httpx.HTTPStatusError as e:
+                errors.append(f"HTTP {e.response.status_code} on {page_url}")
+                return
             except Exception as e:
-                errors.append(f"list request failed on {page_url}: {e}")
+                errors.append(f"list request failed on {page_url}: {type(e).__name__}: {e}")
                 return
             yield page_url, data
             next_href = None
         else:
-            page = await fetcher.get(page_url)
+            try:
+                page = await _fetch_page(fetcher, page_url, recipe.needs_js)
+            except PortalCancelled:
+                raise
+            except Exception as e:
+                errors.append(f"list request failed on {page_url}: {type(e).__name__}: {e}")
+                return
             if page.status >= 400:
                 errors.append(f"HTTP {page.status} on {page_url}")
                 return
@@ -268,8 +353,10 @@ async def _list_pages(recipe: Recipe, fetcher: FetcherLike, errors: list[str]):
                     action, data = req
                     try:
                         page = await fetcher.post(action, data)
+                    except PortalCancelled:
+                        raise
                     except Exception as e:
-                        errors.append(f"post-back failed on {action}: {e}")
+                        errors.append(f"post-back failed on {action}: {type(e).__name__}: {e}")
                         return
                     if page.status >= 400:
                         errors.append(f"HTTP {page.status} on {action}")
@@ -318,9 +405,12 @@ async def run_recipe(recipe: Recipe, fetcher: FetcherLike, *, limit: int | None 
         if recipe.source == "json_api":
             items = select_json(payload, recipe.item)
             selector_for = lambda item: (lambda r: select_json(item, r.selector) if r.selector else [])
+        elif recipe.item.startswith("/"):
+            items = _xpath_items(payload, recipe.item)
+            selector_for = lambda item: (lambda r: select_html(item, r))
         else:
             root = LexborHTMLParser(payload).root
-            items = root.css(recipe.item) if not recipe.item.startswith("/") else []
+            items = root.css(recipe.item)
             selector_for = lambda item: (lambda r: select_html(item, r))
         if not items:
             if not out:
@@ -341,6 +431,7 @@ async def run_recipe(recipe: Recipe, fetcher: FetcherLike, *, limit: int | None 
             if "status" not in recipe.fields and recipe.source == "html" and _withdrawn_marker(item, t):
                 t["status"] = TenderStatus.withdrawn
             t["_item"] = item if recipe.source == "json_api" else None
+            t["_item_html"] = item.html or "" if recipe.source == "html" else None
             t["_base"] = page_url
             out.append(t)
             new += 1
@@ -373,8 +464,11 @@ async def _detail_and_docs(recipe: Recipe, fetcher: FetcherLike, t: RawTender, e
                     obj = await fetcher.get_json(url)
                     _extract(d.fields, lambda r: select_json(obj, r.selector) if r.selector else [], country, url, t)
                     doc_ctx = ("json", obj)
+                    if pages is not None:
+                        merged = {"item": t["_item"], "detail": obj} if t.get("_item") is not None else obj
+                        pages[t["id"]] = json.dumps(merged, ensure_ascii=False)
                 else:
-                    page = await fetcher.get(url)
+                    page = await _fetch_page(fetcher, url, d.needs_js or recipe.needs_js)
                     if page.status >= 400:
                         errors.append(f"detail HTTP {page.status} on {url}")
                     else:
@@ -387,8 +481,15 @@ async def _detail_and_docs(recipe: Recipe, fetcher: FetcherLike, t: RawTender, e
                         doc_ctx = ("html", (root, page.final_url or url))
                         if pages is not None:
                             pages[t["id"]] = page.html
+            except PortalCancelled:
+                raise
             except Exception as e:
                 errors.append(f"detail failed for {t['id']}: {e}")
+    if pages is not None and t["id"] not in pages:
+        if recipe.source == "json_api" and t.get("_item") is not None:
+            pages[t["id"]] = json.dumps(t["_item"], ensure_ascii=False)
+        elif t.get("_item_html"):
+            pages[t["id"]] = t["_item_html"]
     if doc_ctx is None:
         if recipe.source == "json_api" and t.get("_item") is not None:
             doc_ctx = ("json", t["_item"])
@@ -418,8 +519,10 @@ async def _documents(steps: list[DocStep], fetcher: FetcherLike, ctx, t: RawTend
         nxt = []
         for u in urls:
             try:
-                p = await fetcher.get(u)
+                p = await _fetch_page(fetcher, u, step.needs_js)
                 nxt.append(("html", (LexborHTMLParser(p.html).root, p.final_url or u)))
+            except PortalCancelled:
+                raise
             except Exception as e:
                 errors.append(f"document step failed for {t['id']}: {e}")
         current = nxt
@@ -441,6 +544,7 @@ def _withdrawn_marker(item, t: RawTender) -> bool:
 
 def _finalise(t: RawTender, mask: set[str]) -> None:
     t.pop("_item", None)
+    t.pop("_item_html", None)
     if t.get("status") is None:
         dl = t.get("submissionDeadline")
         t["status"] = TenderStatus.closed if isinstance(dl, datetime) and dl < datetime.now(timezone.utc) \

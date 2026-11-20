@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass, field
 
 from .. import events
+from ..fetch import PortalCancelled
 from ..judge.llm import LLMUnavailable
 from ..recipe.dsl import Recipe
 from ..recipe.engine import run_recipe
@@ -75,10 +76,13 @@ async def heal(portal_id: str, start_url: str, old: Recipe, old_snapshot: str | 
         pages: dict[str, str] = {}
         errors: list[str] = []
         try:
-            sample = await run_recipe(new, fetcher, limit=10, pages=pages, errors=errors, mask=mask)
+            sample = await run_recipe(new, fetcher, limit=10, pages=pages, errors=errors)
+        except PortalCancelled:
+            raise
         except Exception as e:
             sample, errors = [], [f"recipe crashed: {e}"]
-        v = await verify_sample(sample, pages, jev, country=new.country or "DE", portal_id=portal_id)
+        v = await verify_sample(sample, pages, jev, country=new.country or "DE", portal_id=portal_id,
+                                expect_docs=ex.docs_reachable)
         rep.verify = v
         if v.ok and sample:
             rep.ok = True

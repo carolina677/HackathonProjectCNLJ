@@ -1,6 +1,6 @@
 """Declarative recipe: what the LLM learns once per portal, and what the engine runs without a model."""
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -19,6 +19,7 @@ class FieldRule(BaseModel):
 class Pagination(BaseModel):
     kind: Literal["none", "page_param", "offset", "next_link", "postback"] = "none"
     param: str | None = None         # postback: the event target, if it cannot be read from the "next" control
+    body_field: str | None = None    # POST JSON pagination field (supports dotted paths like "paging.page")
     start: int = 1
     step: int = 1
     next_selector: str | None = None
@@ -30,6 +31,7 @@ class DetailRule(BaseModel):
     url_field: str = "url"
     url_template: str | None = None  # e.g. "https://x/api/tenders/{id}"
     fields: dict[str, FieldRule] = Field(default_factory=dict)
+    needs_js: bool = False
 
 
 class DocStep(BaseModel):
@@ -42,6 +44,8 @@ class DocStep(BaseModel):
 class Recipe(BaseModel):
     source: Literal["html", "json_api"]
     list_url: str
+    method: Literal["GET", "POST"] = "GET"
+    request_body: dict[str, Any] | None = None
     extra_params: dict[str, str | int] = Field(default_factory=dict)
     pagination: Pagination = Field(default_factory=Pagination)
     item: str

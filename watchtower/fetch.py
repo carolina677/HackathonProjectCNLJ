@@ -50,6 +50,7 @@ class CapturedJson:
     method: str
     status: int
     body: Any
+    post_data: str | None = None
 
 
 @dataclass
@@ -205,6 +206,13 @@ class Fetcher:
         r.raise_for_status()
         return r.json()
 
+    async def post_json(self, url: str, body: Any = None, params: dict | None = None) -> Any:
+        r = await self._send(http().build_request("POST", url, params=params, json=body,
+                                                  headers={"Accept": "application/json"}))
+        events.emit(self.portal_id, "page", {"url": str(r.url), "status": r.status_code, "via": "json-post"})
+        r.raise_for_status()
+        return r.json()
+
     @asynccontextmanager
     async def stream(self, url: str):
         r = await self._send(http().build_request("GET", url), stream=True)
@@ -236,7 +244,11 @@ class Fetcher:
                 ct = resp.headers.get("content-type", "")
                 if "json" in ct and resp.request.resource_type in ("xhr", "fetch"):
                     body = await resp.json()
-                    captured.append(CapturedJson(resp.url, resp.request.method, resp.status, body))
+                    try:
+                        post_data = resp.request.post_data if resp.request.method.upper() != "GET" else None
+                    except Exception:
+                        post_data = None
+                    captured.append(CapturedJson(resp.url, resp.request.method, resp.status, body, post_data))
             except Exception:
                 pass
 

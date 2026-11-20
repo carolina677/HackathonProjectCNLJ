@@ -27,9 +27,11 @@ Serve ──every READ_INTERVAL_SECONDS──► Read: deterministic engine, no 
 
 **Why it scales:** the LLM runs only to learn a recipe and to repair it. Every read after that is plain code. Typed yes/no judgments go to Jev (TypeSafe), which costs far less than an LLM call. All portals share one scheduler. Each host gets at most 1 request per second, with no logins and no captcha solving.
 
-**States:** `integrating → serving ⇄ healing`, or `failed` with a reason. While a portal is `healing`, its last correct tenders stay served. A tender is `closed` once its deadline has passed or the portal stops listing it, and `withdrawn` when the portal marks it cancelled. ZIP files are unpacked (Word, Excel and other office files stay whole), and files over 250 MB are skipped. A tender is only marked `closed` for missing from the list when every list page was read. When a value can't be verified, it is left empty instead of guessed.
+**States & reliability:** `integrating → serving ⇄ healing`, or `failed` with a reason. A portal stays `integrating` until its initial tenders and documents are actually stored (with progressive serving on huge portals), and while `healing`, its last correct tenders stay served until refreshed data is verified. Transient `5xx`/`429`/timeout outages retry with backoff before triggering a repair, and fill rates (including document delivery) plus per-portal model costs persist in SQLite across restarts. Login or captcha walls on list, detail, or document pages report `failed` honestly; portals showing a captcha whose documents download freely are still served. A tender is `closed` once its deadline has passed or the portal stops listing it, and `withdrawn` when the portal marks it cancelled. ZIP files are unpacked (Word, Excel and other office files stay whole), and files over 250 MB are skipped. A tender is only marked `closed` for missing from the list when every list page was read. When a value can't be verified, it is left empty instead of guessed.
 
-**Dashboard (`/`):** one card per portal with its state and story, a live event feed, and a Theater view per portal that shows the agent's steps and recipe diffs. It also has a cost meter, a race panel comparing a Jev answer with an LLM answer, and a spoken morning briefing (ElevenLabs). With `WATCHTOWER_LAB=1`, the built-in Chaos Lab (`/lab`) provides portals you can break on purpose.
+**JS apps & APIs:** supports plain HTML, XPath/CSS selectors, PRADO/ASP.NET post-backs, JS-rendered pages (`needs_js`), and both `GET` and `POST` JSON APIs captured from Playwright network traffic.
+
+**Dashboard (`/`):** one card per portal with its state and story, live SSE updates and summary counters, and a Theater view per portal that shows the agent's steps and before-vs-after recipe diffs. It also has a cost meter, a race panel comparing a Jev answer with an LLM answer, and a spoken morning briefing (ElevenLabs). With `WATCHTOWER_LAB=1`, the built-in Chaos Lab (`/lab`) provides portals you can break on purpose.
 
 ## Run
 
@@ -42,10 +44,10 @@ docker run -p 8080:8080 --env-file .env -v watchtower-data:/data watchtower
 
 | Variable | Required | Meaning |
 |---|---|---|
-| `LLM_PROVIDER` | yes | `anthropic` (default) or `openai` |
-| `LLM_MODEL` | yes | default `claude-sonnet-5-5` |
+| `LLM_PROVIDER` | yes | `anthropic` (default) or `openai` (auto-falls back if only the other key is set) |
+| `LLM_MODEL` | yes | default `claude-sonnet-5-5` (list prices also built in for `gpt-5.5`, `gpt-5`, `gpt-4.1`, `gpt-4o`) |
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | one of them | key for the chosen provider |
-| `TYPESAFE_API_KEY` | yes | Jev judgments. Without it, verification falls back to rule checks only |
+| `TYPESAFE_API_KEY` | **yes** (hand in) | Jev judgments (exploration, link ranking, field verification, spot checks). Without it, verification falls back to rule checks only |
 | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID` | no | spoken briefing (`/briefing.mp3`) |
 | `LLM_PRICE_IN`, `LLM_PRICE_OUT` | no | USD per 1M tokens for the cost meter. Defaults are list prices for `claude-sonnet-5-5` ($2/$10), `claude-haiku-5-5` ($0.10/$0.50) and `claude-opus-5-5` ($4/$20) |
 | `MLFLOW_TRACKING_URI`, `MLFLOW_EXPERIMENT_NAME` | no | record every LLM and Jev call as an MLflow trace (portal, purpose, tokens, USD). Needs `pip install -e '.[tracing]'`; the Docker image leaves MLflow out to stay small |

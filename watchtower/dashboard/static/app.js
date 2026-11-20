@@ -38,6 +38,26 @@ const Watchtower = (() => {
     for (const s of ["serving", "healing", "integrating", "failed"]) {
       const el = $(`#n-${s}`); if (el) el.textContent = document.querySelectorAll(`.card.state-${s}`).length;
     }
+    scheduleSummary();
+  }
+
+  let summaryTimer = null;
+  async function refreshSummary() {
+    try {
+      const s = await api("GET", "/ui/summary");
+      if (!s) return;
+      for (const k of ["serving", "healing", "integrating", "failed"]) {
+        const el = $(`#n-${k}`); if (el) el.textContent = s[k];
+      }
+      if ($("#n-tenders")) $("#n-tenders").textContent = s.tenders;
+      if ($("#n-avg-usd")) $("#n-avg-usd").textContent = `$${Number(s.avg_usd || 0).toFixed(3)}`;
+      if ($("#n-projected")) $("#n-projected").textContent = `$${Math.round(s.projected || 0)}`;
+    } catch {}
+  }
+
+  function scheduleSummary() {
+    clearTimeout(summaryTimer);
+    summaryTimer = setTimeout(refreshSummary, 250);
   }
 
   function describe(ev) {
@@ -82,7 +102,13 @@ const Watchtower = (() => {
     });
     document.addEventListener("click", async (e) => {
       const t = e.target;
-      if (t.dataset.refresh) { t.disabled = true; await api("POST", `/portals/${t.dataset.refresh}/refresh`).then(() => toast("Reading the portal now")).catch((e) => toast(e.message, "error")); scheduleCard(t.dataset.refresh); }
+      if (t.dataset.refresh) {
+        t.disabled = true;
+        try { await api("POST", `/portals/${t.dataset.refresh}/refresh`); toast("Reading the portal now"); }
+        catch (err) { toast(err.message, "error"); }
+        finally { t.disabled = false; }
+        scheduleCard(t.dataset.refresh);
+      }
       if (t.dataset.break) { t.disabled = true; const r = await api("POST", `/portals/${t.dataset.break}/break`).catch((e) => toast(e.message, "error")); if (r) toast(`Chaos Lab broke the portal: ${r.mutation}. Watch it heal.`); if (r) t.textContent = `Broke: ${r.mutation}`; setTimeout(() => { t.disabled = false; t.textContent = "Break it"; }, 4000); }
       if (t.dataset.delete && confirm("Remove this portal and its tenders?")) {
         await api("DELETE", `/portals/${t.dataset.delete}`).then(() => toast("Portal removed")).catch((e) => toast(e.message, "error")); document.getElementById(`card-${t.dataset.delete}`)?.remove(); recount();
@@ -100,6 +126,7 @@ const Watchtower = (() => {
     });
     connect((ev) => {
       if (ev.portal_id && ["state", "run"].includes(ev.kind)) scheduleCard(ev.portal_id);
+      if (ev.kind === "cost") scheduleSummary();
       feed(ev);
     });
     setInterval(() => document.querySelectorAll(".card").forEach((c) => scheduleCard(c.dataset.id)), 60000);

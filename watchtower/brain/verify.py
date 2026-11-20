@@ -112,6 +112,13 @@ async def select_value(fld: str, page_text: str, current: Any, jev, country: str
     return clean_text(raw)
 
 
+def evidence_text(raw: str) -> str:
+    s = (raw or "").strip()
+    if s.startswith(("{", "[")):
+        return s
+    return visible_text(s)
+
+
 async def cross_check(t: dict, page_text: str, jev, portal_id: str | None = None) -> dict[str, float]:
     present = {f: t[f] for f in CHECK_FIELDS if t.get(f) not in (None, [], "")}
     if not present:
@@ -124,7 +131,8 @@ async def cross_check(t: dict, page_text: str, jev, portal_id: str | None = None
 
 
 async def verify_sample(tenders: list[dict], pages: dict[str, str], jev, *, sample: int = 5,
-                        country: str = "DE", portal_id: str | None = None) -> VerifyReport:
+                        country: str = "DE", portal_id: str | None = None,
+                        expect_docs: bool = False) -> VerifyReport:
     rep = VerifyReport(ok=False)
     if not tenders:
         rep.problems.append("no tenders extracted")
@@ -134,6 +142,14 @@ async def verify_sample(tenders: list[dict], pages: dict[str, str], jev, *, samp
     if len(set(ids)) != len(ids):
         rep.problems.append("duplicate tender ids — id_field is not the portal's unique identifier")
     picked = [t for t in tenders if t.get("id") in pages][:sample] or tenders[:sample]
+    title_missing = sum(bool(t.get("title")) for t in picked) == 0
+    if title_missing:
+        rep.problems.append("title empty in all sampled tenders")
+        rep.feedback.append("Title is empty in every sampled tender — fix the title selector.")
+    docs_missing = expect_docs and not any(t.get("_doc_urls") for t in picked)
+    if docs_missing:
+        rep.problems.append("no document URLs extracted")
+        rep.feedback.append("Explorer found reachable documents, but the recipe extracted no document URLs — fix the documents steps.")
     rule_fail = 0
     for t in picked:
         probs = rule_check(t)
@@ -144,7 +160,7 @@ async def verify_sample(tenders: list[dict], pages: dict[str, str], jev, *, samp
     failing: dict[str, list[str]] = {}
     try:
         for t in picked:
-            text = visible_text(pages[t["id"]]) if t.get("id") in pages else ""
+            text = evidence_text(pages[t["id"]]) if t.get("id") in pages else ""
             if not text:
                 continue
             res = await cross_check(t, text, jev, portal_id)
@@ -167,7 +183,13 @@ async def verify_sample(tenders: list[dict], pages: dict[str, str], jev, *, samp
     for f in rep.nulled:
         rep.feedback.append(f"Field {f} did not match the page in {len(failing.get(f, []))}/{len(picked)} samples.")
     rep.feedback += rep.problems[:10]
-    rep.ok = (not any("duplicate" in p for p in rep.problems)) and rule_fail <= 1 and not core_bad
+    rep.ok = (
+        (not any("duplicate" in p for p in rep.problems))
+        and rule_fail <= 1
+        and not core_bad
+        and not title_missing
+        and not docs_missing
+    )
     events.emit(portal_id, "verify", {"ok": rep.ok, "field_scores": rep.field_scores, "mask": rep.mask,
                                       "problems": rep.problems[:10], "samples": [t.get("id") for t in picked],
                                       "judged": rep.judged})

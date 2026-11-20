@@ -11,7 +11,7 @@ from . import events
 from .brain.explore import explore
 from .brain.fingerprint import fingerprint
 from .brain.heal import heal
-from .brain.health import fill_rates, health_check, spot_check
+from .brain.health import fill_rates, health_check, pick_probe, spot_check
 from .brain.induce import induce_recipe
 from .brain.verify import VerifyReport, verify_sample
 from .db import Repo
@@ -24,6 +24,11 @@ from .recipe.dsl import Recipe
 from .recipe.engine import list_complete, run_recipe
 
 log = logging.getLogger("watchtower.pipeline")
+
+RETRY_DELAYS = (60.0, 300.0)
+MAX_TRANSIENT = 3
+SMALL_PORTAL_LIMIT = 50
+PROGRESSIVE_SERVE_AT = 20
 
 BLOCK_REASONS = {
     "login": "Portal requires a login",
@@ -79,9 +84,17 @@ class Pipeline:
         self.is_cancelled = is_cancelled or (lambda pid: False)
         self.jev, self.llm = jev, llm
         self.read_jev = jev.without_llm() if hasattr(jev, "without_llm") else jev
-        self._followups: dict[str, RunKind] = {}
-        self._prev_fill: dict[str, dict[str, float]] = {}
+        self._followups: dict[str, tuple[RunKind, float]] = {}
+        self._outages: dict[str, int] = {}
+        self._probe_turn: dict[str, int] = {}
         self._docs: dict[tuple[str, str], tuple[tuple[str, ...], list[Document]]] = {}
+
+    def forget(self, pid: str) -> None:
+        self._followups.pop(pid, None)
+        self._outages.pop(pid, None)
+        self._probe_turn.pop(pid, None)
+        for key in [k for k in self._docs if k[0] == pid]:
+            self._docs.pop(key, None)
 
     @staticmethod
     def check_transition(frm: PortalState, to: PortalState) -> None:
@@ -97,10 +110,10 @@ class Pipeline:
         if p.state != to or p.reason != reason:
             events.emit(pid, "state", {"from": str(p.state), "to": str(to), "reason": reason})
 
-    def schedule_followup(self, pid: str, kind: RunKind) -> None:
-        self._followups[pid] = kind
+    def schedule_followup(self, pid: str, kind: RunKind, delay: float = 0.0) -> None:
+        self._followups[pid] = (kind, delay)
 
-    def pop_followup(self, pid: str) -> RunKind | None:
+    def pop_followup(self, pid: str) -> tuple[RunKind, float] | None:
         return self._followups.pop(pid, None)
 
     def fetcher(self, pid: str) -> Fetcher:
@@ -132,7 +145,7 @@ class Pipeline:
             raise
 
     # --- attach ----------------------------------------------------------
-    async def _try(self, recipe: Recipe, fetcher, pid: str, limit: int = 30):
+    async def _try(self, recipe: Recipe, fetcher, pid: str, limit: int = 10, expect_docs: bool = False):
         errors: list[str] = []
         pages: dict[str, str] = {}
         try:
@@ -141,7 +154,8 @@ class Pipeline:
             raise
         except Exception as e:
             sample, errors = [], [f"recipe crashed: {e}"]
-        v = await verify_sample(sample, pages, self.jev, country=recipe.country or "DE", portal_id=pid)
+        v = await verify_sample(sample, pages, self.jev, country=recipe.country or "DE", portal_id=pid,
+                                expect_docs=expect_docs)
         return sample, errors, v
 
     async def attach(self, pid: str, run_id: str) -> RunResult:
@@ -152,7 +166,13 @@ class Pipeline:
         recipe: Recipe | None = None
         v: VerifyReport | None = None
         sample: list[dict] = []
-        start = await fetcher.open(p.url)
+        try:
+            start = await fetcher.open(p.url)
+        except PortalCancelled:
+            raise
+        except Exception as e:
+            await self.transition(pid, PortalState.failed, f"Could not reach the portal: {e}")
+            return RunResult.failed
         known = fingerprint(start)
         if known is not None:
             events.emit(pid, "log", {"msg": f"Recognised platform {known.platform}; using its adapter"})
@@ -175,7 +195,7 @@ class Pipeline:
                 except LLMUnavailable as e:
                     await self.transition(pid, PortalState.failed, f"No LLM available to learn the portal: {e}")
                     return RunResult.failed
-                sample, errors, v = await self._try(cand, fetcher, pid)
+                sample, errors, v = await self._try(cand, fetcher, pid, expect_docs=ex.docs_reachable)
                 events.emit(pid, "log", {"msg": f"Recipe attempt {attempt + 1}: {len(sample)} tenders, "
                                                 f"{'verified' if v.ok else 'rejected'}"})
                 if v.ok and sample:
@@ -192,26 +212,79 @@ class Pipeline:
         mask = v.mask if v else []
         await self.repo.set_recipe(pid, json.loads(recipe.model_dump_json()), snapshot_ref=snap,
                                    field_mask=mask, country=recipe.country)
+        return await self._initial_read(pid, recipe, set(mask), fetcher)
+
+    async def _initial_read(self, pid: str, recipe: Recipe, mask: set[str], fetcher: Fetcher) -> RunResult:
+        """Read full tenders and documents before moving out of integrating (progressively for huge portals)."""
+        from .brain.health import Health
+
+        errors: list[str] = []
+        pages: dict[str, str] = {}
         now = datetime.now(timezone.utc)
-        tenders = [t for t in (to_tender(r, [], now, set(mask)) for r in sample) if t]
-        await self.repo.upsert_tenders(pid, tenders, now)
-        await self.repo.mark_success(pid, len(tenders), now)
-        self._prev_fill[pid] = fill_rates(sample)
-        await self.transition(pid, PortalState.serving, None)
-        events.emit(pid, "log", {"msg": f"Serving {len(tenders)} tenders; full read with documents follows"})
-        self.schedule_followup(pid, RunKind.read)
+        tenders: dict[str, Tender] = {}
+        doc_counts: dict[str, int] = {}
+        doc_errors: list[str] = []
+        list_health: list[Health] = []
+        list_total = 0
+        progressive_served = False
+
+        async def on_list(items, errs):
+            nonlocal list_total
+            list_total = len(items)
+            h = health_check(0, items, errs)
+            list_health.append(h)
+            if h.ok:
+                events.emit(pid, "log", {"msg": f"List read: {len(items)} tenders; fetching details and documents"})
+            return h.ok
+
+        async def on_tender(r):
+            nonlocal progressive_served
+            docs = await self._documents(pid, r, fetcher, doc_errors)
+            doc_counts[str(r["id"])] = len(docs)
+            t = to_tender(r, docs, now, mask)
+            if t is None:
+                return
+            tenders[t.id] = t
+            if list_total > SMALL_PORTAL_LIMIT and not await self.repo.is_deleted(pid):
+                await self.repo.upsert_tenders(pid, [t], now)
+                if not progressive_served and len(tenders) >= PROGRESSIVE_SERVE_AT:
+                    await self.repo.mark_success(pid, len(tenders), now)
+                    await self.transition(pid, PortalState.serving, None)
+                    progressive_served = True
+
+        raw = await run_recipe(recipe, fetcher, errors=errors, mask=mask, pages=pages,
+                               on_list=on_list, on_tender=on_tender)
+        if await self.repo.is_deleted(pid):
+            return RunResult.failed
+        health = list_health[0] if list_health and not list_health[0].ok else \
+            health_check(0, raw, errors, doc_counts=doc_counts, doc_errors=doc_errors)
+        if not health.ok and not progressive_served:
+            await self.transition(pid, PortalState.failed, health.reason)
+            return RunResult.failed
+        if not tenders:
+            if not progressive_served:
+                await self.transition(pid, PortalState.failed, "Could not extract valid tenders from the portal.")
+            return RunResult.failed
+        if list_total <= SMALL_PORTAL_LIMIT:
+            await self.repo.upsert_tenders(pid, list(tenders.values()), now)
+        await self.repo.mark_success(pid, len(tenders), now, fill=fill_rates(raw, doc_counts=doc_counts))
+        self._outages.pop(pid, None)
+        if not progressive_served:
+            await self.transition(pid, PortalState.serving, None)
+        events.emit(pid, "log", {"msg": f"Serving {len(tenders)} tenders with documents ({fetcher.requests} requests)"})
         return RunResult.ok
 
     # --- read --------------------------------------------------------------
-    async def _documents(self, pid: str, raw: dict, fetcher) -> list[Document]:
+    async def _documents(self, pid: str, raw: dict, fetcher, doc_errors: list[str] | None = None) -> list[Document]:
         urls = tuple(raw.get("_doc_urls") or ())
         key = (pid, str(raw["id"]))
         hit = self._docs.get(key)
         if hit and hit[0] == urls:
             return hit[1]
         docs = await fetch_documents(pid, str(raw["id"]), list(urls), fetcher, repo=self.repo,
-                                     data_dir=self.settings.data_dir) if urls else []
-        self._docs[key] = (urls, docs)
+                                     data_dir=self.settings.data_dir, errors=doc_errors) if urls else []
+        if docs or not urls:
+            self._docs[key] = (urls, docs)
         return docs
 
     async def read(self, pid: str, run_id: str) -> RunResult:
@@ -230,6 +303,8 @@ class Pipeline:
         known = {t.id for t in await self.repo.list_tenders(pid)}
         now = datetime.now(timezone.utc)
         tenders: dict[str, Tender] = {}
+        doc_counts: dict[str, int] = {}
+        doc_errors: list[str] = []
         list_health: list[Health] = []
 
         async def on_list(items, errs):
@@ -240,7 +315,9 @@ class Pipeline:
             return h.ok
 
         async def on_tender(r):
-            t = to_tender(r, await self._documents(pid, r, fetcher), now, mask)
+            docs = await self._documents(pid, r, fetcher, doc_errors)
+            doc_counts[str(r["id"])] = len(docs)
+            t = to_tender(r, docs, now, mask)
             if t is None:
                 return
             tenders[t.id] = t
@@ -250,23 +327,35 @@ class Pipeline:
         raw = await run_recipe(recipe, fetcher, errors=errors, mask=mask, pages=pages,
                                on_list=on_list, on_tender=on_tender)
         health = list_health[0] if list_health and not list_health[0].ok else \
-            health_check(p.prev_count or 0, raw, errors, self._prev_fill.get(pid))
+            health_check(p.prev_count or 0, raw, errors, p.prev_fill or None,
+                         doc_counts=doc_counts, doc_errors=doc_errors)
         if health.ok:
-            probe = next((t for t in raw if t["id"] in pages), None)
-            if probe is not None and not await spot_check(probe, pages[probe["id"]], self.read_jev, pid):
-                health = Health(False, f"Spot check: the values of tender {probe['id']} no longer match its page.")
+            probe = pick_probe(raw, pages, self._probe_turn.get(pid, 0))
+            if probe is not None:
+                self._probe_turn[pid] = self._probe_turn.get(pid, 0) + 1
+                if not await spot_check(probe, pages[probe["id"]], self.read_jev, pid):
+                    health = Health(False, f"Spot check: the values of tender {probe['id']} no longer match its page.")
         if await self.repo.is_deleted(pid):
             return RunResult.failed
         if not health.ok:
             events.emit(pid, "log", {"msg": f"Read unhealthy: {health.reason}"})
             await self.transition(pid, PortalState.healing, health.reason)
-            self.schedule_followup(pid, RunKind.repair)
+            if health.transient:
+                n = self._outages.get(pid, 0) + 1
+                self._outages[pid] = n
+                if n < MAX_TRANSIENT:
+                    self.schedule_followup(pid, RunKind.read, RETRY_DELAYS[n - 1])
+                else:
+                    self.schedule_followup(pid, RunKind.repair, 0.0)
+            else:
+                self._outages.pop(pid, None)
+                self.schedule_followup(pid, RunKind.repair, 0.0)
             return RunResult.failed
+        self._outages.pop(pid, None)
         changed = await self.repo.upsert_tenders(pid, list(tenders.values()), now)
         # Only a fully read list says a tender is gone; a cut-off or failed page proves nothing.
         closed = await self.repo.mark_missing_closed(pid, set(tenders), now) if list_complete(errors) else 0
-        await self.repo.mark_success(pid, len(tenders), now)
-        self._prev_fill[pid] = fill_rates(raw)
+        await self.repo.mark_success(pid, len(tenders), now, fill=fill_rates(raw, doc_counts=doc_counts))
         if p.state != PortalState.serving:
             await self.transition(pid, PortalState.serving, None)
         events.emit(pid, "log", {"msg": f"Read {len(tenders)} tenders ({changed} changed, {closed} closed, "
@@ -275,6 +364,9 @@ class Pipeline:
 
     # --- repair ------------------------------------------------------------
     async def repair(self, pid: str, run_id: str) -> RunResult:
+        from .brain.health import Health
+
+        self._followups.pop(pid, None)
         p = await self.repo.get_portal(pid)
         if p.recipe is None:
             return await self.attach(pid, run_id)
@@ -305,13 +397,60 @@ class Pipeline:
         page = rep.list_page or await fetcher.open(p.url)
         after_ref = fetcher.snapshot(page) or None
         self._record_repair(pid, p, old, new, rep, ok=True, reason=p.reason, after_ref=after_ref)
+        new_mask = rep.verify.mask if rep.verify else []
         await self.repo.set_recipe(pid, json.loads(new.model_dump_json()), snapshot_ref=after_ref,
-                                   field_mask=rep.verify.mask if rep.verify else None, country=new.country)
-        self._prev_fill.pop(pid, None)
-        await self.transition(pid, PortalState.serving, None)
+                                   field_mask=new_mask, country=new.country)
         events.emit(pid, "log", {"msg": "Repaired: " + ("; ".join(rep.diff[:4]) or "recipe re-learned")})
-        self.schedule_followup(pid, RunKind.read)
-        return RunResult.ok
+
+        # Keep serving old tenders in `healing` until fresh tenders & documents are ready (unless huge portal).
+        errors: list[str] = []
+        pages: dict[str, str] = {}
+        now = datetime.now(timezone.utc)
+        tenders: dict[str, Tender] = {}
+        doc_counts: dict[str, int] = {}
+        doc_errors: list[str] = []
+        list_health: list[Health] = []
+        large_portal = False
+
+        async def on_list(items, errs):
+            nonlocal large_portal
+            h = health_check(0, items, errs)
+            list_health.append(h)
+            if not h.ok:
+                return False
+            if len(items) > SMALL_PORTAL_LIMIT:
+                large_portal = True
+                return False
+            return True
+
+        async def on_tender(r):
+            docs = await self._documents(pid, r, fetcher, doc_errors)
+            doc_counts[str(r["id"])] = len(docs)
+            t = to_tender(r, docs, now, set(new_mask))
+            if t is not None:
+                tenders[t.id] = t
+
+        raw = await run_recipe(new, fetcher, errors=errors, mask=set(new_mask), pages=pages,
+                               on_list=on_list, on_tender=on_tender)
+        if await self.repo.is_deleted(pid):
+            return RunResult.failed
+        if large_portal:
+            self._outages.pop(pid, None)
+            await self.transition(pid, PortalState.serving, None)
+            self.schedule_followup(pid, RunKind.read, 0.0)
+            return RunResult.ok
+        health = list_health[0] if list_health and not list_health[0].ok else \
+            health_check(0, raw, errors, doc_counts=doc_counts, doc_errors=doc_errors)
+        if health.ok and tenders:
+            await self.repo.upsert_tenders(pid, list(tenders.values()), now)
+            if list_complete(errors):
+                await self.repo.mark_missing_closed(pid, set(tenders), now)
+            await self.repo.mark_success(pid, len(tenders), now, fill=fill_rates(raw, doc_counts=doc_counts))
+            self._outages.pop(pid, None)
+            await self.transition(pid, PortalState.serving, None)
+            return RunResult.ok
+        self.schedule_followup(pid, RunKind.read, 60.0)
+        return RunResult.failed
 
     def _record_repair(self, pid: str, p, old: Recipe, new: Recipe | None, rep, *, ok: bool, reason: str | None,
                        after_ref: str | None) -> None:
