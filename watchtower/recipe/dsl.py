@@ -17,8 +17,8 @@ class FieldRule(BaseModel):
 
 
 class Pagination(BaseModel):
-    kind: Literal["none", "page_param", "offset", "next_link"] = "none"
-    param: str | None = None
+    kind: Literal["none", "page_param", "offset", "next_link", "postback"] = "none"
+    param: str | None = None         # postback: the event target, if it cannot be read from the "next" control
     start: int = 1
     step: int = 1
     next_selector: str | None = None

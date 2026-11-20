@@ -13,9 +13,10 @@ SIGNATURE = [lambda p: urlsplit(p.final_url or p.url).netloc.endswith("tenderned
 def template(page: Page) -> Recipe:
     return Recipe.model_validate({
         "platform": NAME, "source": "json_api", "country": "NL", "list_url": API,
-        "extra_params": {"size": 100},
-        # 147k publications, newest first: the newest 300 cover everything still open in practice.
-        "pagination": {"kind": "page_param", "param": "page", "start": 0, "max_pages": 3},
+        # Only contract notices (AAO) whose deadline is today or later: every open tender (≈2,900 in Nov 2026),
+        # not rectifications, market consultations or award notices.
+        "extra_params": {"size": 100, "publicatieType": "AAO", "sluitingsDatumVanaf": "{today}"},
+        "pagination": {"kind": "page_param", "param": "page", "start": 0, "max_pages": 200},
         "item": "$.content[*]",
         "fields": {
             "id": {"selector": "$.publicatieId"},

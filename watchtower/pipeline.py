@@ -210,38 +210,55 @@ class Pipeline:
         return docs
 
     async def read(self, pid: str, run_id: str) -> RunResult:
-        """Deterministic: the stored recipe, no model call. Jev spot-checks one tender (no LLM fallback)."""
+        """Deterministic: the stored recipe, no model call. Jev spot-checks one tender (no LLM fallback).
+
+        Large portals: the list is checked first; new tenders are served one by one while details and documents
+        arrive. Tenders we already serve are only overwritten after the whole read passed its health check."""
+        from .brain.health import Health
+
         p = await self.repo.get_portal(pid)
         recipe = Recipe.model_validate(p.recipe)
         mask = set(p.field_mask or [])
         fetcher = self.fetcher(pid)
         errors: list[str] = []
         pages: dict[str, str] = {}
-        raw = await run_recipe(recipe, fetcher, errors=errors, mask=mask, pages=pages)
-        health = health_check(p.prev_count or 0, raw, errors, self._prev_fill.get(pid))
+        known = {t.id for t in await self.repo.list_tenders(pid)}
+        now = datetime.now(timezone.utc)
+        tenders: dict[str, Tender] = {}
+        list_health: list[Health] = []
+
+        async def on_list(items, errs):
+            h = health_check(p.prev_count or 0, items, errs)
+            list_health.append(h)
+            if h.ok:
+                events.emit(pid, "log", {"msg": f"List read: {len(items)} tenders; fetching details and documents"})
+            return h.ok
+
+        async def on_tender(r):
+            t = to_tender(r, await self._documents(pid, r, fetcher), now, mask)
+            if t is None:
+                return
+            tenders[t.id] = t
+            if t.id not in known and not await self.repo.is_deleted(pid):
+                await self.repo.upsert_tenders(pid, [t], now)
+
+        raw = await run_recipe(recipe, fetcher, errors=errors, mask=mask, pages=pages,
+                               on_list=on_list, on_tender=on_tender)
+        health = list_health[0] if list_health and not list_health[0].ok else \
+            health_check(p.prev_count or 0, raw, errors, self._prev_fill.get(pid))
         if health.ok:
             probe = next((t for t in raw if t["id"] in pages), None)
             if probe is not None and not await spot_check(probe, pages[probe["id"]], self.read_jev, pid):
-                from .brain.health import Health
-
                 health = Health(False, f"Spot check: the values of tender {probe['id']} no longer match its page.")
+        if await self.repo.is_deleted(pid):
+            return RunResult.failed
         if not health.ok:
-            if await self.repo.is_deleted(pid):
-                return RunResult.failed
             events.emit(pid, "log", {"msg": f"Read unhealthy: {health.reason}"})
             await self.transition(pid, PortalState.healing, health.reason)
             self.schedule_followup(pid, RunKind.repair)
             return RunResult.failed
-        now = datetime.now(timezone.utc)
-        tenders = []
-        for r in raw:
-            t = to_tender(r, await self._documents(pid, r, fetcher), now, mask)
-            if t:
-                tenders.append(t)
-        if await self.repo.is_deleted(pid):
-            return RunResult.failed
-        changed = await self.repo.upsert_tenders(pid, tenders, now)
-        closed = await self.repo.mark_missing_closed(pid, {t.id for t in tenders}, now)
+        changed = await self.repo.upsert_tenders(pid, list(tenders.values()), now)
+        closed = await self.repo.mark_missing_closed(pid, set(tenders), now)
         await self.repo.mark_success(pid, len(tenders), now)
         self._prev_fill[pid] = fill_rates(raw)
         if p.state != PortalState.serving:

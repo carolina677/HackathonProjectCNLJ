@@ -13,15 +13,15 @@
   software: Atexo LocalTrust
   kind: ssr
   holdout: false
-  verified: 10 results server-rendered; Reglement/Complement PDFs and DUME ZIP download without login
-  notes: adapter "atexo"; further pages are PRADO post-backs, full DCE needs the identification form
+  verified: 10 results/page server-rendered, 40 pages read by PRADO post-back (live check, 3 pages); Reglement/Complement PDFs and DUME ZIP download without login
+  notes: adapter "atexo"; the full DCE sits behind an identification form, which we do not fill in
 - url: https://www.tenderned.nl/aankondigingen/overzicht
   country: NL
   software: TenderNed (Angular + JSON API)
   kind: spa
   holdout: false
-  verified: JSON list API, documents API and downloads without login
-  notes: adapter "tenderned"
+  verified: JSON list API filtered to contract notices with deadline >= today (2,927 on 2026-11-20), documents API and downloads without login
+  notes: adapter "tenderned"; the first full read takes hours at 1 req/s, tenders appear one by one
 - url: https://www.etenders.gov.ie/epps/quickSearchAction.do?searchType=cftFTS&latest=true
   country: IE
   software: European Dynamics ePPS

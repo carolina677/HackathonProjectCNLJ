@@ -18,7 +18,9 @@ def template(page: Page) -> Recipe:
     return Recipe.model_validate({
         "platform": NAME, "source": "html", "country": "FR",
         "list_url": f"{origin}/?page=Entreprise.EntrepriseAdvancedSearch&AllCons",
-        "pagination": {"kind": "none"},  # further pages are PRADO post-backs
+        # Paging is a PRADO post-back on the "next" arrow; on the last page the arrow is no longer a link.
+        "pagination": {"kind": "postback", "next_selector": "a[id$='resultSearch_PagerTop_ctl2']",
+                       "param": "ctl0$CONTENU_PAGE$resultSearch$PagerTop$ctl2"},
         "item": "div.item_consultation",
         "fields": {
             "id": {"selector": "input[id$='_refCons']", "attr": "value"},

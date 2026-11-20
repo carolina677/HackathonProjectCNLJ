@@ -160,6 +160,16 @@ class Fetcher:
                                              "ms": int((time.monotonic() - t0) * 1000)})
         return page
 
+    async def post(self, url: str, data: dict) -> Page:
+        """Form post-back for pagination only (never logins): same politeness as a GET."""
+        await self._polite(url)
+        t0 = time.monotonic()
+        r = await http().post(url, data=data)
+        page = Page(url=url, final_url=str(r.url), status=r.status_code, html=r.text, headers=dict(r.headers))
+        events.emit(self.portal_id, "page", {"url": url, "status": r.status_code, "via": "post",
+                                             "ms": int((time.monotonic() - t0) * 1000)})
+        return page
+
     async def get_json(self, url: str, params: dict | None = None) -> Any:
         await self._polite(url)
         r = await http().get(url, params=params, headers={"Accept": "application/json"})

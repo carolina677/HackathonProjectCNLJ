@@ -148,12 +148,91 @@ def _extract(fields: dict[str, FieldRule], selector, country, base_url, into: Ra
             _set(into, key, val)
 
 
+def resolve_param(v):
+    """Runtime placeholders in extra_params, e.g. {"deadlineFrom": "{today}"}."""
+    if isinstance(v, str) and "{today}" in v:
+        return v.replace("{today}", datetime.now(timezone.utc).date().isoformat())
+    return v
+
+
+# --- post-back pagination (PRADO, ASP.NET WebForms) --------------------------
+STATE_FIELDS = ("PRADO_PAGESTATE", "__VIEWSTATE")
+DOPOSTBACK = re.compile(r"__doPostBack\(\s*'([^']*)'\s*,\s*'([^']*)'")
+
+
+def _form_of(root: LexborNode):
+    for name in STATE_FIELDS:
+        n = root.css_first(f"input[name='{name}']")
+        while n is not None and n.tag != "form":
+            n = n.parent
+        if n is not None:
+            return n
+    return root.css_first("form[method='post'], form[method='POST']")
+
+
+def _form_data(form: LexborNode) -> dict[str, str]:
+    data: dict[str, str] = {}
+    for i in form.css("input"):
+        name, typ = i.attributes.get("name"), (i.attributes.get("type") or "text").lower()
+        if not name or typ in ("submit", "button", "image", "reset", "file"):
+            continue
+        if typ in ("checkbox", "radio") and "checked" not in i.attributes:
+            continue
+        data[name] = i.attributes.get("value") or ("on" if typ in ("checkbox", "radio") else "")
+    for s in form.css("select"):
+        name = s.attributes.get("name")
+        opt = s.css_first("option[selected]") or s.css_first("option")
+        if name and opt is not None:
+            data[name] = opt.attributes.get("value") or opt.text(strip=True)
+    for t in form.css("textarea"):
+        if t.attributes.get("name"):
+            data[t.attributes["name"]] = t.text()
+    return data
+
+
+def _client_id_to_name(cid: str, names: list[str]) -> str:
+    """PRADO/ASP.NET client ids replace '$' with '_'. Rebuild the unique name from segments the form already uses."""
+    segs = sorted({s for n in names for s in n.split("$") if s}, key=len, reverse=True)
+    out, rest = [], cid
+    while rest:
+        seg = next((s for s in segs if rest == s or rest.startswith(s + "_")), None) or rest.split("_", 1)[0]
+        out.append(seg)
+        rest = rest[len(seg) + 1:]
+    return "$".join(out)
+
+
+def postback_request(html: str, base: str, next_selector: str | None, target: str | None):
+    """The form post that a click on "next" would send, or None on the last page."""
+    root = LexborHTMLParser(html).root
+    nxt = root.css_first(next_selector) if next_selector else None
+    if nxt is None or "disabled" in (nxt.attributes.get("class") or "") or "disabled" in nxt.attributes:
+        return None
+    form = _form_of(root)
+    if form is None:
+        return None
+    data = _form_data(form)
+    m = DOPOSTBACK.search(nxt.attributes.get("href") or "") or DOPOSTBACK.search(nxt.attributes.get("onclick") or "")
+    arg = ""
+    if m:
+        target, arg = m.group(1), m.group(2)
+    elif not target:
+        cid = nxt.attributes.get("id")
+        if not cid:
+            return None
+        target = _client_id_to_name(cid, list(data))
+    if "PRADO_PAGESTATE" in data:
+        data.update({"PRADO_POSTBACK_TARGET": target, "PRADO_POSTBACK_PARAMETER": arg})
+    else:
+        data.update({"__EVENTTARGET": target, "__EVENTARGUMENT": arg})
+    return urljoin(base, form.attributes.get("action") or base), data
+
+
 # --- runner ----------------------------------------------------------------
 async def _list_pages(recipe: Recipe, fetcher: FetcherLike, errors: list[str]):
     pg = recipe.pagination
     url = recipe.list_url
     for k, v in recipe.extra_params.items():
-        url = with_param(url, k, v)
+        url = with_param(url, k, resolve_param(v))
     seen_pages = 0
     next_url: str | None = url
     while next_url and seen_pages < pg.max_pages:
@@ -179,6 +258,24 @@ async def _list_pages(recipe: Recipe, fetcher: FetcherLike, errors: list[str]):
                 return
             yield page.final_url or page_url, page.html
             next_href = None
+            if pg.kind == "postback":
+                pages_seen = 1
+                while pages_seen < pg.max_pages:
+                    req = postback_request(page.html, page.final_url or page_url, pg.next_selector, pg.param)
+                    if req is None:
+                        return
+                    action, data = req
+                    try:
+                        page = await fetcher.post(action, data)
+                    except Exception as e:
+                        errors.append(f"post-back failed on {action}: {e}")
+                        return
+                    if page.status >= 400:
+                        errors.append(f"HTTP {page.status} on {action}")
+                        return
+                    pages_seen += 1
+                    yield page.final_url or action, page.html
+                return
             if pg.kind == "next_link" and pg.next_selector:
                 n = LexborHTMLParser(page.html).css_first(pg.next_selector)
                 next_href = urljoin(page.final_url or page_url, n.attributes.get("href")) if n and n.attributes.get("href") else None
@@ -193,8 +290,11 @@ async def _list_pages(recipe: Recipe, fetcher: FetcherLike, errors: list[str]):
 
 async def run_recipe(recipe: Recipe, fetcher: FetcherLike, *, limit: int | None = None,
                      errors: list[str] | None = None, mask: set[str] | None = None,
-                     pages: dict[str, str] | None = None) -> list[RawTender]:
-    """Run a recipe. `pages` (optional) collects detail-page HTML by tender id for verification."""
+                     pages: dict[str, str] | None = None, on_list=None, on_tender=None) -> list[RawTender]:
+    """Run a recipe. `pages` (optional) collects detail-page HTML by tender id for verification.
+
+    on_list(items, errors) runs after the list pages; returning False stops before any detail request.
+    on_tender(t) runs as soon as one tender is complete (details, document URLs, mask applied)."""
     errors = errors if errors is not None else []
     mask = mask or set()
     out: list[RawTender] = []
@@ -235,9 +335,13 @@ async def run_recipe(recipe: Recipe, fetcher: FetcherLike, *, limit: int | None 
         if new == 0 or (limit and len(out) >= limit):
             break
 
+    if on_list is not None and await on_list(out, errors) is False:
+        return out
     for t in out:
         await _detail_and_docs(recipe, fetcher, t, errors, pages)
         _finalise(t, mask)
+        if on_tender is not None:
+            await on_tender(t)
     return out
 
 

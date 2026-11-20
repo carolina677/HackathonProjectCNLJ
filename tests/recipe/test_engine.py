@@ -112,3 +112,27 @@ async def test_withdrawn_detected_without_status_rule(lab):
     truth = {t.id: t.status for t in lab.truth("ssr")}
     assert [t["id"] for t in ts if t["status"] == "withdrawn"] == [i for i, s in truth.items() if s == "withdrawn"]
     assert sum(t["status"] == "withdrawn" for t in ts) == 1
+
+
+async def test_hooks_list_first_then_each_tender(lab):
+    calls = []
+
+    async def on_list(items, errors):
+        calls.append(("list", len(items)))
+        return True
+
+    async def on_tender(t):
+        calls.append(("tender", t["id"]))
+
+    ts = await run_recipe(ssr_recipe(lab), SimpleFetcher(), on_list=on_list, on_tender=on_tender)
+    assert calls[0] == ("list", 23) and [c[1] for c in calls[1:]] == [t["id"] for t in ts]
+
+
+async def test_on_list_false_stops_before_details(lab):
+    f = SimpleFetcher()
+
+    async def stop(items, errors):
+        return False
+
+    ts = await run_recipe(ssr_recipe(lab), f, on_list=stop)
+    assert len(ts) == 23 and f.calls <= 4  # 3 list pages + the empty 4th; no detail pages

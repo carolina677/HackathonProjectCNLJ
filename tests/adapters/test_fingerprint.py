@@ -72,6 +72,17 @@ async def _run(name, routes):
     return await run_recipe(r, FixtureFetcher(routes), errors=[])
 
 
+def test_atexo_reads_all_pages_by_postback():
+    from watchtower.recipe.engine import postback_request
+
+    url, f = CASES["atexo"]
+    r = fingerprint(page(url, f))
+    assert r.pagination.kind == "postback"
+    action, data = postback_request((FX / f).read_text(), url, r.pagination.next_selector, r.pagination.param)
+    assert action.startswith("https://marches.maximilien.fr/") and "PRADO_PAGESTATE" in data
+    assert data["PRADO_POSTBACK_TARGET"] == "ctl0$CONTENU_PAGE$resultSearch$PagerTop$ctl2"
+
+
 async def test_atexo_template_extracts_list():
     ts = await _run("atexo", {"https://marches.maximilien.fr/?page=Entreprise.EntrepriseAdvancedSearch": "atexo_list.html"})
     assert len(ts) == 10
@@ -98,3 +109,22 @@ async def test_tenderned_template_extracts_list():
     assert t["id"] == "450447" and t["title"] and t["buyerName"] == "Stichting Xpect013"
     assert t["procedureType"] == "restricted" and t["contractNature"] == "works"
     assert t["submissionDeadline"].utcoffset() is not None
+
+
+async def test_tenderned_asks_only_for_open_contract_notices():
+    from datetime import date
+
+    seen = []
+
+    class Spy(FixtureFetcher):
+        async def get_json(self, url, params=None):
+            seen.append(url)
+            return await super().get_json(url, params)
+
+    url, f = CASES["tenderned"]
+    r = fingerprint(page(url, f))
+    r.pagination.max_pages = 1
+    await run_recipe(r, Spy({"https://www.tenderned.nl/papi/tenderned-rs-tns/v2/publicaties": "tenderned_list.json"}),
+                     errors=[])
+    assert "publicatieType=AAO" in seen[0] and f"sluitingsDatumVanaf={date.today().isoformat()}" in seen[0]
+    assert fingerprint(page(url, f)).pagination.max_pages >= 100

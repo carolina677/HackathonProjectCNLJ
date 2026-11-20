@@ -8,7 +8,9 @@ open tender from one portal. No model will be called when the recipe runs, so th
   **Prefer `json_api` whenever a captured JSON response lists the tenders.** It is far more stable than HTML.
 - `list_url`: absolute URL of the list (HTML page or JSON endpoint). `extra_params`: fixed query params (e.g. page size).
 - `pagination.kind`: `none` | `page_param` (`param`, `start`, `step`) | `offset` (`param`, `start`, `step` = page size)
-  | `next_link` (`next_selector` = CSS of the "next" link).
+  | `next_link` (`next_selector` = CSS of the "next" link)
+  | `postback` (`next_selector` = CSS of the "next" control when paging is a form post-back, e.g. `javascript:__doPostBack(...)`
+  links on ASP.NET or `javascript:;` pager links on PRADO/Atexo pages with a `PRADO_PAGESTATE` field).
 - `item`: CSS selector of ONE tender in the list (html), or JSONPath of the items array (json), e.g. `$.items[*]`.
 - `fields`: map from Tender field name to a FieldRule, evaluated relative to the item:
   - `selector`: CSS (html; XPath allowed if it starts with `/`) or JSONPath like `$.title` (json)
