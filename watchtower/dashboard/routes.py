@@ -256,10 +256,11 @@ def register(app: FastAPI) -> None:
             html = f.read_text() if f.exists() else None
         if html is None:
             limiter = getattr(st, "limiter", None) or HostLimiter(st.settings.min_request_interval)
+            from ..pipeline import open_start, unreachable_reason
+
             try:
-                pg = await Fetcher(pid, limiter).get(p.url)
+                pg, _ = await open_start(Fetcher(pid, limiter), p.url)  # same www. fallback as attaching
             except Exception as e:
-                from ..pipeline import unreachable_reason
 
                 return JSONResponse({"error": "The race could not load the portal's page. "
                                               + unreachable_reason(e, p.url)}, status_code=409)
