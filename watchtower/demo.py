@@ -146,6 +146,9 @@ async def _clear_lab_portals(app, data_dir: Path) -> None:
             (data_dir / "snapshots" / p.id / "repairs.json").unlink(missing_ok=True)
 
 
+NEW_PORTAL = "spa"  # attached on screen at the start of the replay
+
+
 async def run_timelapse(app, base_url: str, *, speed: float = 1.0) -> dict:
     """Replay, offline and in about 40 seconds, what a night looks like: five portals deliver, three change their
     layout at once, the pulse notices, every one repairs itself while its tenders stay served, and one portal that
@@ -185,6 +188,10 @@ async def run_timelapse(app, base_url: str, *, speed: float = 1.0) -> dict:
         if sched is not None and hasattr(sched, "_last_enqueued"):
             sched._last_enqueued[pid] = time.monotonic()
             sched._cancelled.discard(pid)  # same id as the portal deleted above: watch it again (pulse, reads)
+        if slug == NEW_PORTAL:
+            events.emit(pid, "state", {"from": "integrating", "to": "integrating", "reason": None})
+            seeded.append({"id": pid, "slug": slug, "state": "integrating"})
+            continue
         if slug == "login":
             rid = await repo.start_run(pid, RunKind.read)
             await repo.finish_run(rid, RunResult.failed, "Portal requires a login")
@@ -209,8 +216,54 @@ async def run_timelapse(app, base_url: str, *, speed: float = 1.0) -> dict:
         seeded.append({"id": pid, "slug": slug, "state": "serving"})
 
     total = sum(counts.values())
-    story("start", f"Replay of one night: 5 portals attached, {total} tenders with their documents delivered. "
-                   "The portal behind a login reports itself as blocked.", tenders=total)
+    story("start", f"Replay of one night: 4 portals deliver {total} tenders with their documents. "
+                   "The portal behind a login reports itself as blocked. A new portal is about to be added.",
+          tenders=total)
+
+    async def _attach(slug: str) -> None:
+        """The attach flow, replayed: explore, one LLM call writes the recipe, Jev verifies, then plain code."""
+        nonlocal total
+        pid = ids[slug]
+        url = f"{base_url}/lab/{slug}/"
+        story("attach", f"New portal added: only a URL, {url}. Watchtower has never seen it.", pid, slug=slug)
+        events.emit(pid, "page", {"url": url, "status": 200, "via": "browser", "ms": 1830,
+                                  "json_apis": [f"{base_url}/lab/{slug}/api/tenders"]})
+        events.emit(pid, "judgment", {
+            "question": "What kind of page is this, for someone collecting public tenders?", "answer": "tender_list",
+            "probabilities": {"tender_list": 0.91, "search_form": 0.06, "other": 0.03},
+            "source": "jev", "ms": 38, "usd": 0.00004})
+        spend(pid, "jev", 3100, 9, 0.00013)
+        await asyncio.sleep(2.0 / speed)
+        story("explore", "Jev: this is a tender list, built in JavaScript. Watchtower found the JSON API behind it.",
+              pid, slug=slug)
+        await asyncio.sleep(2.0 / speed)
+        rec = _recipes(base_url, slug)[0]
+        spend(pid, "llm", 11800, 620, 0.0248)
+        events.emit(pid, "llm", {"purpose": "induce", "ms": 9400, "usd": 0.0248, "tokens": 12420})
+        events.emit(pid, "recipe", {"recipe": rec, "reason": "learned"})
+        story("recipe", "One LLM call wrote a recipe: where the list is, which field is which, where the PDFs are. "
+                        "Cost: $0.025.", pid, slug=slug)
+        await asyncio.sleep(2.0 / speed)
+        events.emit(pid, "verify", {
+            "ok": True, "field_scores": {"title": 0.99, "buyerName": 0.98, "publicationDate": 0.98,
+                                         "submissionDeadline": 0.97},
+            "mask": [], "problems": [], "samples": [f"LAB-000{i}" for i in range(1, 10)] + ["LAB-0010"],
+            "judged": True})
+        spend(pid, "jev", 9800, 30, 0.00041)
+        story("verify", "Jev checked 10 tenders against their own pages: 97–99 % match on every field. "
+                        "Nothing is served before this check passes.", pid, slug=slug)
+        await asyncio.sleep(1.5 / speed)
+        before[slug] = _write_snapshot(data_dir, pid, f"demo_{slug}_before.html", _snapshot_html(base_url, slug))
+        await repo.set_recipe(pid, rec, snapshot_ref=before[slug], country="DE")
+        counts[slug] = await _seed_tenders(repo, data_dir, pid, slug, base_url)
+        await repo.mark_success(pid, counts[slug], now_utc(), fill=fill_ok)
+        rid = await repo.start_run(pid, RunKind.read)
+        await repo.finish_run(rid, RunResult.ok)
+        await repo.set_state(pid, PortalState.serving, None)
+        events.emit(pid, "state", {"from": "integrating", "to": "serving", "reason": None})
+        total += counts[slug]
+        story("learned", f"{slug} delivers {counts[slug]} tenders with their PDFs. From now on every read is plain "
+                         "code: no LLM.", pid, slug=slug, tenders=total)
 
     async def _break(slug: str, mutation: str, reason: str) -> None:
         pid = ids[slug]
@@ -285,6 +338,8 @@ async def run_timelapse(app, base_url: str, *, speed: float = 1.0) -> dict:
 
     async def _sequence() -> None:
         try:
+            await asyncio.sleep(1.5 / speed)
+            await _attach(NEW_PORTAL)
             await asyncio.sleep(2.0 / speed)
             story("break", "02:14 at night: three portals change their layout at the same time. Nobody presses refresh.")
             for slug, mutation, reason in BREAKS:
