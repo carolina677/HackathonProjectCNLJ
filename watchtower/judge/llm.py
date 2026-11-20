@@ -50,13 +50,17 @@ class AnthropicBackend:
         self.model = settings.llm_model
 
     async def __call__(self, system: str, user: str, schema: dict) -> tuple[dict, int, int]:
+        # No forced tool_choice: current Claude models (Sonnet 5.5, Opus 5.5) reject it with HTTP 400.
+        # The schema travels in the prompt; complete_json validates the answer and retries with the errors.
         r = await self.client.messages.create(
-            model=self.model, max_tokens=8000, system=system,
-            messages=[{"role": "user", "content": user}],
-            tools=[{"name": "answer", "description": "Return the answer.", "input_schema": schema}],
-            tool_choice={"type": "tool", "name": "answer"})
-        block = next(b for b in r.content if b.type == "tool_use")
-        return block.input, r.usage.input_tokens, r.usage.output_tokens
+            model=self.model, max_tokens=16000,
+            system=system + "\nReply with one JSON object matching this schema, and nothing else:\n"
+                   + json.dumps(schema),
+            messages=[{"role": "user", "content": user}])
+        if r.stop_reason == "refusal":
+            raise RuntimeError(f"model refused: {getattr(r, 'stop_details', None)}")
+        text = "".join(b.text for b in r.content if b.type == "text")
+        return _json_from_text(text), r.usage.input_tokens, r.usage.output_tokens
 
 
 class OpenAIBackend:

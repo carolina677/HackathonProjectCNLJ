@@ -71,7 +71,8 @@ These are **estimates** from the prompt size limits in the code (HTML trimmed to
 - VMPCenter portals (Brandenburg, NRW, DTVP) have no adapter yet, so they go through the LLM path.
 - e-Vergabe (evergabe-online.de, federal): only the 10 newest tenders and no documents. Its next-page and download links are tied to a server-side page state that the site's load balancer loses, so they fail over plain HTTP. Tenders are never closed for missing from this partial list; they close at their deadline.
 - TenderNed lists about 2,900 open notices. At 1 request per second, the first full read takes hours, so tenders appear progressively.
-- Not yet verified by us: the `linux/amd64` Docker build (no Docker on our dev machine), live ElevenLabs and Jev Vision calls, a full run with real LLM and Jev keys, and the holdout portals in `testset/portals.yaml`.
+- Live-tested with `LLM_PROVIDER=openai`, `LLM_MODEL=gpt-5.5` and real Jev: the lab portal was learned and, after Break it, repaired in 39 s, with all 13 fields correct both times. The Claude path is covered by unit tests only; we had no Anthropic key.
+- Not yet verified by us: the `linux/amd64` Docker build (no Docker on our dev machine), live ElevenLabs and Jev Vision calls, and the holdout portals in `testset/portals.yaml`.
 
 ## Development
 
