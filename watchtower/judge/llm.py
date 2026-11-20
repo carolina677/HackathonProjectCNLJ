@@ -22,9 +22,19 @@ class LLMUnavailable(Exception):
     pass
 
 
-def _price() -> tuple[float, float]:
-    # USD per 1M tokens; override per model via env (README documents this).
-    return float(os.environ.get("LLM_PRICE_IN", "3")), float(os.environ.get("LLM_PRICE_OUT", "15"))
+# USD per 1M input/output tokens, Anthropic first-party list prices (checked 2026-11-20).
+PRICES = {
+    "claude-sonnet-5-5": (2.0, 10.0),
+    "claude-haiku-5-5": (0.10, 0.50),
+    "claude-opus-5-5": (4.0, 20.0),
+}
+UNKNOWN_PRICE = (8.0, 40.0)  # unknown model: assume a top-tier price so the cost meter never under-reports
+
+
+def _price(model: str) -> tuple[float, float]:
+    """LLM_PRICE_IN / LLM_PRICE_OUT override the table (other providers, negotiated rates)."""
+    pin, pout = PRICES.get(model, UNKNOWN_PRICE)
+    return float(os.environ.get("LLM_PRICE_IN", pin)), float(os.environ.get("LLM_PRICE_OUT", pout))
 
 
 def _json_from_text(text: str) -> dict:
@@ -92,7 +102,7 @@ class LLM:
             t0 = time.monotonic()
             try:
                 data, tin, tout = await self.backend(system, user, js)
-                pin, pout = _price()
+                pin, pout = _price(self.settings.llm_model)
                 usd = tin / 1e6 * pin + tout / 1e6 * pout
                 cost.record(portal_id, "llm", tin, tout, usd)
                 out = schema.model_validate(data)
