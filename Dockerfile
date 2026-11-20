@@ -1,5 +1,5 @@
 # Playwright's official image ships Chromium and its system deps, so the build only pulls and pip-installs.
-FROM mcr.microsoft.com/playwright/python:v1.49.0-jammy
+FROM mcr.microsoft.com/playwright/python:v1.65.2-noble
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
