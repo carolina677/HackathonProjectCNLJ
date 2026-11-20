@@ -53,10 +53,10 @@ async def _llm_usd(c: httpx.AsyncClient, pid: str) -> float:
     return float(r.json().get("llm_usd", 0.0)) if r.status_code == 200 else 0.0
 
 
-async def run_matrix(api: str, lab: str, timeout: float) -> list[dict]:
+async def run_matrix(api: str, lab: str, timeout: float, mutations: list[str] | None = None) -> list[dict]:
     rows = []
     async with httpx.AsyncClient(base_url=api, timeout=60) as c, httpx.AsyncClient(timeout=60) as lc:
-        for mutation in REPAIRABLE:
+        for mutation in mutations or REPAIRABLE:
             slug = portal_for(mutation)
             await lc.post(f"{lab}/{slug}/reset")
             truth = [Tender.model_validate(t) for t in (await lc.get(f"{lab}/{slug}/truth")).json()]
@@ -88,8 +88,12 @@ def main() -> int:
     ap.add_argument("--lab", default=None, help="defaults to <api>/lab")
     ap.add_argument("--timeout", type=float, default=600)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--mutations", default=None, help="comma-separated subset of REPAIRABLE (cheaper run)")
     a = ap.parse_args()
-    rows = asyncio.run(run_matrix(a.api, a.lab or a.api.rstrip("/") + "/lab", a.timeout))
+    only = [m for m in a.mutations.split(",") if m] if a.mutations else None
+    if only and set(only) - set(REPAIRABLE):
+        ap.error(f"unknown mutations: {sorted(set(only) - set(REPAIRABLE))}")
+    rows = asyncio.run(run_matrix(a.api, a.lab or a.api.rstrip("/") + "/lab", a.timeout, only))
     print("\n" + render_matrix(rows))
     if a.out:
         Path(a.out).write_text(json.dumps(rows, indent=2))
