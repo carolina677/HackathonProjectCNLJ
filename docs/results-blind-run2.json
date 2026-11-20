@@ -1,0 +1,53 @@
+{
+  "rows": [
+    {
+      "seed": 986704465,
+      "portal": "cards/json/de/long/next",
+      "state": "serving",
+      "reason": null,
+      "attach": 1.0,
+      "quality": 1.0,
+      "wrong": 0,
+      "missing": 0,
+      "wrong_examples": [],
+      "docs": 35,
+      "usd": 0.024587996,
+      "seconds": 246.87943612481467
+    },
+    {
+      "seed": 320878039,
+      "portal": "cards/html/nl/long/next",
+      "state": "serving",
+      "reason": null,
+      "attach": 1.0,
+      "quality": 0.9690721649484536,
+      "wrong": 0,
+      "missing": 9,
+      "wrong_examples": [],
+      "docs": 35,
+      "usd": 0.023644584000000003,
+      "seconds": 301.0348166669719
+    },
+    {
+      "seed": 81128183,
+      "portal": "cards/html/en/iso/page",
+      "state": "serving",
+      "reason": null,
+      "attach": 1.0,
+      "quality": 1.0,
+      "wrong": 0,
+      "missing": 0,
+      "wrong_examples": [],
+      "docs": 35,
+      "usd": 0.025099242,
+      "seconds": 289.0048220001627
+    }
+  ],
+  "summary": {
+    "serving": 3,
+    "total": 3,
+    "attach_avg": 1.0,
+    "quality_avg": 0.9896907216494846,
+    "usd_per_portal": 0.024443940666666667
+  }
+}
