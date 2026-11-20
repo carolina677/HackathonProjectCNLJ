@@ -76,6 +76,7 @@ const Watchtower = (() => {
     document.addEventListener("click", async (e) => {
       const t = e.target;
       if (t.dataset.refresh) { t.disabled = true; await api("POST", `/portals/${t.dataset.refresh}/refresh`).catch(alert); scheduleCard(t.dataset.refresh); }
+      if (t.dataset.break) { t.disabled = true; const r = await api("POST", `/portals/${t.dataset.break}/break`).catch(alert); if (r) t.textContent = `Broke: ${r.mutation}`; setTimeout(() => { t.disabled = false; t.textContent = "Break it"; }, 4000); }
       if (t.dataset.delete && confirm("Remove this portal and its tenders?")) {
         await api("DELETE", `/portals/${t.dataset.delete}`).catch(alert); document.getElementById(`card-${t.dataset.delete}`)?.remove(); recount();
       }

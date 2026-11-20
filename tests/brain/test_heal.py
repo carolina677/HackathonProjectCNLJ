@@ -56,3 +56,15 @@ async def test_heal_reports_block(lab, fetcher, settings):
     new, rep = await heal("p", lab.url("ssr"), ssr_recipe(lab), None, fetcher, FakeJev(),
                           LLM(settings, backend=RecordingBackend({})), reason="x")
     assert new is None and rep.blocked == "login"
+
+
+def test_recipe_diff_names_leaf_changes(lab):
+    from watchtower.brain.heal import recipe_diff
+    from watchtower.recipe.dsl import Recipe
+
+    old = ssr_recipe(lab)
+    new = Recipe.model_validate(renamed(lab))
+    d = recipe_diff(old, new)
+    assert "item: tr.tender-row → tr.vx-wor-rednet" in d
+    assert "fields.id.selector: td.nr → td.vx-rn" in d
+    assert all("{" not in line for line in d)

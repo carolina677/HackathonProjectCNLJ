@@ -104,8 +104,13 @@ class Pipeline:
         return self._followups.pop(pid, None)
 
     def fetcher(self, pid: str) -> Fetcher:
-        return Fetcher(pid, self.limiter, cancelled=lambda: self.is_cancelled(pid),
-                       snapshot_dir=self.settings.data_dir if self.settings else None)
+        f = Fetcher(pid, self.limiter, cancelled=lambda: self.is_cancelled(pid),
+                    snapshot_dir=self.settings.data_dir if self.settings else None)
+        if isinstance(self.jev, Jev) and self.jev.client is not None:
+            from .dashboard.vision import look
+
+            f.on_screenshot = lambda png, url: look(self.jev, png, pid, url)
+        return f
 
     async def run(self, pid: str, run_id: str, kind: RunKind) -> RunResult:
         p = await self.repo.get_portal(pid)

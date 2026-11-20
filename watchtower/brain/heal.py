@@ -26,17 +26,25 @@ class HealReport:
     diff: list[str] = field(default_factory=list)
 
 
+def _leaves(v, path: str, out: dict) -> None:
+    if isinstance(v, dict):
+        for k, x in v.items():
+            _leaves(x, f"{path}.{k}" if path else k, out)
+    elif isinstance(v, list) and v and all(isinstance(x, dict) for x in v):
+        for i, x in enumerate(v):
+            _leaves(x, f"{path}[{i}]", out)
+    else:
+        out[path] = v
+
+
 def recipe_diff(old: Recipe, new: Recipe) -> list[str]:
-    a, b = json.loads(old.model_dump_json()), json.loads(new.model_dump_json())
-    out = []
-    for k in sorted(set(a) | set(b)):
-        if k == "fields":
-            for f in sorted(set(a.get(k, {})) | set(b.get(k, {}))):
-                if a[k].get(f) != b[k].get(f):
-                    out.append(f"fields.{f}: {a[k].get(f)} → {b[k].get(f)}")
-        elif a.get(k) != b.get(k):
-            out.append(f"{k}: {a.get(k)} → {b.get(k)}")
-    return out
+    """What the repair changed, one readable line per changed setting (e.g. "fields.id.selector: a → b")."""
+    a: dict = {}
+    b: dict = {}
+    _leaves(json.loads(old.model_dump_json()), "", a)
+    _leaves(json.loads(new.model_dump_json()), "", b)
+    show = lambda v: "—" if v is None else (json.dumps(v, ensure_ascii=False) if not isinstance(v, str) else v)
+    return [f"{k}: {show(a.get(k))} → {show(b.get(k))}" for k in sorted(set(a) | set(b)) if a.get(k) != b.get(k)]
 
 
 async def heal(portal_id: str, start_url: str, old: Recipe, old_snapshot: str | None, fetcher, jev, llm, *,

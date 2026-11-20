@@ -78,6 +78,18 @@ def page_shell(title: str, body: str) -> str:
             f"<main>{body}</main><footer>Powered by LabVergabe · Datenschutz · Kontakt</footer></body></html>")
 
 
+def break_portal(slug: str) -> str:
+    """Apply one random repairable mutation that fits this kind of portal; returns its name."""
+    from .mutations import REPAIRABLE
+
+    options = [m for m in REPAIRABLE if not STATE.has(slug, m)
+               and not (slug == "spa" and m in ("rename_classes", "reshuffle_layout", "pagination_style", "html_to_json"))
+               and not (slug != "spa" and m in ("api_path_move", "json_keys_rename"))]
+    name = random.choice(options) if options else "date_format"
+    STATE.mutate(slug, name)
+    return name
+
+
 def _status_note(slug: str, t: LabTender) -> str:
     return " <strong>(aufgehoben)</strong>" if t.id in STATE.withdrawn.get(slug, set()) else ""
 
@@ -295,12 +307,7 @@ def create_lab_app() -> FastAPI:
 
         if slug not in SLUGS:
             raise HTTPException(404)
-        options = [m for m in REPAIRABLE if not STATE.has(slug, m)
-                   and not (slug == "spa" and m in ("rename_classes", "reshuffle_layout", "pagination_style", "html_to_json"))
-                   and not (slug != "spa" and m in ("api_path_move", "json_keys_rename"))]
-        name = random.choice(options) if options else "date_format"
-        STATE.mutate(slug, name)
-        return {"mutation": name}
+        return {"mutation": break_portal(slug)}
 
     @lab.post("/{slug}/reset")
     async def reset(slug: str):

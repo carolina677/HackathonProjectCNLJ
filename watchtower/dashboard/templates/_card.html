@@ -18,9 +18,10 @@
     {% else %}<li class="run-running"><span>Queued</span></li>{% endfor %}
   </ol>
   <div class="actions">
-    <a href="/theater/{{ p.id }}">Theater</a>
+    <a href="/portals/{{ p.id }}/theater">Theater</a>
     <a href="/portals/{{ p.id }}/tenders" target="_blank">Tenders JSON</a>
     <button data-refresh="{{ p.id }}">Refresh</button>
+    {% if c.lab %}<button class="danger" data-break="{{ p.id }}">Break it</button>{% endif %}
     <button class="ghost" data-delete="{{ p.id }}">Remove</button>
   </div>
 </article>

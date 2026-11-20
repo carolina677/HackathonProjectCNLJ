@@ -35,6 +35,29 @@ def ago(dt) -> str:
 templates.env.filters["ago"] = ago
 
 
+def lab_slug(request: Request, url: str) -> str | None:
+    """Break-it is offered only for Chaos Lab portals, and only when the lab is switched on."""
+    if not request.app.state.settings.lab:
+        return None
+    from ..lab.app import SLUGS
+
+    parts = [x for x in urlsplit(url).path.split("/") if x]
+    return parts[1] if len(parts) >= 2 and parts[0] == "lab" and parts[1] in SLUGS else None
+
+
+def judges(request: Request):
+    st = request.app.state
+    if getattr(st, "judges", None) is None:
+        pl = getattr(st, "pipeline", None)
+        if pl is not None and pl.jev is not None:
+            st.judges = (pl.jev, pl.llm)
+        else:
+            from ..pipeline import make_judges
+
+            st.judges = make_judges(st.settings)
+    return st.judges
+
+
 def run_words(r: dict, first: bool) -> str:
     kind, res, detail = r["kind"], r["result"], r.get("detail")
     if res is None:
@@ -48,7 +71,7 @@ def run_words(r: dict, first: bool) -> str:
     return "Read stopped: " + (detail or "the portal changed")
 
 
-async def card_context(repo, p) -> dict:
+async def card_context(repo, p, request: Request | None = None) -> dict:
     runs = await repo.run_details(p.id, limit=50)
     oldest = runs[-1]["id"] if runs else None
     story = [{"text": run_words(r, r["id"] == oldest), "when": ago(r["finished_at"] or r["started_at"]),
@@ -56,7 +79,8 @@ async def card_context(repo, p) -> dict:
     u = urlsplit(p.url)
     label = (u.netloc + u.path.rstrip("/"))[:60]
     return {"p": p.out(), "host": label, "story": story, "cost": cost.summary(p.id),
-            "platform": (p.recipe or {}).get("platform"), "country": p.country}
+            "platform": (p.recipe or {}).get("platform"), "country": p.country,
+            "lab": lab_slug(request, p.url) if request is not None else None}
 
 
 def register(app: FastAPI) -> None:
@@ -66,7 +90,7 @@ def register(app: FastAPI) -> None:
     async def index(request: Request):
         repo = request.app.state.repo
         portals = await repo.list_portals()
-        cards = [await card_context(repo, p) for p in portals]
+        cards = [await card_context(repo, p, request) for p in portals]
         counts = {s: sum(c["p"].state == s for c in cards) for s in ("serving", "healing", "integrating", "failed")}
         return templates.TemplateResponse(request, "index.html", {
             "cards": cards, "counts": counts, "tenders": sum(c["p"].tenderCount for c in cards),
@@ -79,7 +103,101 @@ def register(app: FastAPI) -> None:
         p = await repo.get_portal(pid)
         if not p:
             raise HTTPException(404, "portal not found")
-        return templates.TemplateResponse(request, "_card.html", {"c": await card_context(repo, p)})
+        return templates.TemplateResponse(request, "_card.html", {"c": await card_context(repo, p, request)})
+
+    async def _portal(request: Request, pid: str):
+        p = await request.app.state.repo.get_portal(pid)
+        if not p:
+            raise HTTPException(404, "portal not found")
+        return p
+
+    @app.get("/portals/{pid}/theater", response_class=HTMLResponse)
+    async def theater(pid: str, request: Request):
+        p = await _portal(request, pid)
+        c = await card_context(request.app.state.repo, p, request)
+        return templates.TemplateResponse(request, "theater.html", {"c": c, "recipe": p.recipe,
+                                                                    "projected": cost.projected(4500)})
+
+    @app.get("/portals/{pid}/timeline")
+    async def timeline(pid: str, request: Request):
+        await _portal(request, pid)
+        return events.history(pid, limit=400)
+
+    @app.get("/portals/{pid}/cost")
+    async def portal_cost(pid: str, request: Request):
+        await _portal(request, pid)
+        return {**cost.summary(pid), "avg_usd": cost.per_portal_average(), "projected_4500": cost.projected(4500)}
+
+    @app.post("/portals/{pid}/break", status_code=202)
+    async def break_it(pid: str, request: Request):
+        p = await _portal(request, pid)
+        slug = lab_slug(request, p.url)
+        if not slug:
+            raise HTTPException(400, "Break-it works on Chaos Lab portals only")
+        from ..lab.app import break_portal
+        from ..models import RunKind
+
+        name = break_portal(slug)
+        events.emit(pid, "log", {"msg": f"Chaos Lab: applied mutation '{name}' — watching for it"})
+        rid = await request.app.state.scheduler.enqueue(pid, RunKind.read)
+        return {"mutation": name, "runId": rid}
+
+    @app.post("/portals/{pid}/race")
+    async def race(pid: str, request: Request):
+        """Same page-type question to Jev and to the frontier LLM, at the same time."""
+        import time
+
+        from pydantic import BaseModel
+
+        from ..brain.explore import PAGE_TYPES, classify_page
+        from ..fetch import Fetcher, Page
+        from ..recipe.engine import visible_text
+        from ..scheduler import HostLimiter
+
+        p = await _portal(request, pid)
+        st = request.app.state
+        html = None
+        if p.snapshot_ref:
+            f = Path(st.settings.data_dir) / p.snapshot_ref
+            html = f.read_text() if f.exists() else None
+        if html is None:
+            limiter = getattr(st, "limiter", None) or HostLimiter(st.settings.min_request_interval)
+            pg = await Fetcher(pid, limiter).get(p.url)
+            html, final = pg.html, pg.final_url
+        else:
+            final = p.url
+        page = Page(url=p.url, final_url=final, status=200, html=html, headers={})
+        jev, llm = judges(request)
+        jev = jev.without_llm() if hasattr(jev, "without_llm") else jev
+
+        class PageType(BaseModel):
+            choice: str
+
+        async def run_jev():
+            before, t0 = cost.summary(pid)["jev_usd"], time.monotonic()
+            c = await classify_page(page, jev, pid)
+            return {"answer": c.choice, "probabilities": c.probabilities, "ms": int((time.monotonic() - t0) * 1000),
+                    "usd": cost.summary(pid)["jev_usd"] - before}
+
+        async def run_llm():
+            before, t0 = cost.summary(pid)["llm_usd"], time.monotonic()
+            options = "\n".join(f"- {k}: {v}" for k, v in PAGE_TYPES.items())
+            out = await llm.complete_json(
+                "You classify web pages for a public-tender crawler. Answer with one option key.",
+                f"Options:\n{options}\n\nURL: {final}\nPage text:\n{visible_text(html, 6000)}",
+                PageType, portal_id=pid, purpose="race", attempts=1)
+            return {"answer": out.choice, "ms": int((time.monotonic() - t0) * 1000),
+                    "usd": cost.summary(pid)["llm_usd"] - before}
+
+        async def safe(coro):
+            try:
+                return await coro
+            except Exception as e:
+                return {"error": (str(e).splitlines() or ["error"])[0][:90], "answer": None, "ms": None, "usd": 0.0}
+
+        a, b = await asyncio.gather(safe(run_jev()), safe(run_llm()))
+        events.emit(pid, "race", {"jev": a, "llm": b})
+        return {"jev": a, "llm": b}
 
     @app.get("/events")
     async def stream(request: Request, limit: int | None = None, portal: str | None = None):

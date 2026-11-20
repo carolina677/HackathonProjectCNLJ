@@ -142,6 +142,7 @@ class Fetcher:
         self.portal_id, self.limiter, self.cancelled = portal_id, limiter, cancelled
         self.snapshot_dir = Path(snapshot_dir) if snapshot_dir else None
         self.requests = 0
+        self.on_screenshot = None  # optional async (png, url) -> None, display only (Jev Vision)
 
     async def _polite(self, url: str) -> None:
         if self.cancelled():
@@ -235,6 +236,8 @@ class Fetcher:
             "url": url, "status": status, "via": "browser", "ms": int((time.monotonic() - t0) * 1000),
             "json_apis": [c.url for c in captured][:5],
             "screenshot": "data:image/jpeg;base64," + base64.b64encode(shot).decode()})
+        if self.on_screenshot is not None:
+            asyncio.get_running_loop().create_task(self.on_screenshot(shot, url))
         return rp
 
     async def open(self, url: str) -> Page:
