@@ -180,6 +180,26 @@ async def test_repair_delivers_refreshed_tenders_before_serving(lab, repo, setti
     assert pl.pop_followup(pid) is None
 
 
+async def test_large_portal_repair_stays_healing_until_full_read(lab, repo, settings, monkeypatch):
+    from watchtower import pipeline as pipeline_mod
+
+    pid, _ = await _served_ssr(lab, repo, settings, json.loads(ssr_recipe(lab).model_dump_json()))
+    monkeypatch.setattr(pipeline_mod, "SMALL_PORTAL_LIMIT", 5)  # the lab's 23 tenders count as a large portal
+    lab.mutate("ssr", "rename_classes")
+    pl = Pipeline(repo, settings, HostLimiter(0.0), None, FakeJev(),
+                  LLM(settings, backend=RecordingBackend(renamed(lab))))
+    assert str(await pl.read(pid, "r2")) == "failed"
+    assert pl.pop_followup(pid) == (RunKind.repair, 0.0)
+    assert str(await pl.repair(pid, "rep1")) == "ok"
+    p = await repo.get_portal(pid)
+    assert p.state == PortalState.healing and p.reason == pipeline_mod.VERIFYING_REPAIR
+    assert pl.pop_followup(pid) == (RunKind.read, 0.0)
+    assert str(await pl.read(pid, "r3")) == "ok"
+    p = await repo.get_portal(pid)
+    assert p.state == PortalState.serving and p.reason is None
+    assert all(t.documents for t in await repo.list_tenders(pid))
+
+
 async def test_pulse_uses_no_vision_and_list_fields_only(lab, repo, settings, monkeypatch):
     from watchtower import pipeline as pipeline_mod
 
