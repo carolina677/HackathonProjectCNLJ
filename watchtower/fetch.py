@@ -214,8 +214,8 @@ class Fetcher:
         return r.json()
 
     @asynccontextmanager
-    async def stream(self, url: str):
-        r = await self._send(http().build_request("GET", url), stream=True)
+    async def stream(self, url: str, headers: dict | None = None):
+        r = await self._send(http().build_request("GET", url, headers=headers), stream=True)
         try:
             yield r
         finally:

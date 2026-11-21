@@ -27,6 +27,7 @@ log = logging.getLogger("watchtower.pipeline")
 
 RETRY_DELAYS = (60.0, 300.0)
 MAX_TRANSIENT = 3
+VERIFYING_REPAIR = "Repaired; reading all tenders and documents before serving again."
 NO_DOCUMENTS = "Serving without documents: the portal's document links could not be found."
 MAX_REPAIR_CYCLES = 3  # repairs in a row whose new recipe never delivered: stop paying, say so
 SMALL_PORTAL_LIMIT = 50
@@ -127,7 +128,8 @@ class Pipeline:
         self._outages: dict[str, int] = {}
         self._repair_cycles: dict[str, int] = {}
         self._probe_turn: dict[str, int] = {}
-        self._docs: dict[tuple[str, str], tuple[tuple[str, ...], list[Document]]] = {}
+        # (portal, tender) -> {document url: (conditional headers, documents)}; revalidated on every read
+        self._docs: dict[tuple[str, str], dict[str, tuple[dict, list[Document]]]] = {}
 
     def forget(self, pid: str) -> None:
         self._followups.pop(pid, None)
@@ -329,16 +331,14 @@ class Pipeline:
 
     # --- read --------------------------------------------------------------
     async def _documents(self, pid: str, raw: dict, fetcher, doc_errors: list[str] | None = None) -> list[Document]:
-        urls = tuple(raw.get("_doc_urls") or ())
-        key = (pid, str(raw["id"]))
-        hit = self._docs.get(key)
-        if hit and hit[0] == urls:
-            return hit[1]
-        docs = await fetch_documents(pid, str(raw["id"]), list(urls), fetcher, repo=self.repo,
-                                     data_dir=self.settings.data_dir, errors=doc_errors) if urls else []
-        if docs or not urls:
-            self._docs[key] = (urls, docs)
-        return docs
+        urls = list(raw.get("_doc_urls") or ())
+        if not urls:
+            return []
+        cache = self._docs.setdefault((pid, str(raw["id"])), {})
+        for gone in [u for u in cache if u not in urls]:
+            cache.pop(gone, None)
+        return await fetch_documents(pid, str(raw["id"]), urls, fetcher, repo=self.repo,
+                                     data_dir=self.settings.data_dir, errors=doc_errors, cache=cache)
 
     async def read(self, pid: str, run_id: str) -> RunResult:
         """Deterministic: the stored recipe, no model call. Jev spot-checks one tender (no LLM fallback).
@@ -516,8 +516,18 @@ class Pipeline:
         if await self.repo.is_deleted(pid):
             return RunResult.failed
         if large_portal:
+            # Only the list was checked. Stay in `healing` (old tenders keep being served) until the full
+            # read delivers details and documents; that read moves the portal to serving, or back to repair.
+            n = self._repair_cycles.get(pid, 0) + 1
+            if n >= MAX_REPAIR_CYCLES:
+                self._repair_cycles.pop(pid, None)
+                await self.transition(pid, PortalState.failed,
+                                      f"Could not repair: {n} repairs in a row produced a recipe whose full "
+                                      f"read did not deliver.")
+                return RunResult.failed
+            self._repair_cycles[pid] = n
             self._outages.pop(pid, None)
-            await self.transition(pid, PortalState.serving, None)
+            await self.transition(pid, PortalState.healing, VERIFYING_REPAIR)
             self.schedule_followup(pid, RunKind.read, 0.0)
             return RunResult.ok
         health = list_health[0] if list_health and not list_health[0].ok else \

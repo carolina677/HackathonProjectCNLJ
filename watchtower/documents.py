@@ -67,6 +67,13 @@ class _Store:
         os.close(fd)
         return Path(p)
 
+    def reuse(self, docs: list[Document]) -> None:
+        """Documents the portal confirmed unchanged (HTTP 304): served as stored, nothing downloaded."""
+        for d in docs:
+            if d.sha256 not in self.seen:
+                self.seen.add(d.sha256)
+                self.out.append(d)
+
     async def keep(self, tmp: Path, name: str, sha: str, size: int) -> None:
         if sha in self.seen:
             tmp.unlink(missing_ok=True)
@@ -153,15 +160,41 @@ def not_a_document(path: Path, headers: dict, size: int) -> str | None:
     return "HTML page instead of a document"
 
 
+def revalidation_headers(headers: dict) -> dict[str, str]:
+    """Conditional-request headers that ask the portal whether a document changed since this download."""
+    h = {k.lower(): v for k, v in headers.items()}
+    out = {}
+    if h.get("etag"):
+        out["If-None-Match"] = h["etag"]
+    if h.get("last-modified"):
+        out["If-Modified-Since"] = h["last-modified"]
+    return out
+
+
 async def fetch_documents(portal_id: str, tender_id: str, urls: list[str], fetcher, *, repo,
-                          data_dir: Path, errors: list[str] | None = None) -> list[Document]:
+                          data_dir: Path, errors: list[str] | None = None,
+                          cache: dict[str, tuple[dict, list[Document]]] | None = None) -> list[Document]:
+    """Download, hash and store each document.
+
+    `cache` (url -> (conditional headers, documents), updated in place) lets a later read skip unchanged
+    files: the document is requested again with If-None-Match / If-Modified-Since and only a 304 reuses the
+    stored copy. A portal that sends neither ETag nor Last-Modified gets a full download, and the hash
+    decides whether the document changed. The same URL never short-circuits on its own."""
     store = _Store(repo, data_dir, portal_id, tender_id)
     for url in urls:
+        prev = cache.get(url) if cache is not None else None
+        cond = prev[0] if prev else {}
+        start = len(store.out)
         tmp = store.tmpfile()
         try:
-            async with fetcher.stream(url) as resp:
-                if getattr(resp, "status_code", 200) >= 400:
-                    raise IOError(f"HTTP {resp.status_code}")
+            async with (fetcher.stream(url, headers=cond) if cond else fetcher.stream(url)) as resp:
+                status = getattr(resp, "status_code", 200)
+                if status == 304 and prev:
+                    store.reuse(prev[1])
+                    tmp.unlink(missing_ok=True)
+                    continue
+                if status >= 300:
+                    raise IOError(f"HTTP {status}")
                 headers = dict(resp.headers)
                 declared = {k.lower(): v for k, v in headers.items()}.get("content-length")
                 if declared and declared.isdigit() and int(declared) > MAX_BYTES:
@@ -185,6 +218,8 @@ async def fetch_documents(portal_id: str, tender_id: str, urls: list[str], fetch
                     tmp.unlink(missing_ok=True)
             else:
                 await store.keep(tmp, name, h.hexdigest(), n)
+            if cache is not None:
+                cache[url] = (revalidation_headers(headers), store.out[start:])
         except PortalCancelled:
             tmp.unlink(missing_ok=True)
             raise
@@ -192,6 +227,8 @@ async def fetch_documents(portal_id: str, tender_id: str, urls: list[str], fetch
             log.info("skipped %s: larger than 250 MB", url)
             tmp.unlink(missing_ok=True)
         except Exception as e:
+            if cache is not None:
+                cache.pop(url, None)
             log.warning("document %s failed: %s", url, e)
             if errors is not None:
                 errors.append(f"document {url}: {e}")

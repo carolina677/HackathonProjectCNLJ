@@ -60,6 +60,7 @@ class Scheduler:
         self._tasks: dict[str, asyncio.Task] = {}
         self._cancelled: set[str] = set()
         self._last_enqueued: dict[str, float] = {}
+        self._enqueue_locks: dict[str, asyncio.Lock] = {}
         self._sem = asyncio.Semaphore(max_parallel)
         self._loops: list[asyncio.Task] = []
         self._started = time.monotonic()
@@ -72,15 +73,18 @@ class Scheduler:
         return int(hashlib.sha1(pid.encode()).hexdigest(), 16) % max(1, self.settings.read_interval_seconds)
 
     async def enqueue(self, pid: str, kind: RunKind = RunKind.read) -> str:
-        self._cancelled.discard(pid)
-        running = await self.repo.running_run(pid)
-        if running and pid in self._tasks and not self._tasks[pid].done():
-            return running
-        rid = await self.repo.start_run(pid, kind)
-        self._last_enqueued[pid] = time.monotonic()
-        events.emit(pid, "run", {"id": rid, "kind": str(kind), "status": "started"})
-        self._tasks[pid] = asyncio.create_task(self._execute(pid, rid, kind))
-        return rid
+        """Start a run, or return the one in flight. Check and start are one step per portal, so
+        simultaneous refreshes share a single run."""
+        async with self._enqueue_locks.setdefault(pid, asyncio.Lock()):
+            self._cancelled.discard(pid)
+            running = await self.repo.running_run(pid)
+            if running and pid in self._tasks and not self._tasks[pid].done():
+                return running
+            rid = await self.repo.start_run(pid, kind)
+            self._last_enqueued[pid] = time.monotonic()
+            events.emit(pid, "run", {"id": rid, "kind": str(kind), "status": "started"})
+            self._tasks[pid] = asyncio.create_task(self._execute(pid, rid, kind))
+            return rid
 
     async def cancel(self, pid: str) -> None:
         self._cancelled.add(pid)

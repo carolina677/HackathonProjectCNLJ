@@ -176,3 +176,55 @@ async def test_pdf_with_wrong_html_content_type_is_kept(repo, settings):
 async def test_empty_file_is_not_a_document(repo, settings):
     docs, errors = await _fetch_err(repo, settings, {"https://x/b.pdf": (b"", {})}, ["https://x/b.pdf"])
     assert docs == [] and "empty" in errors[0]
+
+
+class RevalidatingFetcher:
+    """Serves files[url] = (body, headers); answers 304 when the request's validators still match."""
+
+    def __init__(self, files: dict[str, tuple]):
+        self.files, self.requests = files, []
+
+    @asynccontextmanager
+    async def stream(self, url, headers=None):
+        self.requests.append((url, dict(headers or {})))
+        body, h = self.files[url]
+        sent = {k.lower(): v for k, v in (headers or {}).items()}
+        etag = {k.lower(): v for k, v in h.items()}.get("etag")
+        if etag and sent.get("if-none-match") == etag:
+            yield FakeResp([], h, status=304)
+        else:
+            yield FakeResp([body], h)
+
+
+PDF = {"content-disposition": 'attachment; filename="a.pdf"'}
+URL = "https://x/dl?id=1"
+
+
+async def test_same_url_new_content_is_downloaded_again(repo, settings):
+    """No ETag/Last-Modified: every read downloads, so a changed file at the same URL gets its new hash."""
+    cache: dict = {}
+    f = RevalidatingFetcher({URL: (b"%PDF-1.4 v1", PDF)})
+    first = await fetch_documents("p", "t", [URL], f, repo=repo, data_dir=settings.data_dir, cache=cache)
+    f.files[URL] = (b"%PDF-1.4 v2", PDF)
+    second = await fetch_documents("p", "t", [URL], f, repo=repo, data_dir=settings.data_dir, cache=cache)
+    assert first[0].sha256 == hashlib.sha256(b"%PDF-1.4 v1").hexdigest()
+    assert second[0].sha256 == hashlib.sha256(b"%PDF-1.4 v2").hexdigest()
+
+
+async def test_unchanged_document_is_reused_on_304(repo, settings):
+    cache: dict = {}
+    f = RevalidatingFetcher({URL: (b"%PDF-1.4 v1", {**PDF, "ETag": '"v1"'})})
+    first = await fetch_documents("p", "t", [URL], f, repo=repo, data_dir=settings.data_dir, cache=cache)
+    second = await fetch_documents("p", "t", [URL], f, repo=repo, data_dir=settings.data_dir, cache=cache)
+    assert f.requests[1][1] == {"If-None-Match": '"v1"'}
+    assert second == first
+
+
+async def test_changed_etag_replaces_the_document(repo, settings):
+    cache: dict = {}
+    f = RevalidatingFetcher({URL: (b"%PDF-1.4 v1", {**PDF, "ETag": '"v1"'})})
+    await fetch_documents("p", "t", [URL], f, repo=repo, data_dir=settings.data_dir, cache=cache)
+    f.files[URL] = (b"%PDF-1.4 v2", {**PDF, "ETag": '"v2"'})
+    second = await fetch_documents("p", "t", [URL], f, repo=repo, data_dir=settings.data_dir, cache=cache)
+    assert second[0].sha256 == hashlib.sha256(b"%PDF-1.4 v2").hexdigest()
+    assert cache[URL][0] == {"If-None-Match": '"v2"'}

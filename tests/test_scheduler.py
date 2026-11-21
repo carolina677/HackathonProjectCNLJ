@@ -261,3 +261,10 @@ async def test_pulse_soon_checks_at_the_next_tick_without_a_read(repo, settings)
         await asyncio.sleep(0.05)
     await s.stop()
     assert pipe.pulses == 1 and pipe.runs == []  # a pulse, not a refresh
+
+
+async def test_simultaneous_refreshes_share_one_run(sched_env, repo):
+    s, _, pid = sched_env
+    ids = await asyncio.gather(*[s.enqueue(pid) for _ in range(12)])
+    assert len(set(ids)) == 1
+    assert len(await repo.list_runs(pid)) == 1
