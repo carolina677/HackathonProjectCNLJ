@@ -869,3 +869,6 @@ dialog.modal { width: min(56rem, 94vw); max-height: 85vh; }
 .sv.bump strong { animation: sv-bump .5s ease-out; }
 @keyframes sv-bump { 40% { transform: scale(1.18); } }
 @media (max-width: 860px) { .stage-body { grid-template-columns: 1fr; } }
+
+/* the card the live break just changed */
+.card-spotlight { outline: 3px solid var(--amber-accent); outline-offset: 3px; animation: sp-pulse 1.2s ease-in-out 4; }

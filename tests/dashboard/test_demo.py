@@ -59,7 +59,7 @@ async def test_timelapse_202_and_full_cycle(app, client):
         STATE.reset()
 
 
-async def test_chaos_breaks_serving_lab_portals_without_refresh(app, client):
+async def test_chaos_breaks_one_portal_without_refresh(app, client):
     STATE.reset()
     try:
         await run_timelapse(app, "http://test", speed=200.0)
@@ -68,7 +68,7 @@ async def test_chaos_breaks_serving_lab_portals_without_refresh(app, client):
         r = await client.post("/demo/chaos")
         assert r.status_code == 202
         broken = r.json()["broken"]
-        assert {b["slug"] for b in broken} == {"ssr", "multistep", "spa"}
+        assert [b["slug"] for b in broken] == ["ssr"]  # one portal, the first lab card
         for b in broken:
             assert STATE.has(b["slug"], b["mutation"])
         runs_started = [e for e in events.history(kinds={"run"}) if e["data"].get("status") == "started"

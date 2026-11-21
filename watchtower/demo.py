@@ -380,16 +380,28 @@ def chaos_mutation(slug: str) -> str:
     return name
 
 
-async def run_chaos(app, *, limit: int = 3) -> list[dict]:
-    """Live, no replay: change the layout of up to `limit` serving lab portals and press nothing.
+LIVE_BREAK = ("ssr", "multistep", "spa")  # preference order: ssr is the first lab card on the Overview
+
+
+def _lab_slug(url: str) -> str | None:
+    return url.rstrip("/").rsplit("/lab/", 1)[-1] if "/lab/" in url else None
+
+
+async def run_chaos(app, *, limit: int = 1) -> list[dict]:
+    """Live, no replay: change the layout of `limit` serving lab portals and press nothing.
     The pulse notices, the real repair runs (real model calls)."""
     from datetime import datetime, timezone
 
     broken = []
-    for p in await app.state.repo.list_portals():
-        slug = p.url.rstrip("/").rsplit("/lab/", 1)[-1] if "/lab/" in p.url else None
-        if slug in (None, "login", "captcha-open-docs") or p.state != PortalState.serving:
+    sched = getattr(app.state, "scheduler", None)
+    portals = await app.state.repo.list_portals()
+    portals.sort(key=lambda p: LIVE_BREAK.index(s) if (s := _lab_slug(p.url)) in LIVE_BREAK else len(LIVE_BREAK))
+    for p in portals:
+        slug = _lab_slug(p.url)
+        if slug not in LIVE_BREAK or p.state != PortalState.serving:
             continue
+        if hasattr(sched, "pulse_soon"):
+            sched.pulse_soon(p.id)  # don't make the audience wait up to one pulse interval
         broken.append({"id": p.id, "slug": slug, "mutation": chaos_mutation(slug),
                        "at": datetime.now(timezone.utc).isoformat()})
         if len(broken) >= limit:
@@ -397,6 +409,6 @@ async def run_chaos(app, *, limit: int = 3) -> list[dict]:
     every = getattr(app.state.settings, "pulse_interval_seconds", 900)
     names = ", ".join(f"{b['slug']} ({b['mutation']})" for b in broken) or "none (no serving lab portal)"
     events.emit(None, "story", {"mode": "live", "step": "chaos",
-                                "text": f"Live: changed {names}. Nobody presses refresh; the pulse checks every "
-                                        f"{every} s and the real repair follows."})
+                                "text": f"Live: changed {names}. Nobody presses refresh: the pulse (every {every} s, "
+                                        f"brought forward for the demo) has to notice it, then the real repair runs."})
     return broken
