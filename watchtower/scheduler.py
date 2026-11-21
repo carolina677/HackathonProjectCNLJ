@@ -137,8 +137,9 @@ class Scheduler:
             if delay > 0:
                 await asyncio.sleep(delay)
             if not self.is_cancelled(pid):
-                self._tasks.pop(pid, None)
-                await self.enqueue(pid, kind_next)
+                if self._tasks.get(pid) is asyncio.current_task():  # a refresh during the wait owns the slot now
+                    self._tasks.pop(pid, None)
+                await self.enqueue(pid, kind_next)  # returns that refresh's run if it is still in flight
 
     async def _finish(self, rid: str, pid: str, result: RunResult, detail: str | None) -> None:
         try:

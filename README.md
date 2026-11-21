@@ -33,7 +33,7 @@ The full list is in `.env.example`.
 
 | Test | Result | Model cost |
 |---|---|---|
-| 4 real portals, known software (DE, FR, NL) | 4/4 serving | $0.001 / portal |
+| 4 real portals, known software (DE, FR, NL) | 4/4 serving (e-Vergabe: first page only, no documents; see Known limits) | $0.001 / portal |
 | **Blind portals**: generated from a random seed at run time (layout, language, date format, pagination, URLs, JSON keys); nobody saw them before | run 1: 3/3 serving, all tenders, all 105 PDFs, quality 0.87 · run 2 (after 2 normalizer fixes): 3/3, quality 0.99, 0 wrong values | $0.024–0.028 / portal |
 | **Holdout**: 6 real portals, never used during development, run once at tag `holdout-run-1` | **2/6 serving**: LU (204 tenders, 204 docs), FR marches-publics (82 tenders, 182 docs). 4 ended `failed` with a reason | $0.055 / portal (NRW alone $0.26) |
 | Same 4 failed portals after 3 general fixes (**no longer blind**) | **NRW and DTVP now serve** (DTVP: 8,320 tenders listed, filled in progressively). ES: firewall rejects automated requests (reported, not bypassed). PL: list only behind a JS search form | $0.06–0.07 / portal |

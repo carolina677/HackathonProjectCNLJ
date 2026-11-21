@@ -483,7 +483,8 @@ class Pipeline:
                                    field_mask=new_mask, country=new.country)
         events.emit(pid, "log", {"msg": "Repaired: " + ("; ".join(rep.diff[:4]) or "recipe re-learned")})
 
-        # Keep serving old tenders in `healing` until fresh tenders & documents are ready (unless huge portal).
+        # Keep serving old tenders in `healing` until fresh tenders & documents are verified. Small portals are read
+        # here; large ones stay `healing` until the scheduled full read passes its health check.
         errors: list[str] = []
         pages: dict[str, str] = {}
         now = datetime.now(timezone.utc)

@@ -268,3 +268,36 @@ async def test_simultaneous_refreshes_share_one_run(sched_env, repo):
     ids = await asyncio.gather(*[s.enqueue(pid) for _ in range(12)])
     assert len(set(ids)) == 1
     assert len(await repo.list_runs(pid)) == 1
+
+
+class FollowupPipeline:
+    """First run asks for a delayed follow-up read; counts how many runs overlap."""
+
+    def __init__(self):
+        self.first, self.active, self.peak = True, 0, 0
+
+    async def run(self, pid, rid, kind):
+        self.active += 1
+        self.peak = max(self.peak, self.active)
+        await asyncio.sleep(0.1 if self.first else 0.6)
+        self.active -= 1
+        return RunResult.ok
+
+    def pop_followup(self, pid):
+        if self.first:
+            self.first = False
+            return (RunKind.read, 0.3)
+        return None
+
+
+async def test_refresh_during_followup_delay_shares_one_run(repo, settings):
+    pipe = FollowupPipeline()
+    s = Scheduler(repo, pipe, settings)
+    pid = await repo.create_portal("https://followup.de")
+    await s.enqueue(pid)
+    await asyncio.sleep(0.2)  # first run finished, follow-up waiting
+    refresh = await s.enqueue(pid)
+    await asyncio.sleep(0.4)  # follow-up fires while the refresh run is in flight
+    open_runs = [r for r in await repo.list_runs(pid) if r.finishedAt is None]
+    await s.stop()
+    assert pipe.peak == 1 and len(open_runs) == 1 and open_runs[0].id == refresh
