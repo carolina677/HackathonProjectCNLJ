@@ -22,8 +22,12 @@ def retry_every(settings: Settings, state: PortalState) -> int:
     return interval
 
 
+LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})  # our own Chaos Lab and Blind Lab, not a real portal
+
+
 class HostLimiter:
-    """At most one request per second per host (brief: be polite to real portals)."""
+    """At most one request per second per host (brief: be polite to real portals). Watchtower's own lab server
+    on this machine is not a portal, so it is not throttled."""
 
     def __init__(self, min_interval: float = 1.0):
         self.min_interval = min_interval
@@ -31,6 +35,8 @@ class HostLimiter:
         self._locks: dict[str, asyncio.Lock] = {}
 
     async def acquire(self, host: str) -> None:
+        if host in LOCAL_HOSTS:
+            return
         lock = self._locks.setdefault(host, asyncio.Lock())
         async with lock:
             last = self._last.get(host)
@@ -154,6 +160,14 @@ class Scheduler:
                 elif self._pulse_due(p, now):
                     self._last_pulse[p.id] = now
                     self._tasks[p.id] = asyncio.create_task(self._pulse(p.id))
+
+    def pulse_soon(self, pid: str) -> None:
+        """Make the next tick pulse this portal instead of waiting the full interval. Still only a pulse:
+        the list-only check decides whether anything is wrong, and only then a read follows."""
+        every = getattr(self.settings, "pulse_interval_seconds", 0)
+        back = time.monotonic() - every
+        self._last_pulse[pid] = back
+        self._last_enqueued[pid] = min(self._last_enqueued.get(pid, back), back)
 
     def _pulse_due(self, p, now: float) -> bool:
         """A cheap list-only check between full reads, only for portals that claim to deliver."""

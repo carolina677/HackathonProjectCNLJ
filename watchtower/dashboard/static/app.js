@@ -842,7 +842,15 @@ const Watchtower = (() => {
       try {
         await Stage.start("live");
         const res = await api("POST", "/demo/chaos");
-        if (!res?.broken?.length) toast("No serving lab portal to break: run the replay first, or attach /lab/ssr/.", "error");
+        const b = res?.broken?.[0];
+        if (!b) toast("No serving lab portal to break: run the replay first, or attach /lab/ssr/.", "error");
+        else {
+          toast(`Broke ${b.slug} live (${b.mutation}). Watch the card: amber, then green.`);
+          const card = byId(`card-${b.id}`);
+          card?.scrollIntoView({ behavior: "smooth", block: "center" });
+          card?.classList.add("card-spotlight");
+          setTimeout(() => card?.classList.remove("card-spotlight"), 6000);
+        }
       } catch (err) {
         toast(err.message, "error");
       } finally {

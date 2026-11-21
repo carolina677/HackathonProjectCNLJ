@@ -25,6 +25,14 @@ async def test_limiter_hosts_independent():
     assert time.monotonic() - t0 < 0.5
 
 
+async def test_limiter_does_not_throttle_our_own_lab_server():
+    lim = HostLimiter()
+    t0 = time.monotonic()
+    for host in ("localhost", "localhost", "127.0.0.1", "127.0.0.1"):
+        await lim.acquire(host)
+    assert time.monotonic() - t0 < 0.5
+
+
 class SlowPipeline:
     def __init__(self, sched_ref, delay=1.0):
         self.delay, self.calls, self.sched_ref = delay, 0, sched_ref
@@ -239,3 +247,17 @@ async def test_pulse_off_when_interval_zero(repo, settings):
     await asyncio.sleep(1.5)
     await s.stop()
     assert pipe.pulses == 0
+
+
+async def test_pulse_soon_checks_at_the_next_tick_without_a_read(repo, settings):
+    pipe = PulsePipeline()
+    s, pid = await _pulse_env(repo, settings, pipe, interval=900)  # next regular pulse is 15 min away
+    await asyncio.sleep(0.3)
+    assert pipe.pulses == 0
+    s.pulse_soon(pid)
+    for _ in range(20):
+        if pipe.pulses:
+            break
+        await asyncio.sleep(0.05)
+    await s.stop()
+    assert pipe.pulses == 1 and pipe.runs == []  # a pulse, not a refresh

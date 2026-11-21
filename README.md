@@ -59,7 +59,7 @@ The repair matrix needs `PULSE_INTERVAL_SECONDS=60`.
 - A cost meter with a projection to 4,500 portals.
 - **Theater:** the agent's steps for each portal, with a before-vs-after diff of the recipe.
 - **⚡ Run demo:** a replay of one night in which three portals break and repair, plus one that needs a person.
-- **💥 Break 3 portals live:** real breaks and real repairs, with real model calls.
+- **💥 Break a portal live:** one real break (no refresh pressed), a real repair, real model calls.
 
 ## Known limits
 

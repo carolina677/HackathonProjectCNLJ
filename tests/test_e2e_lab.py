@@ -74,6 +74,25 @@ async def until(c, pid, pred, timeout=60.0):
     raise AssertionError(f"timeout; last state {p}")
 
 
+async def went_healing(pid, since: str, timeout=30.0) -> dict:
+    """The healing state can be brief against the unthrottled local lab, so look for the state event, not a poll."""
+    from watchtower import events
+
+    t0 = asyncio.get_event_loop().time()
+    while asyncio.get_event_loop().time() - t0 < timeout:
+        hits = [e for e in events.history(pid, {"state"}) if e["ts"] > since and e["data"].get("to") == "healing"]
+        if hits:
+            return hits[0]["data"]
+        await asyncio.sleep(0.1)
+    raise AssertionError("never went healing")
+
+
+def now_iso() -> str:
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).isoformat()
+
+
 async def idle(app, pid, timeout=60):
     await app.state.scheduler.wait_idle(pid, timeout)
 
@@ -178,9 +197,10 @@ async def test_repair_keeps_before_and_after_view(e2e):
     pid = await _attach(c, lab.url("ssr"))
     await until(c, pid, lambda p: p["state"] == "serving" and p["tenderCount"] == 23)
     await idle(app, pid)
+    since = now_iso()
     lab.mutate("ssr", "rename_classes")
     await c.post(f"/portals/{pid}/refresh")
-    await until(c, pid, lambda p: p["state"] == "healing")
+    await went_healing(pid, since)
     await until(c, pid, lambda p: p["state"] == "serving", 90)
     await idle(app, pid)
     reps = (await c.get(f"/portals/{pid}/repairs")).json()
@@ -201,9 +221,10 @@ async def test_pulse_notices_break_without_refresh(e2e_pulse):
     await idle(app, pid)
     n = replay.calls
     assert await app.state.pipeline.pulse(pid) is True and replay.calls == n  # a healthy pulse costs no model call
+    since = now_iso()
     lab.mutate("ssr", "rename_classes")
-    p = await until(c, pid, lambda p: p["state"] == "healing", 30)  # nobody pressed refresh
-    assert p["reason"]
+    healing = await went_healing(pid, since)  # nobody pressed refresh
+    assert healing["reason"]
     await until(c, pid, lambda p: p["state"] == "serving", 90)
     await idle(app, pid)
     runs = (await c.get(f"/portals/{pid}/runs")).json()
