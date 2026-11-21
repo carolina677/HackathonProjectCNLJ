@@ -116,3 +116,10 @@ def test_projection():
     cost.record("a", "jev", 0, 0, 0.01)
     cost.record("b", "llm", 0, 0, 0.03)
     assert cost.projected(4500) == pytest.approx(0.02 * 4500)
+
+
+def test_default_model_is_the_one_the_readme_measured():
+    from watchtower.config import Settings
+
+    f = Settings.model_fields
+    assert (f["llm_provider"].default, f["llm_model"].default) == ("openai", "gpt-5.5")

@@ -20,7 +20,7 @@ docker build -t watchtower .
 docker run -p 8080:8080 --env-file .env -v watchtower-data:/data watchtower
 ```
 
-`.env`: `LLM_PROVIDER` (`openai` or `anthropic`), `LLM_MODEL`, the matching API key, and `TYPESAFE_API_KEY`. Optional variables:
+`.env`: `OPENAI_API_KEY` and `TYPESAFE_API_KEY` are enough (defaults: `LLM_PROVIDER=openai`, `LLM_MODEL=gpt-5.5`, as measured). For Claude set `LLM_PROVIDER=anthropic`, `LLM_MODEL` and `ANTHROPIC_API_KEY`. Optional variables:
 - `PULSE_INTERVAL_SECONDS` (900; 0 turns the pulse off)
 - `READ_INTERVAL_SECONDS` (43200)
 - `WATCHTOWER_LAB=1` mounts the Chaos Lab and the Blind Lab

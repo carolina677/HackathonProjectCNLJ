@@ -7,8 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    llm_provider: str = "anthropic"
-    llm_model: str = "claude-sonnet-5-5"
+    llm_provider: str = "openai"
+    llm_model: str = "gpt-5.5"  # the model every number in the README was measured with
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
     typesafe_api_key: str | None = None
